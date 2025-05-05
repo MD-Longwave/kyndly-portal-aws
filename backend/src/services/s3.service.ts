@@ -9,7 +9,7 @@ dotenv.config();
 
 // Initialize S3 client
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: process.env.REGION || process.env.AWS_REGION || 'us-east-2',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
@@ -17,7 +17,7 @@ const s3Client = new S3Client({
 });
 
 // S3 bucket name
-const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'kyndly-ichra-documents';
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kyndly-ichra-documents';
 
 /**
  * Service for S3 operations
