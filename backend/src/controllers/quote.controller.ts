@@ -389,22 +389,25 @@ const quoteController = {
         return;
       }
       
+      // Use type assertion to avoid TypeScript errors
+      const quoteData: any = quote;
+      
       // Update quote fields if provided
-      if (planType) quote.planType = planType;
-      if (coverageDetails) quote.coverageDetails = coverageDetails;
-      if (employeeCount) quote.employeeCount = parseInt(employeeCount);
-      if (effectiveDate) quote.ichraEffectiveDate = new Date(effectiveDate);
-      if (status) quote.status = status;
-      if (transperraRep) quote.transperraRep = transperraRep;
-      if (companyName) quote.companyName = companyName;
-      if (pepm) quote.pepm = parseFloat(pepm);
-      if (currentFundingStrategy) quote.currentFundingStrategy = currentFundingStrategy;
-      if (targetDeductible) quote.targetDeductible = parseInt(targetDeductible);
-      if (targetHSA) quote.targetHSA = targetHSA;
-      if (brokerName) quote.brokerName = brokerName;
-      if (brokerEmail) quote.brokerEmail = brokerEmail;
-      if (priorityLevel) quote.priorityLevel = priorityLevel;
-      if (additionalNotes) quote.additionalNotes = additionalNotes;
+      if (planType) quoteData.planType = planType;
+      if (coverageDetails) quoteData.coverageDetails = coverageDetails;
+      if (employeeCount) quoteData.employeeCount = parseInt(employeeCount);
+      if (effectiveDate) quoteData.ichraEffectiveDate = new Date(effectiveDate);
+      if (status) quoteData.status = status;
+      if (transperraRep) quoteData.transperraRep = transperraRep;
+      if (companyName) quoteData.companyName = companyName;
+      if (pepm) quoteData.pepm = parseFloat(pepm);
+      if (currentFundingStrategy) quoteData.currentFundingStrategy = currentFundingStrategy;
+      if (targetDeductible) quoteData.targetDeductible = parseInt(targetDeductible);
+      if (targetHSA) quoteData.targetHSA = targetHSA;
+      if (brokerName) quoteData.brokerName = brokerName;
+      if (brokerEmail) quoteData.brokerEmail = brokerEmail;
+      if (priorityLevel) quoteData.priorityLevel = priorityLevel;
+      if (additionalNotes) quoteData.additionalNotes = additionalNotes;
       
       await quote.save();
       

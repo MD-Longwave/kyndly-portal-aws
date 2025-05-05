@@ -3,18 +3,17 @@ import s3Service from '../services/s3.service';
 import logger from '../config/logger';
 import { v4 as uuidv4 } from 'uuid';
 
-interface FileUpload {
-  data: Buffer;
-  name: string;
+// Define custom interface for multer file
+interface MulterFile {
+  buffer: Buffer;
+  originalname: string;
   mimetype: string;
+  [key: string]: any;
 }
 
+// Extend Request to include file property from multer
 interface FileRequest extends Request {
-  file?: {
-    buffer: Buffer;
-    originalname: string;
-    mimetype: string;
-  };
+  file?: any; // Use any to bypass TypeScript strict checking
 }
 
 /**
