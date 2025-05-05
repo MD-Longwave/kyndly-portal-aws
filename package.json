@@ -1,0 +1,36 @@
+{
+  "name": "kyndly-ichra-portal",
+  "version": "1.0.0",
+  "description": "Kyndly ICHRA Portal Application",
+  "scripts": {
+    "start": "cd frontend && npm start",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "deploy": "aws s3 cp lambda-function.zip s3://kyndly-deployments/ && aws lambda update-function-code --function-name KyndlyApiLambda --s3-bucket kyndly-deployments --s3-key lambda-function.zip",
+    "test": "cd backend && npm test",
+    "verify-ses": "aws ses verify-email-identity --email-address $EMAIL_ADDRESS"
+  },
+  "dependencies": {
+    "@auth0/auth0-react": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "@types/react-router-dom": "^5.3.3",
+    "aws-sdk": "^2.1583.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MD-Longwave/kyndly-portal-aws.git"
+  },
+  "author": "Longwave Solutions",
+  "license": "UNLICENSED",
+  "private": true
+}
