@@ -6,6 +6,11 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Define extended request type with user property
+interface AuthRequest extends Request {
+  user?: any;
+}
+
 // Auth0 configuration
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN || '';
 const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE || '';
@@ -32,8 +37,8 @@ const authMiddleware = {
    * @param permissions - Array of required permissions
    */
   checkPermissions: (permissions: string[]) => {
-    return (req: Request, res: Response, next: NextFunction) => {
-      const user = req.user as any;
+    return (req: AuthRequest, res: Response, next: NextFunction) => {
+      const user = req.user;
       
       if (!user || !user.permissions) {
         return res.status(403).json({
@@ -62,17 +67,17 @@ const authMiddleware = {
    * Used for TPA-specific data access
    */
   checkTpaAccess: () => {
-    return (req: Request, res: Response, next: NextFunction) => {
-      const user = req.user as any;
+    return (req: AuthRequest, res: Response, next: NextFunction) => {
+      const user = req.user;
       const { tpaId } = req.params;
       
       // Skip check for admin users
-      if (user.permissions && user.permissions.includes('admin:all')) {
+      if (user && user.permissions && user.permissions.includes('admin:all')) {
         return next();
       }
       
       // Check if user's TPA ID matches requested TPA ID
-      if (!user.tpaId || user.tpaId !== tpaId) {
+      if (!user || !user.tpaId || user.tpaId !== tpaId) {
         return res.status(403).json({
           success: false,
           message: 'Unauthorized access to TPA data'

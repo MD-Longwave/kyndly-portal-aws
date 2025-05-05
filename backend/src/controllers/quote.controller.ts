@@ -194,6 +194,66 @@ const quoteController = {
   },
 
   /**
+   * Get quotes with additional filtering options
+   * @param req - Express request
+   * @param res - Express response
+   */
+  getQuotesWithFilters: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { tpaId, status, startDate, endDate, employerId } = req.query;
+      
+      // Build where clause based on provided filters
+      const whereClause: any = {};
+      
+      if (tpaId) {
+        whereClause.tpaId = String(tpaId);
+      }
+      
+      if (employerId) {
+        whereClause.employerId = String(employerId);
+      }
+      
+      if (status) {
+        whereClause.status = String(status);
+      }
+      
+      // Date range filter for effective date
+      if (startDate && endDate) {
+        whereClause.ichraEffectiveDate = {
+          [Symbol.for('gte')]: new Date(String(startDate)),
+          [Symbol.for('lte')]: new Date(String(endDate))
+        };
+      } else if (startDate) {
+        whereClause.ichraEffectiveDate = {
+          [Symbol.for('gte')]: new Date(String(startDate))
+        };
+      } else if (endDate) {
+        whereClause.ichraEffectiveDate = {
+          [Symbol.for('lte')]: new Date(String(endDate))
+        };
+      }
+      
+      const quotes = await Quote.findAll({
+        where: whereClause,
+        order: [['createdAt', 'DESC']]
+      });
+      
+      res.status(200).json({
+        success: true,
+        count: quotes.length,
+        data: quotes
+      });
+    } catch (error: any) {
+      logger.error('Error fetching quotes with filters:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Could not fetch quotes',
+        error: error.message
+      });
+    }
+  },
+
+  /**
    * Get a quote by ID
    * @param req - Express request
    * @param res - Express response
@@ -288,6 +348,121 @@ const quoteController = {
       res.status(500).json({
         success: false,
         message: 'Could not update quote status',
+        error: error.message
+      });
+    }
+  },
+
+  /**
+   * Update a quote
+   * @param req - Express request
+   * @param res - Express response
+   */
+  updateQuote: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { 
+        planType, 
+        coverageDetails, 
+        employeeCount, 
+        effectiveDate, 
+        status,
+        transperraRep,
+        companyName,
+        pepm,
+        currentFundingStrategy,
+        targetDeductible,
+        targetHSA,
+        brokerName,
+        brokerEmail,
+        priorityLevel,
+        additionalNotes
+      } = req.body;
+      
+      const quote = await Quote.findByPk(id);
+      
+      if (!quote) {
+        res.status(404).json({
+          success: false,
+          message: `Quote with ID ${id} not found`
+        });
+        return;
+      }
+      
+      // Update quote fields if provided
+      if (planType) quote.planType = planType;
+      if (coverageDetails) quote.coverageDetails = coverageDetails;
+      if (employeeCount) quote.employeeCount = parseInt(employeeCount);
+      if (effectiveDate) quote.ichraEffectiveDate = new Date(effectiveDate);
+      if (status) quote.status = status;
+      if (transperraRep) quote.transperraRep = transperraRep;
+      if (companyName) quote.companyName = companyName;
+      if (pepm) quote.pepm = parseFloat(pepm);
+      if (currentFundingStrategy) quote.currentFundingStrategy = currentFundingStrategy;
+      if (targetDeductible) quote.targetDeductible = parseInt(targetDeductible);
+      if (targetHSA) quote.targetHSA = targetHSA;
+      if (brokerName) quote.brokerName = brokerName;
+      if (brokerEmail) quote.brokerEmail = brokerEmail;
+      if (priorityLevel) quote.priorityLevel = priorityLevel;
+      if (additionalNotes) quote.additionalNotes = additionalNotes;
+      
+      await quote.save();
+      
+      res.status(200).json({
+        success: true,
+        message: 'Quote updated successfully',
+        data: quote
+      });
+    } catch (error: any) {
+      logger.error(`Error updating quote: ${req.params.id}`, error);
+      res.status(500).json({
+        success: false,
+        message: 'Could not update quote',
+        error: error.message
+      });
+    }
+  },
+
+  /**
+   * Delete a quote
+   * @param req - Express request
+   * @param res - Express response
+   */
+  deleteQuote: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      
+      const quote = await Quote.findByPk(id);
+      
+      if (!quote) {
+        res.status(404).json({
+          success: false,
+          message: `Quote with ID ${id} not found`
+        });
+        return;
+      }
+      
+      // Delete associated files from S3 if they exist
+      if (quote.censusFileKey) {
+        await s3Service.deleteFile(quote.censusFileKey);
+      }
+      
+      if (quote.planComparisonFileKey) {
+        await s3Service.deleteFile(quote.planComparisonFileKey);
+      }
+      
+      // Delete quote record
+      await quote.destroy();
+      
+      res.status(200).json({
+        success: true,
+        message: 'Quote deleted successfully'
+      });
+    } catch (error: any) {
+      logger.error(`Error deleting quote: ${req.params.id}`, error);
+      res.status(500).json({
+        success: false,
+        message: 'Could not delete quote',
         error: error.message
       });
     }

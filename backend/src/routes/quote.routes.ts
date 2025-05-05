@@ -14,6 +14,13 @@ const router = express.Router();
 router.get('/', authMiddleware.authenticate, quoteController.getQuotes);
 
 /**
+ * @route   GET /api/quotes/filter
+ * @desc    Get quotes with filters
+ * @access  Private
+ */
+router.get('/filter', authMiddleware.authenticate, quoteController.getQuotesWithFilters);
+
+/**
  * @route   GET /api/quotes/:id
  * @desc    Get a quote by ID
  * @access  Private
@@ -34,24 +41,30 @@ router.post('/', authMiddleware.authenticate, quoteController.createQuote);
  */
 router.patch('/:id/status', authMiddleware.authenticate, quoteController.updateQuoteStatus);
 
-// Get quotes with filters
-router.get('/filter', quoteController.getQuotesWithFilters);
-
-// Update a quote
+/**
+ * @route   PUT /api/quotes/:id
+ * @desc    Update a quote
+ * @access  Private
+ */
 router.put(
   '/:id',
+  authMiddleware.authenticate,
   [
     check('planType').optional(),
     check('coverageDetails').optional(),
     check('employeeCount').optional().isInt({ min: 1 }).withMessage('Valid employee count is required'),
     check('effectiveDate').optional().isISO8601().toDate().withMessage('Valid effective date is required'),
-    check('status').optional().isIn(['pending', 'approved', 'rejected', 'processing']).withMessage('Valid status is required'),
+    check('status').optional().isIn(['new', 'in_progress', 'completed', 'cancelled']).withMessage('Valid status is required'),
     validateRequest
   ],
   quoteController.updateQuote
 );
 
-// Delete a quote
-router.delete('/:id', quoteController.deleteQuote);
+/**
+ * @route   DELETE /api/quotes/:id
+ * @desc    Delete a quote
+ * @access  Private
+ */
+router.delete('/:id', authMiddleware.authenticate, quoteController.deleteQuote);
 
 export default router; 

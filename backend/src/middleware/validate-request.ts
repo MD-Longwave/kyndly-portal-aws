@@ -11,10 +11,13 @@ const validateRequest = (req: Request, res: Response, next: NextFunction) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      errors: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg
-      }))
+      errors: errors.array().map(err => {
+        const error = err as any; // Type assertion to handle different versions of express-validator
+        return {
+          field: error.path || error.param || 'unknown',
+          message: error.msg
+        };
+      })
     });
   }
   
