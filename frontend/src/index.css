@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Logo customization */
+.logo-container {
+  transition: all 0.3s ease;
+}
+
+.logo-container:hover {
+  filter: brightness(1.1);
+}
+
+/* Custom utility classes */
+.bg-gradient-primary {
+  background: linear-gradient(to right, #0284c7, #0369a1);
+}
+
+/* Center content vertically and horizontally */
+.center-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@layer base {
+  html {
+    @apply text-neutral-800;
+  }
+  
+  body {
+    @apply bg-neutral-50;
+  }
+  
+  h1 {
+    @apply text-3xl font-bold;
+  }
+  
+  h2 {
+    @apply text-2xl font-bold;
+  }
+  
+  h3 {
+    @apply text-xl font-bold;
+  }
+  
+  h4 {
+    @apply text-lg font-semibold;
+  }
+  
+  h5 {
+    @apply text-base font-semibold;
+  }
+  
+  h6 {
+    @apply text-sm font-semibold;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-600 text-white hover:bg-secondary-700;
+  }
+  
+  .btn-outline {
+    @apply border border-neutral-300 bg-white hover:bg-neutral-50;
+  }
+  
+  .input {
+    @apply px-3 py-2 rounded-md border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-card p-6;
+  }
+} 

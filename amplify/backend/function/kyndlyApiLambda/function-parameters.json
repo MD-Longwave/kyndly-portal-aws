@@ -1,0 +1,13 @@
+{
+  "lambdaLayers": [],
+  "permissions": {
+    "storage": {
+      "kyndlyDocuments": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
+  }
+} 
