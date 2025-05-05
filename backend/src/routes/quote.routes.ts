@@ -1,10 +1,19 @@
 import express from 'express';
 import { check } from 'express-validator';
+import multer from 'multer';
 import quoteController from '../controllers/quote.controller';
 import validateRequest from '../middleware/validate-request';
 import authMiddleware from '../middleware/auth.middleware';
 
 const router = express.Router();
+
+// Configure multer for memory storage (files will be streamed to S3)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+  }
+});
 
 /**
  * @route   GET /api/quotes
@@ -32,7 +41,14 @@ router.get('/:id', authMiddleware.authenticate, quoteController.getQuoteById);
  * @desc    Create a new quote with file uploads
  * @access  Private
  */
-router.post('/', authMiddleware.authenticate, quoteController.createQuote);
+router.post('/', 
+  authMiddleware.authenticate, 
+  upload.fields([
+    { name: 'censusFile', maxCount: 1 },
+    { name: 'planComparisonFile', maxCount: 1 }
+  ]),
+  quoteController.createQuote
+);
 
 /**
  * @route   PATCH /api/quotes/:id/status

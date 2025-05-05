@@ -43,7 +43,7 @@ const checkJwt = jwt({
 
 // Routes
 app.use('/api/employers', checkJwt, employerRoutes);
-app.use('/api/quotes', checkJwt, quoteRoutes);
+app.use('/api/quotes', quoteRoutes);
 app.use('/api/documents', checkJwt, documentRoutes);
 
 // Health check route

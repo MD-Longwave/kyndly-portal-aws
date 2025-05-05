@@ -17,22 +17,72 @@ export const QuoteService = {
    */
   submitQuote: async (quoteData: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/quotes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quoteData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `API error: ${response.status}`);
+      console.log('QuoteService.submitQuote called with data:', quoteData);
+      
+      const apiUrl = `${API_BASE_URL}/quotes`;
+      console.log('Using API endpoint:', apiUrl);
+      
+      // Check if we need to use form data (for file uploads)
+      const hasFiles = quoteData.censusFile || quoteData.planComparisonFile;
+      
+      let response;
+      
+      if (hasFiles) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        
+        // Add all data to FormData
+        Object.keys(quoteData).forEach(key => {
+          // Skip null/undefined values
+          if (quoteData[key] !== null && quoteData[key] !== undefined) {
+            if (key === 'censusFile' || key === 'planComparisonFile') {
+              // Only add actual File objects
+              if (quoteData[key] instanceof File) {
+                formData.append(key, quoteData[key]);
+              }
+            } else {
+              formData.append(key, quoteData[key].toString());
+            }
+          }
+        });
+        
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          body: formData,
+          // Don't set Content-Type header, browser will set it with boundary
+        });
+      } else {
+        // Use JSON for non-file data
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(quoteData),
+        });
       }
 
-      return await response.json();
+      console.log('API response status:', response.status);
+      
+      // Check if response has content
+      const contentType = response.headers.get('content-type');
+      let responseData;
+      
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        responseData = await response.text();
+      }
+      
+      console.log('API response data:', responseData);
+
+      if (!response.ok) {
+        throw new Error(responseData?.message || `API error: ${response.status}`);
+      }
+
+      return responseData;
     } catch (error) {
-      console.error('Error submitting quote:', error);
+      console.error('Error in QuoteService.submitQuote:', error);
       throw error;
     }
   },
