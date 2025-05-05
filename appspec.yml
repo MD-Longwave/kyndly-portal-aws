@@ -1,0 +1,12 @@
+version: 0.0
+Resources:
+  - KyndlyLambdaFunction:
+      Type: AWS::Lambda::Function
+      Properties:
+        Name: KyndlyApiLambda
+        Alias: PROD
+        CurrentVersion: !Ref Version
+        TargetVersion: !Ref TargetVersion
+Hooks:
+  - BeforeAllowTraffic: !Ref BeforeAllowTrafficHook
+  - AfterAllowTraffic: !Ref AfterAllowTrafficHook 

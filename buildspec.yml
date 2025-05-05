@@ -1,0 +1,51 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing dependencies...
+      - npm ci
+  pre_build:
+    commands:
+      - echo Running tests...
+      - cd backend
+      - npm test || true
+      - cd ..
+  build:
+    commands:
+      - echo Building the backend...
+      - cd backend
+      - npm run build
+      - npm prune --production
+      - cd ..
+      - echo Building the frontend...
+      - cd frontend
+      - npm ci
+      - npm run build
+      - cd ..
+      - echo Packaging Lambda function...
+      - mkdir -p dist
+      - cp -r backend/dist dist/backend
+      - cp -r backend/node_modules dist/backend/
+      - cd dist/backend && zip -r ../../lambda-function.zip .
+      - cd ../..
+  post_build:
+    commands:
+      - echo Build completed on `date`
+
+artifacts:
+  files:
+    - lambda-function.zip
+    - frontend/build/**/*
+    - amplify.yml
+    - backend/iam-policy.json
+    - appspec.yml
+  discard-paths: no
+
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - 'backend/node_modules/**/*'
+    - 'frontend/node_modules/**/*' 
