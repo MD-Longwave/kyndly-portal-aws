@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Storage } from 'aws-amplify';
+import { QuoteService } from '../services/api.service';
 
 // Mock reps data for dropdown
 const mockTransperraReps = [
@@ -12,6 +13,7 @@ const mockTransperraReps = [
 
 const NewQuote: React.FC = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     transperraRep: '',
     contactTypeGLI: false,
@@ -76,6 +78,11 @@ const NewQuote: React.FC = () => {
     e.preventDefault();
     console.log('Submitting form data:', formData);
     
+    // Prevent double submission
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     try {
       // Upload files if provided
       let censusFileKey = '';
@@ -105,23 +112,26 @@ const NewQuote: React.FC = () => {
         brokerEmail: formData.brokerEmail,
         priorityLevel: formData.priorityLevel,
         additionalNotes: formData.additionalNotes,
-        submissionDate: new Date().toISOString()
+        // Required for the backend API
+        tpaId: 'default-tpa', // Replace with actual TPA ID if available
+        employerId: 'default-employer', // Replace with actual employer ID if available
+        isGLI: formData.contactTypeGLI
       };
       
-      // In a real application, you would send this data to your API
-      // const response = await fetch('/api/quotes', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(quoteData),
-      // });
+      // Submit quote using the API service
+      const result = await QuoteService.submitQuote(quoteData);
+      
+      // Show success message
+      alert('Quote submitted successfully!');
       
       // Redirect to quotes list after submission
       navigate('/quotes');
     } catch (error) {
       console.error('Error submitting quote:', error);
       // Show error notification to the user
+      alert('Failed to submit quote. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
