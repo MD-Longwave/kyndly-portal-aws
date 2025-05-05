@@ -34,4 +34,12 @@ frontend:
         - key: 'X-XSS-Protection'
           value: '1; mode=block'
         - key: 'X-Frame-Options'
-          value: 'SAMEORIGIN' 
+          value: 'SAMEORIGIN'
+  # Add redirects for API routes
+  redirects:
+    - source: '/api/<*>'
+      target: '/index.html'
+      status: '200'
+    - source: '/api'
+      target: '/index.html'
+      status: '200' 

@@ -15,9 +15,29 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins for testing
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Api-Key', 'x-api-key']
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Api-Key, x-api-key');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send();
+  }
+  next();
+});
 
 // Log all requests
 app.use((req, res, next) => {
@@ -25,14 +45,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.use('/api/employers', employerRoutes);
-app.use('/api/quotes', quoteRoutes);
-app.use('/api/documents', documentRoutes);
+// Routes - remove the /api prefix to match Lambda function URL structure
+app.use('/employers', employerRoutes);
+app.use('/quotes', quoteRoutes);
+app.use('/documents', documentRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
+  res.status(200).json({ status: 'healthy', environment: process.env.NODE_ENV });
+});
+
+// Root endpoint for basic testing
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'Kyndly ICHRA API is running',
+    version: '1.0.0'
+  });
 });
 
 // Error handling middleware

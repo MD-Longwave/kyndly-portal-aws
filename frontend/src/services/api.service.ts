@@ -3,15 +3,44 @@
  * Provides methods for interacting with the backend API
  */
 
-// API base URL - this will be set to the correct domain in production
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+// Use AWS API Gateway URL and API key for the API in production
+// For local development, use a relative path that will be proxied
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://irl951cfeb.execute-api.us-east-2.amazonaws.com/prod'
+  : '/api';
+
+// API key for AWS API Gateway (from environment variable or hardcoded for testing)
+const API_KEY = process.env.REACT_APP_API_KEY || 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+
+console.log(`Using API URL: ${API_BASE_URL} in ${process.env.NODE_ENV || 'development'} mode`);
+
+/**
+ * Add API key to request headers if in production
+ */
+const getApiHeaders = (contentType = 'application/json'): HeadersInit => {
+  const headers: HeadersInit = {
+    'Content-Type': contentType,
+  };
+  
+  // Add API key if in production
+  if (process.env.NODE_ENV === 'production' && API_KEY) {
+    headers['x-api-key'] = API_KEY;
+  }
+  
+  return headers;
+};
 
 /**
  * Health check to verify API connectivity
  */
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/health`);
+    const healthEndpoint = `${API_BASE_URL}/health`;
+    console.log(`Checking API health at: ${healthEndpoint}`);
+    
+    const response = await fetch(healthEndpoint, {
+      headers: getApiHeaders()
+    });
     if (response.ok) {
       console.log('API health check successful');
       return true;
@@ -73,6 +102,9 @@ export const QuoteService = {
         try {
           response = await fetch(apiUrl, {
             method: 'POST',
+            headers: process.env.NODE_ENV === 'production' && API_KEY 
+              ? { 'x-api-key': API_KEY } 
+              : undefined,
             body: formData,
             // Don't set Content-Type header, browser will set it with boundary
           });
@@ -87,9 +119,7 @@ export const QuoteService = {
         try {
           response = await fetch(apiUrl, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: getApiHeaders(),
             body: JSON.stringify(quoteData),
           });
         } catch (fetchError) {
@@ -162,7 +192,9 @@ export const QuoteService = {
         ? `${API_BASE_URL}/quotes?tpaId=${encodeURIComponent(tpaId)}` 
         : `${API_BASE_URL}/quotes`;
         
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: getApiHeaders()
+      });
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -182,7 +214,9 @@ export const QuoteService = {
    */
   getQuoteById: async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/quotes/${id}`);
+      const response = await fetch(`${API_BASE_URL}/quotes/${id}`, {
+        headers: getApiHeaders()
+      });
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
