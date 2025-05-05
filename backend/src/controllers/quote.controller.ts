@@ -6,6 +6,21 @@ import sesService from '../services/ses.service';
 import zapierService from '../services/zapier.service';
 import logger from '../config/logger';
 
+// Define types for file uploads
+interface FileUpload {
+  data: Buffer;
+  name: string;
+  mimetype: string;
+}
+
+interface FileRequest extends Request {
+  files?: {
+    censusFile?: FileUpload | FileUpload[];
+    planComparisonFile?: FileUpload | FileUpload[];
+    [key: string]: any;
+  };
+}
+
 /**
  * Quote controller
  */
@@ -15,7 +30,7 @@ const quoteController = {
    * @param req - Express request
    * @param res - Express response
    */
-  createQuote: async (req: Request, res: Response): Promise<void> => {
+  createQuote: async (req: FileRequest, res: Response): Promise<void> => {
     try {
       const {
         transperraRep,
@@ -48,12 +63,15 @@ const quoteController = {
       const submissionId = uuidv4();
       
       // Handle file uploads if present
-      let censusFileKey = null;
-      let planComparisonFileKey = null;
+      let censusFileKey: string | undefined = undefined;
+      let planComparisonFileKey: string | undefined = undefined;
 
       // Process census file
       if (req.files && req.files.censusFile) {
-        const censusFile = req.files.censusFile as any;
+        const censusFile = Array.isArray(req.files.censusFile) 
+          ? req.files.censusFile[0] 
+          : req.files.censusFile;
+          
         const fileUploadResult = await s3Service.uploadQuoteFile(
           censusFile.data,
           censusFile.name,
@@ -67,7 +85,10 @@ const quoteController = {
 
       // Process plan comparison file
       if (req.files && req.files.planComparisonFile) {
-        const planComparisonFile = req.files.planComparisonFile as any;
+        const planComparisonFile = Array.isArray(req.files.planComparisonFile) 
+          ? req.files.planComparisonFile[0] 
+          : req.files.planComparisonFile;
+          
         const fileUploadResult = await s3Service.uploadQuoteFile(
           planComparisonFile.data,
           planComparisonFile.name,
@@ -79,6 +100,9 @@ const quoteController = {
         planComparisonFileKey = fileUploadResult.key;
       }
 
+      // Convert targetDeductible to a number or undefined (not null)
+      const parsedTargetDeductible = targetDeductible ? parseInt(targetDeductible) : undefined;
+
       // Create quote record with file paths
       const quote = await Quote.create({
         transperraRep,
@@ -87,7 +111,7 @@ const quoteController = {
         ichraEffectiveDate,
         pepm: parseFloat(pepm) || 70.00,
         currentFundingStrategy,
-        targetDeductible: targetDeductible ? parseInt(targetDeductible) : null,
+        targetDeductible: parsedTargetDeductible,
         targetHSA,
         brokerName,
         brokerEmail,
@@ -146,7 +170,8 @@ const quoteController = {
       // Filter by TPA ID if provided
       const { tpaId } = req.query;
       
-      const whereClause = tpaId ? { tpaId } : {};
+      // Fix type issue with whereClause
+      const whereClause = tpaId ? { tpaId: String(tpaId) } : {};
       
       const quotes = await Quote.findAll({
         where: whereClause,
@@ -252,8 +277,11 @@ const quoteController = {
       
       res.status(200).json({
         success: true,
-        message: `Quote status updated to ${status}`,
-        data: quote
+        message: 'Quote status updated successfully',
+        data: {
+          id: quote.id,
+          status: quote.status
+        }
       });
     } catch (error: any) {
       logger.error(`Error updating quote status: ${req.params.id}`, error);
