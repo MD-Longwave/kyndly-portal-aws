@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Storage } from 'aws-amplify';
-import { QuoteService } from '../services/api.service';
+import { QuoteService, checkApiHealth } from '../services/api.service';
 
 // Mock reps data for dropdown
 const mockTransperraReps = [
@@ -14,6 +14,27 @@ const mockTransperraReps = [
 const NewQuote: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null);
+  
+  // Check API connection when component mounts
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const isHealthy = await checkApiHealth();
+        setApiConnected(isHealthy);
+        
+        if (!isHealthy) {
+          console.error('API health check failed. Backend may not be available.');
+        }
+      } catch (error) {
+        console.error('Error checking API health:', error);
+        setApiConnected(false);
+      }
+    };
+    
+    checkConnection();
+  }, []);
+  
   const [formData, setFormData] = useState({
     transperraRep: '',
     contactTypeGLI: false,
@@ -78,31 +99,41 @@ const NewQuote: React.FC = () => {
     e.preventDefault();
     console.log('Submitting form data:', formData);
     
+    // Check required fields
+    if (!formData.transperraRep) {
+      alert('Please select a Transperra Rep');
+      return;
+    }
+    
+    if (!formData.companyName) {
+      alert('Please enter a Company Name');
+      return;
+    }
+    
+    if (!formData.ichraEffectiveDate) {
+      alert('Please select an ICHRA Effective Date');
+      return;
+    }
+    
     // Prevent double submission
     if (isSubmitting) return;
     
     setIsSubmitting(true);
     
     try {
-      // Upload files if provided
-      let censusFileKey = '';
-      let planComparisonFileKey = '';
+      console.log('Starting form submission...');
       
-      if (formData.censusFile) {
-        censusFileKey = await uploadFileToS3(formData.censusFile, 'census-files');
-      }
+      // Set default TPA and employer IDs if not provided
+      const tpaId = 'default-tpa-id';
+      const employerId = 'default-employer-id';
       
-      if (formData.planComparisonFile) {
-        planComparisonFileKey = await uploadFileToS3(formData.planComparisonFile, 'plan-comparison-files');
-      }
+      console.log(`Using TPA ID: ${tpaId} and Employer ID: ${employerId}`);
       
       // Prepare data for API
       const quoteData = {
         transperraRep: formData.transperraRep,
         contactType: formData.contactTypeGLI ? 'GLI' : (formData.contactTypeNonGLI ? 'Non-GLI' : ''),
         companyName: formData.companyName,
-        censusFileKey,
-        planComparisonFileKey,
         ichraEffectiveDate: formData.ichraEffectiveDate,
         pepm: formData.pepm,
         currentFundingStrategy: formData.currentFundingStrategy,
@@ -113,23 +144,34 @@ const NewQuote: React.FC = () => {
         priorityLevel: formData.priorityLevel,
         additionalNotes: formData.additionalNotes,
         // Required for the backend API
-        tpaId: 'default-tpa', // Replace with actual TPA ID if available
-        employerId: 'default-employer', // Replace with actual employer ID if available
-        isGLI: formData.contactTypeGLI
+        tpaId: tpaId,
+        employerId: employerId,
+        isGLI: formData.contactTypeGLI,
+        // Include the actual file objects
+        censusFile: formData.censusFile,
+        planComparisonFile: formData.planComparisonFile
       };
       
+      console.log('Submitting quote data to API:', quoteData);
+      
       // Submit quote using the API service
-      const result = await QuoteService.submitQuote(quoteData);
-      
-      // Show success message
-      alert('Quote submitted successfully!');
-      
-      // Redirect to quotes list after submission
-      navigate('/quotes');
-    } catch (error) {
-      console.error('Error submitting quote:', error);
-      // Show error notification to the user
-      alert('Failed to submit quote. Please try again.');
+      try {
+        const result = await QuoteService.submitQuote(quoteData);
+        console.log('API response:', result);
+        
+        // Show success message
+        alert('Quote submitted successfully!');
+        
+        // Redirect to quotes list after submission
+        navigate('/quotes');
+      } catch (apiError: any) {
+        console.error('API error during submission:', apiError);
+        alert(`Failed to submit quote: ${apiError.message || 'Unknown error'}. Please check the browser console for more details.`);
+      }
+    } catch (error: any) {
+      console.error('Error in form submission process:', error);
+      // Show more detailed error message
+      alert(`Error in form submission: ${error.message || 'Unknown error'}. Please check the browser console for more details.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -141,6 +183,13 @@ const NewQuote: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">Transperra Choice Quoting Tool Submission</h1>
       </div>
 
+      {apiConnected === false && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Connection Error! </strong>
+          <span className="block sm:inline">Cannot connect to the backend server. Your form submission may fail.</span>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Transperra Rep */}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">

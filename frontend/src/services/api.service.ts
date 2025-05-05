@@ -7,6 +7,25 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 /**
+ * Health check to verify API connectivity
+ */
+export const checkApiHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`);
+    if (response.ok) {
+      console.log('API health check successful');
+      return true;
+    } else {
+      console.error(`API health check failed with status: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('API health check error:', error);
+    return false;
+  }
+};
+
+/**
  * Quote API Service
  */
 export const QuoteService = {
@@ -24,6 +43,7 @@ export const QuoteService = {
       
       // Check if we need to use form data (for file uploads)
       const hasFiles = quoteData.censusFile || quoteData.planComparisonFile;
+      console.log('Has files:', hasFiles);
       
       let response;
       
@@ -39,50 +59,94 @@ export const QuoteService = {
               // Only add actual File objects
               if (quoteData[key] instanceof File) {
                 formData.append(key, quoteData[key]);
+                console.log(`Added file to form data: ${key}, name: ${quoteData[key].name}, size: ${quoteData[key].size} bytes`);
               }
             } else {
               formData.append(key, quoteData[key].toString());
+              console.log(`Added to form data: ${key} = ${quoteData[key].toString().substring(0, 50)}${quoteData[key].toString().length > 50 ? '...' : ''}`);
             }
           }
         });
         
-        response = await fetch(apiUrl, {
-          method: 'POST',
-          body: formData,
-          // Don't set Content-Type header, browser will set it with boundary
-        });
+        console.log('Sending multipart form data request...');
+        
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            body: formData,
+            // Don't set Content-Type header, browser will set it with boundary
+          });
+        } catch (fetchError) {
+          console.error('Fetch error during form data submission:', fetchError);
+          throw fetchError;
+        }
       } else {
         // Use JSON for non-file data
-        response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(quoteData),
-        });
+        console.log('Sending JSON request...');
+        
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(quoteData),
+          });
+        } catch (fetchError) {
+          console.error('Fetch error during JSON submission:', fetchError);
+          throw fetchError;
+        }
       }
 
       console.log('API response status:', response.status);
+      
+      // Log headers in a compatible way
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      console.log('API response headers:', headers);
       
       // Check if response has content
       const contentType = response.headers.get('content-type');
       let responseData;
       
       if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
+        try {
+          responseData = await response.json();
+          console.log('API response data (JSON):', responseData);
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          responseData = { error: 'Failed to parse JSON response' };
+        }
       } else {
-        responseData = await response.text();
+        try {
+          responseData = await response.text();
+          console.log('API response data (text):', responseData.substring(0, 200));
+          if (responseData.length > 200) {
+            console.log('... (truncated)');
+          }
+        } catch (textError) {
+          console.error('Error reading response text:', textError);
+          responseData = 'Failed to read response';
+        }
       }
-      
-      console.log('API response data:', responseData);
 
       if (!response.ok) {
-        throw new Error(responseData?.message || `API error: ${response.status}`);
+        throw new Error(
+          responseData?.message || 
+          responseData?.error || 
+          `API error: ${response.status} - ${response.statusText}`
+        );
       }
 
       return responseData;
     } catch (error) {
       console.error('Error in QuoteService.submitQuote:', error);
+      // Log the stack trace for more information
+      if (error instanceof Error) {
+        console.error('Error stack trace:', error.stack);
+      }
       throw error;
     }
   },
