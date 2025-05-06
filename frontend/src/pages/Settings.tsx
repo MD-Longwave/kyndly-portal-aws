@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   BellIcon, 
   ShieldCheckIcon, 
@@ -9,14 +9,6 @@ import {
 
 // Check if the app is running in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
-
-// Check if Auth0 credentials are configured
-const isAuth0Configured = 
-  process.env.REACT_APP_AUTH0_DOMAIN && 
-  process.env.REACT_APP_AUTH0_CLIENT_ID;
-
-// Bypass authentication in development if Auth0 is not configured
-const bypassAuth = isDevelopment && !isAuth0Configured;
 
 // Settings tabs
 const tabs = [
@@ -65,7 +57,7 @@ const initialEmailSettings = {
 };
 
 const Settings: React.FC = () => {
-  const { isLoading } = useAuth0();
+  const { isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('Notifications');
   
   // Settings state
@@ -116,8 +108,8 @@ const Settings: React.FC = () => {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  // For development without Auth0
-  if (!bypassAuth && isLoading) {
+  // Show loading state while authentication is being checked
+  if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>

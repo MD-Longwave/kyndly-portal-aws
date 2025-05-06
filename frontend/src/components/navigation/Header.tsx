@@ -1,20 +1,20 @@
 import React from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { 
   BellIcon, 
   UserCircleIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth0();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout({ 
-      logoutParams: { 
-        returnTo: window.location.origin 
-      } 
-    });
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   return (
@@ -38,7 +38,7 @@ const Header: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <UserCircleIcon className="h-8 w-8 text-neutral-500" />
                 <div className="text-sm">
-                  <p className="font-medium text-neutral-700">{user?.name || 'User'}</p>
+                  <p className="font-medium text-neutral-700">{user?.username || 'User'}</p>
                   <p className="text-neutral-500">{user?.email || 'user@example.com'}</p>
                 </div>
               </div>

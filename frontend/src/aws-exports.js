@@ -1,11 +1,11 @@
 const awsmobile = {
-    "aws_project_region": "us-east-1",
-    "aws_cognito_identity_pool_id": "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", // You'll need to update this with your Cognito Identity Pool ID
-    "aws_cognito_region": "us-east-1",
-    "aws_user_pools_id": "us-east-1_xxxxxxxxx", // You'll need to update this with your User Pool ID
-    "aws_user_pools_web_client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxx", // You'll need to update this with your App Client ID
+    "aws_project_region": "us-east-2",
+    "aws_cognito_identity_pool_id": "us-east-2:3adb832a-4b01-46e2-a8d3-71857f413d74",
+    "aws_cognito_region": "us-east-2",
+    "aws_user_pools_id": "us-east-2_WVTGKPX0l",
+    "aws_user_pools_web_client_id": "53ua5mcufomh760j8ptp6af0qq",
     "oauth": {
-        "domain": "your-domain.auth.us-east-1.amazoncognito.com", // You'll need to update this with your Cognito domain
+        "domain": "kyndly-ichra-portal.auth.us-east-2.amazoncognito.com",
         "scope": [
             "email",
             "openid",
@@ -18,12 +18,12 @@ const awsmobile = {
     "aws_cloud_logic_custom": [
         {
             "name": "kyndlyApi",
-            "endpoint": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/dev", // You'll need to update this with your API Gateway endpoint
-            "region": "us-east-1"
+            "endpoint": "https://api.kyndly.com/dev",
+            "region": "us-east-2"
         }
     ],
-    "aws_user_files_s3_bucket": "kyndly-ichra-documents", // You'll need to update this with your S3 bucket name
-    "aws_user_files_s3_bucket_region": "us-east-1"
+    "aws_user_files_s3_bucket": "kyndly-ichra-documents",
+    "aws_user_files_s3_bucket_region": "us-east-2"
 };
 
 export default awsmobile; 
