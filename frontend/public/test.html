@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    
+    <button id="testApi">Test API Connection</button>
+    
+    <div id="result">
+        <h2>Response:</h2>
+        <pre id="responseText">Click the button above to test.</pre>
+    </div>
+    
+    <script>
+        document.getElementById('testApi').addEventListener('click', async () => {
+            const resultElement = document.getElementById('responseText');
+            resultElement.textContent = 'Testing...';
+            
+            try {
+                // API Gateway URL
+                const apiUrl = 'https://irl951cfeb.execute-api.us-east-2.amazonaws.com/prod/health';
+                // API Key
+                const apiKey = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+                
+                console.log(`Calling API at ${apiUrl}`);
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey
+                    }
+                });
+                
+                const statusText = response.ok ? 'SUCCESS' : 'ERROR';
+                const statusClass = response.ok ? 'success' : 'error';
+                
+                let responseBody;
+                try {
+                    responseBody = await response.json();
+                } catch (e) {
+                    responseBody = await response.text();
+                }
+                
+                resultElement.innerHTML = `<span class="${statusClass}">${statusText}: ${response.status} ${response.statusText}</span>\n\n`;
+                resultElement.innerHTML += JSON.stringify(responseBody, null, 2);
+                
+                // Log response headers
+                console.log('Response headers:');
+                response.headers.forEach((value, key) => {
+                    console.log(`${key}: ${value}`);
+                });
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">ERROR: ${error.message}</span>`;
+                console.error('Error testing API:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

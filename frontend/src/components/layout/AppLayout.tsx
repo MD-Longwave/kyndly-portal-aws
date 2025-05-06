@@ -9,7 +9,7 @@ import {
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth } from '../../contexts/AuthContext';
 import kyndlyLogo from '../../assets/images/Kyndly-Temp-web-logo-blue.png';
 
 // Navigation links for the sidebar
@@ -96,34 +96,37 @@ function DocumentsIcon() {
   );
 }
 
-// Check if we're in development and Auth0 is not configured
+// Check if we're in development
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isAuth0Configured = process.env.REACT_APP_AUTH0_DOMAIN && 
-                         process.env.REACT_APP_AUTH0_CLIENT_ID;
-const bypassAuth = isDevelopment && !isAuth0Configured;
-const isProduction = process.env.NODE_ENV === 'production';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuth0();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   
   // Handle user logout
-  const handleLogout = () => {
-    // In production or when bypassing Auth0, navigate directly to login
-    if (isProduction || bypassAuth) {
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigation to login page will be handled by the AuthContext
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback navigation if logout fails
       navigate('/login');
-    } else {
-      logout({ logoutParams: { returnTo: window.location.origin } });
     }
   };
   
   // Handle navigation for user dropdown items
-  const handleUserNavigation = (e: React.MouseEvent, href: string) => {
+  const handleUserNavigation = (e: React.MouseEvent, href: string, action?: () => Promise<void>) => {
     e.preventDefault(); // Prevent default behavior
     
-    // Use the navigate function to change routes
-    navigate(href);
+    if (action) {
+      // Execute the action (e.g., logout)
+      action();
+    } else {
+      // Use the navigate function to change routes
+      navigate(href);
+    }
     
     // Close mobile sidebar if open
     if (sidebarOpen) {
@@ -281,7 +284,10 @@ export function AppLayout() {
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </button>
 
-          <div className="flex flex-1 gap-x-4 self-stretch items-center justify-end lg:gap-x-6">
+          {/* Separator */}
+          <div className="h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
+
+          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-end">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <button
                 type="button"
@@ -295,16 +301,12 @@ export function AppLayout() {
               <Menu as="div" className="relative">
                 <Menu.Button className="-m-1.5 flex items-center p-1.5">
                   <span className="sr-only">Open user menu</span>
-                  <UserCircleIcon
-                    className="h-8 w-8 text-secondary-800 hover:text-primary-500"
-                    aria-hidden="true"
-                  />
+                  <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-sm font-semibold text-primary-700">
+                    {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                  </div>
                   <span className="hidden lg:flex lg:items-center">
-                    <span
-                      className="ml-4 text-sm font-semibold leading-6 text-secondary-800"
-                      aria-hidden="true"
-                    >
-                      {user?.name || 'User'}
+                    <span className="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
+                      {user?.username || 'User'}
                     </span>
                   </span>
                 </Menu.Button>
@@ -321,33 +323,20 @@ export function AppLayout() {
                     {userNavigation.map((item) => (
                       <Menu.Item key={item.name}>
                         {({ active }) => (
-                          item.name === 'Sign out' ? (
-                            <button
-                              className={`
-                                ${active ? 'bg-primary-100' : ''}
-                                block w-full text-left px-3 py-1 text-sm leading-6 text-secondary-800
-                              `}
-                              onClick={handleLogout}
-                            >
-                              <div className="flex items-center">
-                                <item.icon className="h-5 w-5 mr-2" />
-                                {item.name}
-                              </div>
-                            </button>
-                          ) : (
-                            <button
-                              className={`
-                                ${active ? 'bg-primary-100' : ''}
-                                block w-full text-left px-3 py-1 text-sm leading-6 text-secondary-800
-                              `}
-                              onClick={() => navigate(item.href)}
-                            >
-                              <div className="flex items-center">
-                                <item.icon className="h-5 w-5 mr-2" />
-                                {item.name}
-                              </div>
-                            </button>
-                          )
+                          <a
+                            href={item.href}
+                            onClick={(e) => 
+                              item.name === 'Sign out' 
+                                ? handleUserNavigation(e, item.href, handleLogout) 
+                                : handleUserNavigation(e, item.href)
+                            }
+                            className={`${active ? 'bg-gray-50' : ''} block px-3 py-1 text-sm leading-6 text-gray-900`}
+                          >
+                            <div className="flex items-center">
+                              <item.icon className="h-5 w-5 mr-2 text-gray-500" aria-hidden="true" />
+                              {item.name}
+                            </div>
+                          </a>
                         )}
                       </Menu.Item>
                     ))}
@@ -358,7 +347,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <main className="py-8 px-4 sm:px-6 lg:px-8">
+        <main className="py-4">
           <Outlet />
         </main>
       </div>

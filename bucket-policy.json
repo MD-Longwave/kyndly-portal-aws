@@ -1,0 +1,78 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadFrontendAssets",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::kyndly-ichra-frontend/*"
+            ]
+        },
+        {
+            "Sid": "AllowTPASpecificReadForQuoteSubmissions",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::ACCOUNT-ID:role/KyndlyTPAUserRole"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::kyndly-ichra-documents",
+                "arn:aws:s3:::kyndly-ichra-documents/submissions/${aws:PrincipalTag/tpa_id}/*"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:PrincipalTag/role": "tpa_user"
+                }
+            }
+        },
+        {
+            "Sid": "AllowEmployerSpecificReadForQuoteSubmissions",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::ACCOUNT-ID:role/KyndlyEmployerUserRole"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::kyndly-ichra-documents",
+                "arn:aws:s3:::kyndly-ichra-documents/submissions/${aws:PrincipalTag/tpa_id}/${aws:PrincipalTag/employer_id}/*"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:PrincipalTag/role": "employer_user"
+                }
+            }
+        },
+        {
+            "Sid": "AllowKyndlyAdminsFullAccess",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::ACCOUNT-ID:role/KyndlyAdminRole"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::kyndly-ichra-documents",
+                "arn:aws:s3:::kyndly-ichra-documents/*"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:PrincipalTag/role": "kyndly_admin"
+                }
+            }
+        }
+    ]
+} 

@@ -1,0 +1,14 @@
+{
+    "IdentityPoolId": "us-east-2:3adb832a-4b01-46e2-a8d3-71857f413d74",
+    "IdentityPoolName": "KyndlyIdentityPool",
+    "AllowUnauthenticatedIdentities": false,
+    "AllowClassicFlow": false,
+    "CognitoIdentityProviders": [
+        {
+            "ProviderName": "cognito-idp.us-east-2.amazonaws.com/us-east-2_WVTGKPX0l",
+            "ClientId": "53ua5mcufomh760j8ptp6af0qq",
+            "ServerSideTokenCheck": false
+        }
+    ],
+    "IdentityPoolTags": {}
+}

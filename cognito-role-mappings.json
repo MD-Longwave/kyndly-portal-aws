@@ -1,0 +1,34 @@
+{
+  "IdentityPoolId": "us-east-2:3adb832a-4b01-46e2-a8d3-71857f413d74",
+  "Roles": {
+    "authenticated": "arn:aws:iam::146575257803:role/KyndlyAdminRole"
+  },
+  "RoleMappings": {
+    "cognito-idp.us-east-2.amazonaws.com/us-east-2_WVTGKPX0l:53ua5mcufomh760j8ptp6af0qq": {
+      "Type": "Rules",
+      "AmbiguousRoleResolution": "Deny",
+      "RulesConfiguration": {
+        "Rules": [
+          {
+            "Claim": "cognito:groups",
+            "MatchType": "Contains",
+            "Value": "tpa_users",
+            "RoleARN": "arn:aws:iam::146575257803:role/KyndlyTPAUserRole"
+          },
+          {
+            "Claim": "cognito:groups",
+            "MatchType": "Contains",
+            "Value": "employer_users",
+            "RoleARN": "arn:aws:iam::146575257803:role/KyndlyEmployerUserRole"
+          },
+          {
+            "Claim": "cognito:groups",
+            "MatchType": "Contains",
+            "Value": "kyndly_admins",
+            "RoleARN": "arn:aws:iam::146575257803:role/KyndlyAdminRole"
+          }
+        ]
+      }
+    }
+  }
+} 

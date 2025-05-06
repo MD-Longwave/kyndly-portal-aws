@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::kyndly-ichra-documents/submissions/test-tpa-123/test-employer-456/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::kyndly-ichra-documents"
+      ],
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "submissions/test-tpa-123/test-employer-456/*"
+          ]
+        }
+      }
+    }
+  ]
+} 

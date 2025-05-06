@@ -13,12 +13,12 @@ interface FileUpload {
   mimetype: string;
 }
 
+// Define request type with files property for multer
 interface FileRequest extends Request {
   files?: {
-    censusFile?: FileUpload | FileUpload[];
-    planComparisonFile?: FileUpload | FileUpload[];
-    [key: string]: any;
+    [fieldname: string]: FileUpload | FileUpload[];
   };
+  user?: any;
 }
 
 /**
@@ -59,6 +59,9 @@ const quoteController = {
         return;
       }
 
+      // Get the ID token from the request object
+      const idToken = req.headers.authorization?.split(' ')[1];
+
       // Generate a unique submission ID for this quote
       const submissionId = uuidv4();
       
@@ -78,7 +81,8 @@ const quoteController = {
           tpaId,
           employerId,
           censusFile.mimetype,
-          submissionId
+          submissionId,
+          idToken
         );
         censusFileKey = fileUploadResult.key;
       }
@@ -95,7 +99,8 @@ const quoteController = {
           tpaId,
           employerId,
           planComparisonFile.mimetype,
-          submissionId
+          submissionId,
+          idToken
         );
         planComparisonFileKey = fileUploadResult.key;
       }
@@ -142,52 +147,95 @@ const quoteController = {
         // Continue processing even if Zapier integration fails
       }
 
+      // Return success response
       res.status(201).json({
         success: true,
+        quoteId: quote.id,
         message: 'Quote created successfully',
-        data: {
-          id: quote.id,
-          submissionId: quote.submissionId
-        }
+        data: quote
       });
     } catch (error: any) {
       logger.error('Error creating quote:', error);
       res.status(500).json({
         success: false,
-        message: 'Could not create quote',
+        message: 'Failed to create quote',
         error: error.message
       });
     }
   },
 
   /**
-   * Get all quotes
+   * Get all quotes (optionally filtered by TPA ID)
    * @param req - Express request
    * @param res - Express response
    */
-  getQuotes: async (req: Request, res: Response): Promise<void> => {
+  getQuotes: async (req: FileRequest, res: Response): Promise<void> => {
     try {
-      // Filter by TPA ID if provided
-      const { tpaId } = req.query;
+      const { tpaId, employerId } = req.query;
       
-      // Fix type issue with whereClause
-      const whereClause = tpaId ? { tpaId: String(tpaId) } : {};
+      // Build filter based on query parameters and user role
+      let filter: any = {};
       
+      // Get the ID token from the request object
+      const idToken = req.headers.authorization?.split(' ')[1];
+      
+      // If user is in a specific role, apply appropriate filtering
+      const user = req.user;
+      
+      if (user) {
+        // Filter by TPA ID if user is a TPA user and not a kyndly_admin
+        if (user.groups?.includes('tpa_users') && !user.groups?.includes('kyndly_admins')) {
+          filter.tpaId = user.tpaId;
+        }
+        
+        // Filter by employer ID if user is an employer user
+        if (user.groups?.includes('employer_users') && !user.groups?.includes('kyndly_admins')) {
+          filter.tpaId = user.tpaId;
+          filter.employerId = user.employerId;
+        }
+      }
+      
+      // Apply additional filters from query parameters (if not already set by role)
+      if (tpaId && !filter.tpaId) {
+        filter.tpaId = tpaId;
+      }
+      
+      if (employerId && !filter.employerId) {
+        filter.employerId = employerId;
+      }
+      
+      // Use Sequelize findAll since we're using Sequelize
       const quotes = await Quote.findAll({
-        where: whereClause,
+        where: filter,
         order: [['createdAt', 'DESC']]
       });
       
+      // For each quote, generate signed URLs for file access
+      const quotesWithUrls = await Promise.all(quotes.map(async (quote) => {
+        const quoteData = quote.toJSON();
+        
+        // Generate signed URLs for file access if keys exist
+        if (quoteData.censusFileKey) {
+          quoteData.censusFileUrl = await s3Service.getSignedUrl(quoteData.censusFileKey, 3600, idToken);
+        }
+        
+        if (quoteData.planComparisonFileKey) {
+          quoteData.planComparisonFileUrl = await s3Service.getSignedUrl(quoteData.planComparisonFileKey, 3600, idToken);
+        }
+        
+        return quoteData;
+      }));
+      
       res.status(200).json({
         success: true,
-        count: quotes.length,
-        data: quotes
+        count: quotesWithUrls.length,
+        data: quotesWithUrls
       });
     } catch (error: any) {
-      logger.error('Error fetching quotes:', error);
+      logger.error('Error getting quotes:', error);
       res.status(500).json({
         success: false,
-        message: 'Could not fetch quotes',
+        message: 'Failed to retrieve quotes',
         error: error.message
       });
     }

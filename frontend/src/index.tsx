@@ -1,48 +1,43 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { Auth0Provider } from '@auth0/auth0-react';
 import { Amplify } from 'aws-amplify';
 import awsconfig from './aws-exports';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { cognitoConfig } from './config/cognito';
 
-// Configure Amplify
-Amplify.configure(awsconfig);
+// Configure Amplify with the centralized configuration
+Amplify.configure({
+  // Use the aws-exports.js file as the base configuration
+  ...awsconfig,
+  
+  // Override with environment-specific values if provided
+  Auth: {
+    region: cognitoConfig.REGION,
+    userPoolId: cognitoConfig.USER_POOL_ID,
+    userPoolWebClientId: cognitoConfig.APP_CLIENT_ID,
+    identityPoolId: cognitoConfig.IDENTITY_POOL_ID,
+    oauth: {
+      domain: cognitoConfig.DOMAIN,
+      scope: cognitoConfig.OAUTH.SCOPE,
+      redirectSignIn: cognitoConfig.OAUTH.REDIRECT_SIGN_IN,
+      redirectSignOut: cognitoConfig.OAUTH.REDIRECT_SIGN_OUT,
+      responseType: cognitoConfig.OAUTH.RESPONSE_TYPE
+    }
+  }
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-// Check if Auth0 credentials are configured
-const isAuth0Configured = 
-  process.env.REACT_APP_AUTH0_DOMAIN && 
-  process.env.REACT_APP_AUTH0_CLIENT_ID;
-
-// For demo purposes, bypass Auth0 in production
-const isDevelopment = process.env.NODE_ENV === 'development';
-const useAuth0 = isDevelopment && isAuth0Configured;
-
 root.render(
   <React.StrictMode>
-    {useAuth0 ? (
-      <Auth0Provider
-        domain={process.env.REACT_APP_AUTH0_DOMAIN || ''}
-        clientId={process.env.REACT_APP_AUTH0_CLIENT_ID || ''}
-        authorizationParams={{
-          redirect_uri: window.location.origin + '/dashboard'
-        }}
-      >
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </Auth0Provider>
-    ) : (
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    )}
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
