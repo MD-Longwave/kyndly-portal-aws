@@ -16,7 +16,6 @@ import kyndlyLogo from '../../assets/images/Kyndly-Temp-web-logo-blue.png';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon, isExternal: false },
   { name: 'Quotes', href: '/quotes', icon: QuotesIcon, isExternal: false },
-  { name: 'Employers', href: '/employers', icon: EmployersIcon, isExternal: false },
   { name: 'Sold Cases', href: '/sold-cases', icon: SoldCasesIcon, isExternal: false },
   { name: 'Enrollments', href: '/enrollments', icon: EnrollmentsIcon, isExternal: false },
   { name: 'Kynd Choice', href: 'https://ichra.kyndchoice.com/clients?locale=en', icon: KyndChoiceIcon, isExternal: true },
