@@ -2,7 +2,6 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   HomeIcon, 
-  BuildingOfficeIcon, 
   DocumentTextIcon, 
   DocumentChartBarIcon, 
   Cog6ToothIcon 
@@ -10,7 +9,6 @@ import {
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: HomeIcon },
-  { name: 'Employers', path: '/employers', icon: BuildingOfficeIcon },
   { name: 'Quotes', path: '/quotes', icon: DocumentChartBarIcon },
   { name: 'Documents', path: '/documents', icon: DocumentTextIcon },
   { name: 'Settings', path: '/settings', icon: Cog6ToothIcon },

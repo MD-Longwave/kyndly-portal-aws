@@ -1,19 +1,10 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-// Mock employer data
-const mockEmployers = [
-  { id: 'emp1', name: 'Acme Corporation' },
-  { id: 'emp2', name: 'Globex Inc.' },
-  { id: 'emp3', name: 'Initech' },
-  { id: 'emp4', name: 'Stark Industries' },
-  { id: 'emp5', name: 'Wayne Enterprises' }
-];
-
 // Report types
 const reportTypes = [
-  { id: 'summary', name: 'Employer Summary', description: 'Overview of employer, plans, and costs' },
+  { id: 'summary', name: 'Summary Report', description: 'Overview of quotes, plans, and costs' },
   { id: 'utilization', name: 'Utilization Report', description: 'Analysis of plan usage and trends' },
   { id: 'compliance', name: 'Compliance Analysis', description: 'ACA and ERISA compliance status' },
   { id: 'financial', name: 'Financial Breakdown', description: 'Detailed cost analysis and projections' }
@@ -22,26 +13,24 @@ const reportTypes = [
 interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerateReport: (employerId: string, reportType: string) => void;
+  onGenerateReport: (reportType: string) => void;
 }
 
 export default function ReportModal({ isOpen, onClose, onGenerateReport }: ReportModalProps) {
-  const [selectedEmployer, setSelectedEmployer] = useState('');
   const [selectedReportType, setSelectedReportType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const handleGenerate = () => {
-    if (!selectedEmployer || !selectedReportType) return;
+    if (!selectedReportType) return;
     
     setIsLoading(true);
     // Simulate report generation delay
     setTimeout(() => {
-      onGenerateReport(selectedEmployer, selectedReportType);
+      onGenerateReport(selectedReportType);
       setIsLoading(false);
       onClose();
       
       // Reset form
-      setSelectedEmployer('');
       setSelectedReportType('');
     }, 1500);
   };
@@ -90,31 +79,11 @@ export default function ReportModal({ isOpen, onClose, onGenerateReport }: Repor
                     </Dialog.Title>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">
-                        Select an employer and report type to generate a detailed report.
+                        Select a report type to generate a detailed report.
                       </p>
                     </div>
                     
-                    <div className="mt-4 space-y-4">
-                      <div>
-                        <label htmlFor="employer" className="block text-sm font-medium text-gray-700">
-                          Employer
-                        </label>
-                        <select
-                          id="employer"
-                          name="employer"
-                          className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-                          value={selectedEmployer}
-                          onChange={(e) => setSelectedEmployer(e.target.value)}
-                        >
-                          <option value="">Select an employer</option>
-                          {mockEmployers.map((employer) => (
-                            <option key={employer.id} value={employer.id}>
-                              {employer.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
+                    <div className="mt-4 space-y-4">                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
                           Report Type
@@ -157,7 +126,7 @@ export default function ReportModal({ isOpen, onClose, onGenerateReport }: Repor
                     type="button"
                     className="inline-flex w-full justify-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 sm:col-start-2"
                     onClick={handleGenerate}
-                    disabled={!selectedEmployer || !selectedReportType || isLoading}
+                    disabled={!selectedReportType || isLoading}
                   >
                     {isLoading ? (
                       <>

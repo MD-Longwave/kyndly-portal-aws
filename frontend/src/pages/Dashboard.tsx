@@ -1,33 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  UsersIcon,
   DocumentTextIcon,
   DocumentIcon,
   ArrowUpTrayIcon,
-  PlusCircleIcon,
   DocumentPlusIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
-
-// Mock data for dashboard
-const dashboardData = {
-  totalEmployers: 27,
-  totalQuotes: 158,
-  activeQuotes: 42,
-  totalDocuments: 87,
-  recentUploads: 12,
-  recentEmployers: [
-    { id: 1, name: 'Acme Co.', employeeCount: 24, status: 'Active' },
-    { id: 2, name: 'Globex Corporation', employeeCount: 47, status: 'Active' },
-    { id: 3, name: 'Stark Industries', employeeCount: 215, status: 'Inactive' },
-  ],
-  recentQuotes: [
-    { id: 1, name: 'Acme Co. - Gold Plan', employer: 'Acme Co.', status: 'Approved', date: '2023-12-15' },
-    { id: 2, name: 'Globex - Family Plan', employer: 'Globex Corporation', status: 'Pending', date: '2023-12-10' },
-    { id: 3, name: 'Stark Industries - Premium', employer: 'Stark Industries', status: 'Rejected', date: '2023-12-05' },
-  ]
-};
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -65,6 +44,73 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function Dashboard() {
+  const [dashboardData, setDashboardData] = useState({
+    totalQuotes: 0,
+    activeQuotes: 0,
+    totalDocuments: 0,
+    recentUploads: 0,
+    recentQuotes: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        // Fetch data from actual API endpoints
+        const quotesResponse = await fetch('/api/quotes/summary');
+        const documentsResponse = await fetch('/api/documents/summary');
+        
+        if (!quotesResponse.ok || !documentsResponse.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        
+        const quotes = await quotesResponse.json();
+        const documents = await documentsResponse.json();
+        
+        setDashboardData({
+          totalQuotes: quotes.totalQuotes || 0,
+          activeQuotes: quotes.activeQuotes || 0,
+          totalDocuments: documents.totalDocuments || 0,
+          recentUploads: documents.recentUploads || 0,
+          recentQuotes: quotes.recentQuotes || []
+        });
+        
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">
+        <p>{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 text-sm font-medium text-red-600 hover:text-red-500"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -72,25 +118,7 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-        <Link to="/employers" className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                <UsersIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-secondary-800 truncate">Total Employers</dt>
-                  <dd>
-                    <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalEmployers}</div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </Link>
-
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
@@ -164,41 +192,7 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {/* Recent Employers */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
-            <h3 className="text-lg leading-6 font-medium text-secondary-800">Recent Employers</h3>
-            <Link to="/employers" className="text-sm text-primary-600 hover:text-primary-700">
-              View all
-            </Link>
-          </div>
-          <ul className="divide-y divide-gray-200">
-            {dashboardData.recentEmployers.map((employer) => (
-              <li key={employer.id}>
-                <Link to={`/employers/${employer.id}`} className="block hover:bg-primary-50">
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-secondary-800 truncate">{employer.name}</p>
-                      <div className="ml-2 flex-shrink-0 flex">
-                        <StatusBadge status={employer.status} />
-                      </div>
-                    </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
-                      <div className="sm:flex">
-                        <p className="flex items-center text-sm text-gray-500">
-                          <UsersIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                          {employer.employeeCount} Employees
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
+      <div className="grid grid-cols-1 gap-5">
         {/* Recent Quotes */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
@@ -207,60 +201,69 @@ export default function Dashboard() {
               View all
             </Link>
           </div>
-          <ul className="divide-y divide-gray-200">
-            {dashboardData.recentQuotes.map((quote) => (
-              <li key={quote.id}>
-                <Link to={`/quotes/${quote.id}`} className="block hover:bg-primary-50">
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-secondary-800 truncate">{quote.name}</p>
-                      <div className="ml-2 flex-shrink-0 flex">
-                        <StatusBadge status={quote.status} />
+          
+          {dashboardData.recentQuotes && dashboardData.recentQuotes.length > 0 ? (
+            <ul className="divide-y divide-gray-200">
+              {dashboardData.recentQuotes.map((quote: any) => (
+                <li key={quote.id}>
+                  <Link to={`/quotes/${quote.id}`} className="block hover:bg-primary-50">
+                    <div className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-secondary-800 truncate">{quote.name}</p>
+                        <div className="ml-2 flex-shrink-0 flex">
+                          <StatusBadge status={quote.status} />
+                        </div>
+                      </div>
+                      <div className="mt-2 sm:flex sm:justify-between">
+                        <div className="sm:flex">
+                          <p className="flex items-center text-sm text-gray-500">
+                            {quote.employer}
+                          </p>
+                        </div>
+                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                          <p>Created on {new Date(quote.date).toLocaleDateString()}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
-                      <div className="sm:flex">
-                        <p className="flex items-center text-sm text-gray-500">
-                          <UsersIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                          {quote.employer}
-                        </p>
-                      </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                        <p>Created on {quote.date}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-4 py-5 text-center text-gray-500">
+              <p>No recent quotes available</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-secondary-800">Quick Actions</h3>
-        </div>
-        <div className="px-4 py-5 sm:p-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/employers/new" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-              <PlusCircleIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              Add Employer
-            </Link>
-            <Link to="/quotes/new" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-              <DocumentPlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              Create Quote
-            </Link>
-            <Link to="/documents" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-              <ArrowUpTrayIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              Upload Document
-            </Link>
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-              <ChartBarIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              Generate Report
-            </button>
-          </div>
+      <div>
+        <h3 className="text-lg font-medium text-secondary-800 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            to="/quotes/new"
+            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <DocumentPlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            Create Quote
+          </Link>
+          
+          <Link
+            to="/documents?action=upload"
+            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <ArrowUpTrayIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            Upload Document
+          </Link>
+          
+          <Link
+            to="/reports"
+            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <ChartBarIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            Generate Report
+          </Link>
         </div>
       </div>
     </div>

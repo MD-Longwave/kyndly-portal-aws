@@ -3,9 +3,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import EmployersList from './pages/EmployersList';
-import EmployerDetails from './pages/EmployerDetails';
-import NewEmployer from './pages/NewEmployer';
 import QuotesList from './pages/QuotesList';
 import QuoteDetails from './pages/QuoteDetails';
 import NewQuote from './pages/NewQuote';
@@ -118,11 +115,6 @@ function AppContent() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          
-          {/* Employer routes */}
-          <Route path="/employers" element={<EmployersList />} />
-          <Route path="/employers/:id" element={<EmployerDetails />} />
-          <Route path="/employers/new" element={<NewEmployer />} />
           
           {/* Quote routes */}
           <Route path="/quotes" element={<QuotesList />} />

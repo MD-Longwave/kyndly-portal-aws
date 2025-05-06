@@ -1,89 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-// Mock documents data
-const mockDocuments = [
-  { 
-    id: 'd1', 
-    name: 'Plan Summary - Acme Corp.pdf', 
-    type: 'PDF', 
-    size: '2.4 MB',
-    employer: { id: 'emp1', name: 'Acme Corporation' },
-    quote: { id: 'q1', name: 'Medical Plan 2023' },
-    uploadedAt: '2022-11-15',
-    uploadedBy: 'Jane Smith' 
-  },
-  { 
-    id: 'd2', 
-    name: 'Rate Sheet - Globex.xlsx', 
-    type: 'Excel', 
-    size: '1.2 MB',
-    employer: { id: 'emp2', name: 'Globex Inc.' },
-    quote: { id: 'q2', name: 'Dental Plan 2023' },
-    uploadedAt: '2022-11-16',
-    uploadedBy: 'John Doe' 
-  },
-  { 
-    id: 'd3', 
-    name: 'Provider Network - Initech.pdf', 
-    type: 'PDF', 
-    size: '4.7 MB',
-    employer: { id: 'emp3', name: 'Initech' },
-    quote: { id: 'q3', name: 'Vision Plan 2023' },
-    uploadedAt: '2022-11-18',
-    uploadedBy: 'Mike Johnson' 
-  },
-  { 
-    id: 'd4', 
-    name: 'Coverage Details - Stark.pdf', 
-    type: 'PDF', 
-    size: '3.1 MB',
-    employer: { id: 'emp4', name: 'Stark Industries' },
-    quote: { id: 'q4', name: 'Comprehensive Plan 2023' },
-    uploadedAt: '2022-11-20',
-    uploadedBy: 'Sarah Williams' 
-  },
-  { 
-    id: 'd5', 
-    name: 'Employee Census - Wayne.xlsx', 
-    type: 'Excel', 
-    size: '5.6 MB',
-    employer: { id: 'emp5', name: 'Wayne Enterprises' },
-    quote: { id: 'q5', name: 'Dental Plan 2023' },
-    uploadedAt: '2022-11-22',
-    uploadedBy: 'Robert Brown' 
-  },
-  { 
-    id: 'd6', 
-    name: 'Renewal Options - Acme.pdf', 
-    type: 'PDF', 
-    size: '1.8 MB',
-    employer: { id: 'emp1', name: 'Acme Corporation' },
-    quote: { id: 'q1', name: 'Medical Plan 2023' },
-    uploadedAt: '2022-11-25',
-    uploadedBy: 'Jane Smith' 
-  },
-  { 
-    id: 'd7', 
-    name: 'Benefit Summary - Globex.pdf', 
-    type: 'PDF', 
-    size: '2.2 MB',
-    employer: { id: 'emp2', name: 'Globex Inc.' },
-    quote: { id: 'q2', name: 'Dental Plan 2023' },
-    uploadedAt: '2022-11-26',
-    uploadedBy: 'John Doe' 
-  },
-  { 
-    id: 'd8', 
-    name: 'Contract - Initech.docx', 
-    type: 'Word', 
-    size: '1.5 MB',
-    employer: { id: 'emp3', name: 'Initech' },
-    quote: { id: 'q3', name: 'Vision Plan 2023' },
-    uploadedAt: '2022-11-28',
-    uploadedBy: 'Mike Johnson' 
-  }
-];
+// Types for document data
+interface Document {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  quote?: {
+    id: string;
+    name: string;
+  };
+  uploadedAt: string;
+  uploadedBy: string;
+}
 
 // Icon components for document types
 const FileIcon = ({ type }: { type: string }) => {
@@ -93,8 +23,12 @@ const FileIcon = ({ type }: { type: string }) => {
       case 'PDF':
         return 'text-red-500';
       case 'Excel':
+      case 'xlsx':
+      case 'xls':
         return 'text-green-500';
       case 'Word':
+      case 'docx':
+      case 'doc':
         return 'text-blue-500';
       default:
         return 'text-gray-500';
@@ -109,25 +43,69 @@ const FileIcon = ({ type }: { type: string }) => {
 };
 
 const DocumentsList: React.FC = () => {
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
-  const [selectedEmployer, setSelectedEmployer] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/documents');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch documents');
+        }
+        
+        const data = await response.json();
+        setDocuments(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching documents:', err);
+        setError('Failed to load documents. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDocuments();
+  }, []);
   
   // Filter documents based on search and filters
-  const filteredDocuments = mockDocuments.filter(doc => {
+  const filteredDocuments = documents.filter(doc => {
     // Filter by search term
     const matchesSearch = searchTerm === '' || 
-      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.employer.name.toLowerCase().includes(searchTerm.toLowerCase());
+      doc.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filter by document type
     const matchesType = selectedType === '' || doc.type === selectedType;
     
-    // Filter by employer
-    const matchesEmployer = selectedEmployer === '' || doc.employer.id === selectedEmployer;
-    
-    return matchesSearch && matchesType && matchesEmployer;
+    return matchesSearch && matchesType;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">
+        <p>{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 text-sm font-medium text-red-600 hover:text-red-500"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -143,7 +121,7 @@ const DocumentsList: React.FC = () => {
       
       {/* Search and filters */}
       <div className="bg-white p-4 shadow sm:rounded-lg">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="col-span-2">
             <label htmlFor="search" className="block text-sm font-medium text-gray-700">Search</label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -152,7 +130,7 @@ const DocumentsList: React.FC = () => {
                 name="search"
                 id="search"
                 className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-3 pr-10 py-2 sm:text-sm border-gray-300 rounded-md"
-                placeholder="Search by document name or employer..."
+                placeholder="Search by document name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -177,24 +155,6 @@ const DocumentsList: React.FC = () => {
               <option value="PDF">PDF</option>
               <option value="Excel">Excel</option>
               <option value="Word">Word</option>
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="employer" className="block text-sm font-medium text-gray-700">Employer</label>
-            <select
-              id="employer"
-              name="employer"
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
-              value={selectedEmployer}
-              onChange={(e) => setSelectedEmployer(e.target.value)}
-            >
-              <option value="">All Employers</option>
-              <option value="emp1">Acme Corporation</option>
-              <option value="emp2">Globex Inc.</option>
-              <option value="emp3">Initech</option>
-              <option value="emp4">Stark Industries</option>
-              <option value="emp5">Wayne Enterprises</option>
             </select>
           </div>
         </div>
@@ -226,13 +186,11 @@ const DocumentsList: React.FC = () => {
                   <div className="mt-2 sm:flex sm:justify-between">
                     <div className="sm:flex">
                       <p className="flex items-center text-sm text-gray-500">
-                        <Link to={`/employers/${document.employer.id}`} className="text-primary-600 hover:text-primary-900">
-                          {document.employer.name}
-                        </Link>
-                        <span className="mx-1">•</span>
-                        <Link to={`/quotes/${document.quote.id}`} className="text-primary-600 hover:text-primary-900">
-                          {document.quote.name}
-                        </Link>
+                        {document.quote && (
+                          <Link to={`/quotes/${document.quote.id}`} className="text-primary-600 hover:text-primary-900">
+                            {document.quote.name}
+                          </Link>
+                        )}
                       </p>
                     </div>
                     <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
@@ -248,7 +206,7 @@ const DocumentsList: React.FC = () => {
             ))
           ) : (
             <li className="px-4 py-6 sm:px-6 text-center text-gray-500">
-              No documents match your criteria. Try adjusting your filters.
+              No documents found.
             </li>
           )}
         </ul>
@@ -257,4 +215,4 @@ const DocumentsList: React.FC = () => {
   );
 };
 
-export default DocumentsList; 
+export default DocumentsList;
