@@ -14,11 +14,39 @@ interface FileUpload {
 }
 
 // Define request type with files property for multer
-interface FileRequest extends Request {
+interface FileRequest extends Omit<Request, 'files'> {
   files?: {
     [fieldname: string]: FileUpload | FileUpload[];
   };
   user?: any;
+}
+
+// Define type for quote with URLs
+interface QuoteWithUrls {
+  id: string;
+  transperraRep: string;
+  contactType: string;
+  companyName: string;
+  censusFileKey?: string;
+  planComparisonFileKey?: string;
+  ichraEffectiveDate: Date;
+  pepm: number;
+  currentFundingStrategy?: string;
+  targetDeductible?: number;
+  targetHSA?: string;
+  brokerName?: string;
+  brokerEmail?: string;
+  priorityLevel: string;
+  additionalNotes?: string;
+  status: 'new' | 'in_progress' | 'completed' | 'cancelled';
+  tpaId: string;
+  employerId: string;
+  submissionId: string;
+  isGLI?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  censusFileUrl?: string;
+  planComparisonFileUrl?: string;
 }
 
 /**
@@ -212,7 +240,7 @@ const quoteController = {
       
       // For each quote, generate signed URLs for file access
       const quotesWithUrls = await Promise.all(quotes.map(async (quote) => {
-        const quoteData = quote.toJSON();
+        const quoteData = quote.toJSON() as QuoteWithUrls;
         
         // Generate signed URLs for file access if keys exist
         if (quoteData.censusFileKey) {

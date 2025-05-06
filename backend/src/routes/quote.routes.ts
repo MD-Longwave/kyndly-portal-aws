@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { check } from 'express-validator';
 import multer from 'multer';
 import quoteController from '../controllers/quote.controller';
@@ -20,7 +20,9 @@ const upload = multer({
  * @desc    Get all quotes (filtered by TPA ID if provided)
  * @access  Private
  */
-router.get('/', authMiddleware.authenticate, quoteController.getQuotes);
+router.get('/', authMiddleware.authenticate, (req: Request, res: Response, next: NextFunction) => {
+  quoteController.getQuotes(req as any, res);
+});
 
 /**
  * @route   GET /api/quotes/filter
@@ -47,7 +49,9 @@ router.post('/',
     { name: 'censusFile', maxCount: 1 },
     { name: 'planComparisonFile', maxCount: 1 }
   ]),
-  quoteController.createQuote
+  (req: Request, res: Response, next: NextFunction) => {
+    quoteController.createQuote(req as any, res);
+  }
 );
 
 /**

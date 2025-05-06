@@ -56,7 +56,9 @@ const authMiddleware = {
         tpaId: payload['custom:tpa_id'],
         employerId: payload['custom:employer_id'],
         // Map to match the old Auth0 structure for compatibility
-        permissions: payload['custom:permissions'] ? JSON.parse(payload['custom:permissions']) : []
+        permissions: payload['custom:permissions'] && typeof payload['custom:permissions'] === 'string' 
+          ? JSON.parse(payload['custom:permissions']) 
+          : []
       };
       
       next();
