@@ -36,6 +36,8 @@ interface AuthContextType {
   hasRole: (role: UserRole | UserRole[]) => boolean;
   hasPermission: (permission: string | string[]) => boolean;
   getIdToken: () => Promise<string | null>;
+  forgotPassword: (username: string) => Promise<void>;
+  confirmForgotPassword: (username: string, code: string, newPassword: string) => Promise<void>;
 }
 
 // Create the auth context
@@ -151,6 +153,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Function to initiate forgot password flow
+  const forgotPassword = async (username: string): Promise<void> => {
+    try {
+      await Auth.forgotPassword(username);
+    } catch (error) {
+      console.error('Error initiating forgot password:', error);
+      throw error;
+    }
+  };
+
+  // Function to confirm forgot password with verification code
+  const confirmForgotPassword = async (
+    username: string,
+    code: string,
+    newPassword: string
+  ): Promise<void> => {
+    try {
+      await Auth.forgotPasswordSubmit(username, code, newPassword);
+    } catch (error) {
+      console.error('Error confirming forgot password:', error);
+      throw error;
+    }
+  };
+
   // Check the user's auth state when the component mounts
   useEffect(() => {
     const checkUser = async (): Promise<void> => {
@@ -202,7 +228,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     hasRole,
     hasPermission,
-    getIdToken
+    getIdToken,
+    forgotPassword,
+    confirmForgotPassword
   };
   
   return (
