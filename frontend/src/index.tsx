@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, HashRouter } from 'react-router-dom';
 import { Amplify } from 'aws-amplify';
 import awsconfig from './aws-exports';
 import './index.css';
@@ -29,15 +29,20 @@ Amplify.configure({
   }
 });
 
+// Check the environment - if this is an S3 hosted site, we need to use HashRouter
+// for proper route handling on page refresh
+const isS3Hosted = process.env.REACT_APP_USE_HASH_ROUTER === 'true';
+const Router = isS3Hosted ? HashRouter : BrowserRouter;
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <Router>
       <App />
-    </BrowserRouter>
+    </Router>
   </React.StrictMode>
 );
 
