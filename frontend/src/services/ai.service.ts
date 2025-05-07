@@ -51,7 +51,7 @@ export const AIService = {
       }
 
       // Log full URL for debugging
-      const url = `${API_BASE_URL}/ai/chat`;
+      const url = `${API_BASE_URL}/kyndly-ai-lambda/ai/chat`;
       console.log('Making API request to:', url);
 
       const response = await fetch(url, {
@@ -88,7 +88,7 @@ export const AIService = {
       const authToken = await getAuthToken();
 
       // Log full URL for debugging
-      const url = `${API_BASE_URL}/ai/ichra-info`;
+      const url = `${API_BASE_URL}/kyndly-ai-lambda/ai/ichra-info`;
       console.log('Making API request to:', url);
 
       const response = await fetch(url, {
