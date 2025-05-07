@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  User,
-  Mail,
-  Phone,
-  Building,
-  MapPin,
-  Calendar,
-  Shield,
-  Key,
-  Bell,
-  Globe,
-  Edit,
-  Save,
-  X
-} from 'lucide-react';
+  UserIcon,
+  BellIcon,
+  LockClosedIcon,
+  GlobeAltIcon,
+  SwatchIcon,
+  MoonIcon,
+  SunIcon,
+  CheckIcon,
+  PencilIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { getThemeStyles, commonStyles } from '../styles/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
@@ -77,12 +74,12 @@ const UserProfile: React.FC = () => {
           >
             {isEditing ? (
               <>
-                <X size={20} />
+                <XMarkIcon className="h-5 w-5" />
                 <span>Cancel</span>
               </>
             ) : (
               <>
-                <Edit size={20} />
+                <PencilIcon className="h-5 w-5" />
                 <span>Edit Profile</span>
               </>
             )}
@@ -94,7 +91,7 @@ const UserProfile: React.FC = () => {
           <div className={`${theme.card} p-6`}>
             <div className="flex items-center space-x-4 mb-6">
               <div className={`${theme.layout.section} rounded-full p-3`}>
-                <User size={24} className="text-slate-400" />
+                <UserIcon className="h-6 w-6 text-slate-400" />
               </div>
               <div>
                 <h2 className={theme.typography.h2}>{formData.firstName} {formData.lastName}</h2>
@@ -103,23 +100,23 @@ const UserProfile: React.FC = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <Mail size={18} className="text-slate-400" />
+                <UserIcon className="h-4 w-4 text-slate-400" />
                 <span className={theme.typography.body}>{formData.email}</span>
               </div>
               <div className="flex items-center space-x-3">
-                <Phone size={18} className="text-slate-400" />
+                <LockClosedIcon className="h-4 w-4 text-slate-400" />
                 <span className={theme.typography.body}>{formData.phone}</span>
               </div>
               <div className="flex items-center space-x-3">
-                <Building size={18} className="text-slate-400" />
+                <GlobeAltIcon className="h-4 w-4 text-slate-400" />
                 <span className={theme.typography.body}>{formData.company}</span>
               </div>
               <div className="flex items-center space-x-3">
-                <MapPin size={18} className="text-slate-400" />
+                <UserIcon className="h-4 w-4 text-slate-400" />
                 <span className={theme.typography.body}>{formData.location}</span>
               </div>
               <div className="flex items-center space-x-3">
-                <Calendar size={18} className="text-slate-400" />
+                <CheckIcon className="h-4 w-4 text-slate-400" />
                 <span className={theme.typography.body}>Joined {formData.joinDate}</span>
               </div>
             </div>
@@ -234,7 +231,7 @@ const UserProfile: React.FC = () => {
                     type="submit"
                     className={`${theme.button.primary} flex items-center space-x-2`}
                   >
-                    <Save size={20} />
+                    <CheckIcon className="h-5 w-5" />
                     <span>Save Changes</span>
                   </motion.button>
                 </div>

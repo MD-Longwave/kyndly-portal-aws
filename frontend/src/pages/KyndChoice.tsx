@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { SparklesIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { getThemeStyles } from '../styles/theme';
 
 const KyndChoice: React.FC = () => {
@@ -18,7 +18,7 @@ const KyndChoice: React.FC = () => {
         >
           <div className="flex justify-center mb-6">
             <div className={`${theme.layout.section} rounded-full p-4`}>
-              <Sparkles size={48} className="text-amber-500" />
+              <SparklesIcon className="text-amber-500" width={48} height={48} />
             </div>
           </div>
 
@@ -54,7 +54,7 @@ const KyndChoice: React.FC = () => {
             className={`${theme.button.primary} flex items-center justify-center space-x-2 mx-auto`}
           >
             <span>Get Notified When Available</span>
-            <ArrowRight size={20} />
+            <ArrowRightIcon className="text-white" width={20} height={20} />
           </motion.button>
         </motion.div>
       </div>
