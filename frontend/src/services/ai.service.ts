@@ -54,8 +54,29 @@ export const AIService = {
       const url = `${API_BASE_URL}/kyndly-ai-lambda/ai/chat`;
       console.log('Making API request to:', url);
 
+      // Create a dummy response for testing
+      if (true) { // Always use the dummy response for now while fixing CORS
+        console.log('Using dummy response while fixing CORS issues');
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+        
+        return {
+          success: true,
+          message: 'Success',
+          data: {
+            response: `I'm a simulated AI assistant response to your message: "${message}". The actual AI integration is being configured.`,
+            conversationHistory: [
+              ...conversationHistory,
+              { role: 'user', content: message },
+              { role: 'assistant', content: `I'm a simulated AI assistant response to your message: "${message}". The actual AI integration is being configured.` }
+            ]
+          }
+        };
+      }
+
       const response = await fetch(url, {
         method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
@@ -91,8 +112,24 @@ export const AIService = {
       const url = `${API_BASE_URL}/kyndly-ai-lambda/ai/ichra-info`;
       console.log('Making API request to:', url);
 
+      // Create a dummy response for testing
+      if (true) { // Always use the dummy response for now while fixing CORS
+        console.log('Using dummy response while fixing CORS issues');
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+        
+        return {
+          success: true,
+          message: 'Success',
+          data: {
+            response: `Here's simulated ICHRA information about "${query}". The actual AI integration is being configured.`
+          }
+        };
+      }
+
       const response = await fetch(url, {
         method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
