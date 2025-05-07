@@ -28,11 +28,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const root = window.document.documentElement;
     
+    console.log('Theme changed to:', theme);
+    console.log('Current classes on root element:', root.classList.toString());
+    
     // Remove both classes first
     root.classList.remove('light', 'dark');
     
     // Add the current theme class
     root.classList.add(theme);
+    
+    console.log('Classes after update:', root.classList.toString());
     
     // Save to localStorage
     localStorage.setItem('theme', theme);
@@ -59,6 +64,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const toggleTheme = () => {
+    console.log('Toggle theme called, current theme:', theme);
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 

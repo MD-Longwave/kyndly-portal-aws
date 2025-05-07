@@ -13,12 +13,19 @@ const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
+  console.log('Header rendered, current theme:', theme);
+
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
       console.error('Error logging out:', error);
     }
+  };
+  
+  const handleThemeToggle = () => {
+    console.log('Toggle button clicked, current theme before toggle:', theme);
+    toggleTheme();
   };
 
   return (
@@ -31,7 +38,7 @@ const Header: React.FC = () => {
           {/* Theme Toggle */}
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={handleThemeToggle}
             className="rounded-full p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-300 dark:hover:bg-dark-bg dark:hover:text-neutral-100"
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
