@@ -50,7 +50,11 @@ export const AIService = {
         console.log('Failed to get auth token');
       }
 
-      const response = await fetch(`${API_BASE_URL}/kyndly-ai-lambda/ai/chat`, {
+      // Log full URL for debugging
+      const url = `${API_BASE_URL}/ai/chat`;
+      console.log('Making API request to:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +87,11 @@ export const AIService = {
     try {
       const authToken = await getAuthToken();
 
-      const response = await fetch(`${API_BASE_URL}/kyndly-ai-lambda/ai/ichra-info`, {
+      // Log full URL for debugging
+      const url = `${API_BASE_URL}/ai/ichra-info`;
+      console.log('Making API request to:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
