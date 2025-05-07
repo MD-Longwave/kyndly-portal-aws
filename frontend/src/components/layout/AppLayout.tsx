@@ -107,8 +107,6 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   
-  console.log('AppLayout rendered, current theme:', theme);
-  
   // Handle user logout
   const handleLogout = async () => {
     try {
@@ -123,7 +121,6 @@ export function AppLayout() {
   
   // Handle theme toggle
   const handleThemeToggle = () => {
-    console.log('Theme toggle clicked in AppLayout, current theme:', theme);
     toggleTheme();
   };
   

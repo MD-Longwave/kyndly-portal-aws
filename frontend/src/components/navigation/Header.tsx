@@ -13,8 +13,6 @@ const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  console.log('Header rendered, current theme:', theme);
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -24,7 +22,6 @@ const Header: React.FC = () => {
   };
   
   const handleThemeToggle = () => {
-    console.log('Toggle button clicked, current theme before toggle:', theme);
     toggleTheme();
   };
 
