@@ -25,9 +25,34 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, index = 0 }) => {
     ));
   };
 
+  // Function to process markdown formatting in AI responses
+  const processMarkdown = (content: string) => {
+    // Convert bold markdown (**text**) to HTML strong tags
+    let processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert numbered lists with headings (1. **Heading**: text) to structured format
+    processed = processed.replace(/(\d+\.\s+)<strong>(.*?)<\/strong>(\s*:|\s*)/g, '<p><strong>$1$2</strong>$3');
+    
+    // Convert bullet points to proper HTML lists
+    processed = processed.replace(/^-\s+(.+)$/gm, '<li>$1</li>');
+    
+    // Wrap consecutive list items in ul tags
+    processed = processed.replace(/(<li>.*<\/li>\n)+/g, (match) => {
+      return `<ul>${match}</ul>`;
+    });
+    
+    // Ensure paragraphs are properly formatted
+    processed = processed.replace(/\n\n/g, '</p><p>');
+    
+    return processed;
+  };
+
   // Function to sanitize HTML content for assistant messages
   const sanitizeHtml = (content: string) => {
-    return DOMPurify.sanitize(content, {
+    // First process any remaining markdown in the content
+    const processedContent = processMarkdown(content);
+    
+    return DOMPurify.sanitize(processedContent, {
       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3'],
       ALLOWED_ATTR: ['href', 'target', 'rel']
     });
