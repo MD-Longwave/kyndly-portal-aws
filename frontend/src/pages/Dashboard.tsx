@@ -8,6 +8,7 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { FadeIn, SlideIn, HoverScale } from '../components/animations';
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -128,180 +129,204 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-6 text-blue-700">
-        <div className="flex items-center space-x-3">
-          <ExclamationTriangleIcon className="h-6 w-6 text-blue-500" />
-          <h3 className="text-lg font-medium text-blue-800">Dashboard Setup in Progress</h3>
+      <FadeIn>
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-6 text-blue-700">
+          <div className="flex items-center space-x-3">
+            <ExclamationTriangleIcon className="h-6 w-6 text-blue-500" />
+            <h3 className="text-lg font-medium text-blue-800">Dashboard Setup in Progress</h3>
+          </div>
+          <div className="mt-4 space-y-3">
+            <p>{error}</p>
+            <p className="text-sm">Your dashboard will display key metrics once the data integration is complete.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm font-medium px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Refresh Dashboard
+            </button>
+          </div>
         </div>
-        <div className="mt-4 space-y-3">
-          <p>{error}</p>
-          <p className="text-sm">Your dashboard will display key metrics once the data integration is complete.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-sm font-medium px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh Dashboard
-          </button>
-        </div>
-      </div>
+      </FadeIn>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-secondary-800">Dashboard</h1>
-      </div>
+      <FadeIn>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-secondary-800">Dashboard</h1>
+        </div>
+      </FadeIn>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                <DocumentTextIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
+        <SlideIn direction="up" delay={0.1}>
+          <HoverScale>
+            <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
+                    <DocumentTextIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-secondary-800 truncate">Total Quotes</dt>
+                      <dd>
+                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalQuotes}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
               </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-secondary-800 truncate">Total Quotes</dt>
-                  <dd>
-                    <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalQuotes}</div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                <DocumentTextIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-secondary-800 truncate">Active Quotes</dt>
-                  <dd>
-                    <div className="text-lg font-semibold text-secondary-900">{dashboardData.activeQuotes}</div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/documents" className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                <DocumentIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-secondary-800 truncate">Total Documents</dt>
-                  <dd>
-                    <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalDocuments}</div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/documents" className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                <ArrowUpTrayIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-secondary-800 truncate">Recent Uploads</dt>
-                  <dd>
-                    <div className="text-lg font-semibold text-secondary-900">{dashboardData.recentUploads}</div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5">
-        {/* Recent Quotes */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
-            <h3 className="text-lg leading-6 font-medium text-secondary-800">Recent Quotes</h3>
-            <Link to="/quotes" className="text-sm text-primary-600 hover:text-primary-700">
-              View all
             </Link>
-          </div>
-          
-          {dashboardData.recentQuotes && dashboardData.recentQuotes.length > 0 ? (
-            <ul className="divide-y divide-gray-200">
-              {dashboardData.recentQuotes.map((quote: any) => (
-                <li key={quote.id}>
-                  <Link to={`/quotes/${quote.id}`} className="block hover:bg-primary-50">
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-secondary-800 truncate">{quote.name}</p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <StatusBadge status={quote.status} />
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            {quote.employer}
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>Created on {new Date(quote.date).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="px-4 py-5 text-center text-gray-500">
-              <p>No recent quotes available</p>
-            </div>
-          )}
-        </div>
+          </HoverScale>
+        </SlideIn>
+
+        <SlideIn direction="up" delay={0.2}>
+          <HoverScale>
+            <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
+                    <DocumentTextIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-secondary-800 truncate">Active Quotes</dt>
+                      <dd>
+                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.activeQuotes}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </HoverScale>
+        </SlideIn>
+
+        <SlideIn direction="up" delay={0.3}>
+          <HoverScale>
+            <Link to="/documents" className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
+                    <DocumentIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-secondary-800 truncate">Total Documents</dt>
+                      <dd>
+                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalDocuments}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </HoverScale>
+        </SlideIn>
+
+        <SlideIn direction="up" delay={0.4}>
+          <HoverScale>
+            <Link to="/documents" className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
+                    <ArrowUpTrayIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-secondary-800 truncate">Recent Uploads</dt>
+                      <dd>
+                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.recentUploads}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </HoverScale>
+        </SlideIn>
       </div>
+
+      <SlideIn direction="up" delay={0.5}>
+        <div className="grid grid-cols-1 gap-5">
+          {/* Recent Quotes */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+              <h3 className="text-lg leading-6 font-medium text-secondary-800">Recent Quotes</h3>
+              <Link to="/quotes" className="text-sm text-primary-600 hover:text-primary-700">
+                View all
+              </Link>
+            </div>
+            
+            {dashboardData.recentQuotes && dashboardData.recentQuotes.length > 0 ? (
+            <ul className="divide-y divide-gray-200">
+                {dashboardData.recentQuotes.map((quote: any, index: number) => (
+                <FadeIn key={quote.id} delay={0.1 * index}>
+                  <li>
+                    <HoverScale scale={1.01}>
+                      <Link to={`/quotes/${quote.id}`} className="block">
+                        <div className="px-4 py-4 sm:px-6">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-secondary-800 truncate">{quote.name}</p>
+                            <div className="ml-2 flex-shrink-0 flex">
+                              <StatusBadge status={quote.status} />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </HoverScale>
+                  </li>
+                </FadeIn>
+                ))}
+            </ul>
+            ) : (
+            <div className="px-4 py-5 text-center text-sm text-secondary-500">
+              No recent quotes found.
+            </div>
+            )}
+          </div>
+        </div>
+      </SlideIn>
 
       {/* Quick Actions */}
-      <div>
-        <h3 className="text-lg font-medium text-secondary-800 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link
-            to="/quotes/new"
-            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <DocumentPlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            Create Quote
-          </Link>
-          
-          <Link
-            to="/documents?action=upload"
-            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <ArrowUpTrayIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            Upload Document
-          </Link>
-          
-          <Link
-            to="/reports"
-            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <ChartBarIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            Generate Report
-          </Link>
+      <SlideIn direction="up" delay={0.6}>
+        <div>
+          <h3 className="text-lg font-medium text-secondary-800 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <HoverScale>
+              <Link
+                to="/quotes/new"
+                className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <DocumentPlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Create Quote
+              </Link>
+            </HoverScale>
+            
+            <HoverScale>
+              <Link
+                to="/documents?action=upload"
+                className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <ArrowUpTrayIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Upload Document
+              </Link>
+            </HoverScale>
+            
+            <HoverScale>
+              <Link
+                to="/reports"
+                className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <ChartBarIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Generate Report
+              </Link>
+            </HoverScale>
+          </div>
         </div>
-      </div>
+      </SlideIn>
     </div>
   );
 } 

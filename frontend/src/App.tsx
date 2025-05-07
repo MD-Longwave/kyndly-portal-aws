@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { AppLayout } from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -17,6 +18,7 @@ import KnowledgeCenter from './pages/KnowledgeCenter';
 import { AuthProvider, UserRole } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { PageTransition } from './components/animations';
 
 // Check if the app is running in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -69,6 +71,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
 function AppContent() {
   const [isInitializing, setIsInitializing] = useState(true);
+  const location = useLocation();
 
   // Simulate initialization delay to ensure all resources are loaded
   useEffect(() => {
@@ -89,60 +92,114 @@ function AppContent() {
 
   return (
     <>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/unauthorized" element={
-          <div className="flex h-screen items-center justify-center bg-secondary-50">
-            <div className="text-center p-8 bg-white rounded-lg shadow-md">
-              <h1 className="text-2xl font-bold text-red-600 mb-4">Unauthorized Access</h1>
-              <p className="mb-4">You don't have permission to access this resource.</p>
-              <button 
-                onClick={() => window.history.back()} 
-                className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600"
-              >
-                Go Back
-              </button>
-            </div>
-          </div>
-        } />
-        
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/login" element={
+            <PageTransition>
+              <Login />
+            </PageTransition>
+          } />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/unauthorized" element={
+            <PageTransition>
+              <div className="flex h-screen items-center justify-center bg-secondary-50">
+                <div className="text-center p-8 bg-white rounded-lg shadow-md">
+                  <h1 className="text-2xl font-bold text-red-600 mb-4">Unauthorized Access</h1>
+                  <p className="mb-4">You don't have permission to access this resource.</p>
+                  <button 
+                    onClick={() => window.history.back()} 
+                    className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600"
+                  >
+                    Go Back
+                  </button>
+                </div>
+              </div>
+            </PageTransition>
+          } />
           
-          {/* Quote routes */}
-          <Route path="/quotes" element={<QuotesList />} />
-          <Route path="/quotes/:id" element={<QuoteDetails />} />
-          <Route path="/quotes/new" element={<NewQuote />} />
-          
-          {/* Document routes */}
-          <Route path="/documents" element={<DocumentsList />} />
-          
-          {/* Other routes */}
-          <Route path="/sold-cases" element={<SoldCases />} />
-          <Route path="/enrollments" element={<Enrollments />} />
-          <Route path="/kynd-choice" element={<KyndChoice />} />
-          <Route path="/knowledge-center" element={<KnowledgeCenter />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route 
-            path="/settings" 
+          <Route
+            path="/"
             element={
-              <ProtectedRoute requiredRoles={['admin', 'tpa_admin']}>
-                <Settings />
+              <ProtectedRoute>
+                <AppLayout />
               </ProtectedRoute>
-            } 
-          />
-        </Route>
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+            }
+          >
+            <Route path="/dashboard" element={
+              <PageTransition>
+                <Dashboard />
+              </PageTransition>
+            } />
+            
+            {/* Quote routes */}
+            <Route path="/quotes" element={
+              <PageTransition>
+                <QuotesList />
+              </PageTransition>
+            } />
+            <Route path="/quotes/:id" element={
+              <PageTransition>
+                <QuoteDetails />
+              </PageTransition>
+            } />
+            <Route path="/quotes/new" element={
+              <PageTransition>
+                <NewQuote />
+              </PageTransition>
+            } />
+            
+            {/* Document routes */}
+            <Route path="/documents" element={
+              <PageTransition>
+                <DocumentsList />
+              </PageTransition>
+            } />
+            
+            {/* Other routes */}
+            <Route path="/sold-cases" element={
+              <PageTransition>
+                <SoldCases />
+              </PageTransition>
+            } />
+            <Route path="/enrollments" element={
+              <PageTransition>
+                <Enrollments />
+              </PageTransition>
+            } />
+            <Route path="/kynd-choice" element={
+              <PageTransition>
+                <KyndChoice />
+              </PageTransition>
+            } />
+            <Route path="/knowledge-center" element={
+              <PageTransition>
+                <KnowledgeCenter />
+              </PageTransition>
+            } />
+            <Route path="/profile" element={
+              <PageTransition>
+                <UserProfile />
+              </PageTransition>
+            } />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'tpa_admin']}>
+                  <PageTransition>
+                    <Settings />
+                  </PageTransition>
+                </ProtectedRoute>
+              } 
+            />
+          </Route>
+          
+          <Route path="*" element={
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          } />
+        </Routes>
+      </AnimatePresence>
     </>
   );
 }
@@ -151,7 +208,7 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <AppContent />
+      <AppContent />
       </ThemeProvider>
     </AuthProvider>
   );
