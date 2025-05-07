@@ -3,8 +3,8 @@ import { AIService, ChatMessage } from '../services/ai.service';
 import ChatMessageComponent from '../components/ui/ChatMessage';
 
 // Flag to control whether to use the actual API or simulated responses
-// Set to false until backend is ready
-const USE_ACTUAL_API = false;
+// Set to true now that we have the backend configured
+const USE_ACTUAL_API = true;
 
 // Simulated AI responses for testing the UI without the backend
 const SIMULATED_RESPONSES = [
@@ -170,7 +170,7 @@ const KnowledgeCenter: React.FC = () => {
         <h1 className="text-2xl font-semibold text-secondary-800">ICHRA Knowledge Center</h1>
         <p className="text-sm text-secondary-500">Ask questions about Individual Coverage Health Reimbursement Arrangements</p>
       </div>
-      
+
       <div className="flex-1 bg-white rounded-lg shadow overflow-hidden flex flex-col">
         {/* Chat header */}
         <div className="bg-primary-600 text-white px-4 py-3 flex items-center justify-between">

@@ -2,9 +2,8 @@
  * AI Service for interacting with the Knowledge Center
  */
 
-// API Gateway URL and key from the temp-api service
-const API_BASE_URL = 'https://irl951cfeb.execute-api.us-east-2.amazonaws.com/prod';
-const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+// API Gateway URL from environment variables or use current value as fallback
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://irl951cfeb.execute-api.us-east-2.amazonaws.com/prod';
 
 // Types for chat functionality
 export interface ChatMessage {
@@ -41,11 +40,13 @@ export const AIService = {
    */
   sendMessage: async (message: string, conversationHistory: ChatMessage[] = []): Promise<ChatResponse> => {
     try {
+      const authToken = await getAuthToken();
+
       const response = await fetch(`${API_BASE_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': API_KEY
+          'Authorization': authToken
         },
         body: JSON.stringify({
           message,
@@ -72,11 +73,13 @@ export const AIService = {
    */
   getICHRAInfo: async (query: string): Promise<ICHRAInfoResponse> => {
     try {
+      const authToken = await getAuthToken();
+
       const response = await fetch(`${API_BASE_URL}/ai/ichra-info`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': API_KEY
+          'Authorization': authToken
         },
         body: JSON.stringify({ query }),
       });
@@ -94,4 +97,28 @@ export const AIService = {
   }
 };
 
-export default AIService; 
+/**
+ * Get the current authentication token from the Cognito session
+ * @returns Promise with the bearer token string
+ */
+const getAuthToken = async (): Promise<string> => {
+  try {
+    // For AWS Amplify Auth
+    // Import is here to avoid circular dependencies
+    const { Auth } = await import('aws-amplify');
+    
+    try {
+      const session = await Auth.currentSession();
+      // You can use idToken or accessToken depending on your API Gateway setup
+      return session.getIdToken().getJwtToken();
+    } catch (error) {
+      console.error('Error getting current session:', error);
+      throw new Error('Not authenticated');
+    }
+  } catch (error) {
+    console.error('Error importing Auth:', error);
+    throw new Error('Authentication module not available');
+  }
+};
+
+export default AIService;

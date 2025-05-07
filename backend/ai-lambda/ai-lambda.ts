@@ -3,11 +3,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import serverless from 'serverless-http';
 import dotenv from 'dotenv';
-import employerRoutes from './routes/employer.routes';
-import quoteRoutes from './routes/quote.routes';
-import documentRoutes from './routes/document.routes';
-import aiRoutes from './routes/ai.routes';
-import logger from './config/logger';
+import aiRoutes from '../src/routes/ai.routes';
+import logger from '../src/config/logger';
 
 // Load environment variables
 dotenv.config();
@@ -46,22 +43,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes - remove the /api prefix to match Lambda function URL structure
-app.use('/employers', employerRoutes);
-app.use('/quotes', quoteRoutes);
-app.use('/documents', documentRoutes);
-app.use('/ai', aiRoutes);
+// Routes - only include AI routes for this Lambda
+app.use('/', aiRoutes);  // Map to root so paths are /chat and /ichra-info
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', environment: process.env.NODE_ENV });
-});
-
-// Root endpoint for basic testing
-app.get('/', (req, res) => {
   res.status(200).json({ 
-    message: 'Kyndly ICHRA API is running',
-    version: '1.0.0'
+    status: 'healthy', 
+    service: 'AI Lambda',
+    environment: process.env.NODE_ENV 
   });
 });
 
@@ -75,4 +65,4 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Export the serverless handler
-export const lambdaHandler = serverless(app); 
+export const handler = serverless(app); 
