@@ -9,43 +9,54 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { FadeIn, SlideIn, HoverScale } from '../components/animations';
+import { motion } from 'framer-motion';
+import { 
+  Users, 
+  FileText, 
+  MessageSquare, 
+  Settings, 
+  Search,
+  Bell,
+  ChevronDown,
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  AlertCircle,
+  Upload,
+  BarChart
+} from 'lucide-react';
+import { getThemeStyles, commonStyles } from '../styles/theme';
 
-// Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
-  let bgColor = '';
-  let textColor = '';
-
-  switch (status) {
-    case 'Active':
-    case 'Approved':
-      bgColor = 'bg-green-100';
-      textColor = 'text-green-800';
-      break;
-    case 'Pending':
-      bgColor = 'bg-yellow-100';
-      textColor = 'text-yellow-800';
-      break;
-    case 'Inactive':
-      bgColor = 'bg-gray-100';
-      textColor = 'text-gray-800';
-      break;
-    case 'Rejected':
-      bgColor = 'bg-red-100';
-      textColor = 'text-red-800';
-      break;
-    default:
-      bgColor = 'bg-gray-100';
-      textColor = 'text-gray-800';
-  }
+// Status Badge Component
+const StatusBadge: React.FC<{ status: string; theme: any }> = ({ status, theme }) => {
+  const getStatusStyles = () => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return theme.badge.success;
+      case 'pending':
+        return theme.badge.warning;
+      case 'inactive':
+        return theme.badge.error;
+      case 'rejected':
+        return theme.badge.error;
+      default:
+        return theme.badge.info;
+    }
+  };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+    <span className={`${commonStyles.badge.base} ${getStatusStyles()}`}>
       {status}
     </span>
   );
 };
 
-export default function Dashboard() {
+const Dashboard: React.FC = () => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const theme = getThemeStyles(isDarkMode);
   const [dashboardData, setDashboardData] = useState({
     totalQuotes: 0,
     activeQuotes: 0,
@@ -122,7 +133,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -130,17 +141,17 @@ export default function Dashboard() {
   if (error) {
     return (
       <FadeIn>
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-6 text-blue-700">
+        <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-6 text-slate-700 shadow-lg">
           <div className="flex items-center space-x-3">
-            <ExclamationTriangleIcon className="h-6 w-6 text-blue-500" />
-            <h3 className="text-lg font-medium text-blue-800">Dashboard Setup in Progress</h3>
+            <ExclamationTriangleIcon className="h-6 w-6 text-teal-500" />
+            <h3 className="text-lg font-medium text-slate-900">Dashboard Setup in Progress</h3>
           </div>
           <div className="mt-4 space-y-3">
-            <p>{error}</p>
-            <p className="text-sm">Your dashboard will display key metrics once the data integration is complete.</p>
+            <p className="text-slate-600">{error}</p>
+            <p className="text-sm text-slate-500">Your dashboard will display key metrics once the data integration is complete.</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-2 text-sm font-medium px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="mt-2 text-sm font-medium px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors duration-200"
             >
               Refresh Dashboard
             </button>
@@ -151,182 +162,200 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <FadeIn>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-secondary-800">Dashboard</h1>
+    <div className={`min-h-screen ${theme.layout.container}`}>
+      {/* Header */}
+      <header className={`sticky top-0 z-50 ${theme.layout.section} border-b`}>
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <h1 className={theme.typography.h1}>Dashboard</h1>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search..."
+                className={`pl-10 pr-4 py-2 ${theme.input} w-64`}
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button className={`p-2 ${theme.button.secondary} rounded-full`}>
+              <Bell size={20} />
+            </button>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white">
+                JD
+              </div>
+              <span className={theme.typography.body}>John Doe</span>
+              <ChevronDown size={16} className="text-slate-400" />
+            </div>
+          </div>
         </div>
-      </FadeIn>
+      </header>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <SlideIn direction="up" delay={0.1}>
-          <HoverScale>
-            <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                    <DocumentTextIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-secondary-800 truncate">Total Quotes</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalQuotes}</div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
+      <div className="p-6 space-y-6">
+        {/* Stats Overview */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+          <motion.div
+            key="totalQuotes"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className={`${theme.card} p-6`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={theme.typography.caption}>Total Quotes</p>
+                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.totalQuotes}</h3>
               </div>
-            </Link>
-          </HoverScale>
-        </SlideIn>
-
-        <SlideIn direction="up" delay={0.2}>
-          <HoverScale>
-            <Link to="/quotes" className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                    <DocumentTextIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-secondary-800 truncate">Active Quotes</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.activeQuotes}</div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
+              <div className={`p-3 rounded-xl bg-teal-50`}>
+                <DocumentTextIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
               </div>
-            </Link>
-          </HoverScale>
-        </SlideIn>
-
-        <SlideIn direction="up" delay={0.3}>
-          <HoverScale>
-            <Link to="/documents" className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                    <DocumentIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-secondary-800 truncate">Total Documents</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.totalDocuments}</div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </HoverScale>
-        </SlideIn>
-
-        <SlideIn direction="up" delay={0.4}>
-          <HoverScale>
-            <Link to="/documents" className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                    <ArrowUpTrayIcon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-secondary-800 truncate">Recent Uploads</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-secondary-900">{dashboardData.recentUploads}</div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </HoverScale>
-        </SlideIn>
-      </div>
-
-      <SlideIn direction="up" delay={0.5}>
-        <div className="grid grid-cols-1 gap-5">
-          {/* Recent Quotes */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
-              <h3 className="text-lg leading-6 font-medium text-secondary-800">Recent Quotes</h3>
-              <Link to="/quotes" className="text-sm text-primary-600 hover:text-primary-700">
-                View all
-              </Link>
             </div>
-            
+          </motion.div>
+
+          <motion.div
+            key="activeQuotes"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className={`${theme.card} p-6`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={theme.typography.caption}>Active Quotes</p>
+                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.activeQuotes}</h3>
+              </div>
+              <div className={`p-3 rounded-xl bg-teal-50`}>
+                <DocumentTextIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            key="totalDocuments"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className={`${theme.card} p-6`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={theme.typography.caption}>Total Documents</p>
+                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.totalDocuments}</h3>
+              </div>
+              <div className={`p-3 rounded-xl bg-teal-50`}>
+                <DocumentIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            key="recentUploads"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={`${theme.card} p-6`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={theme.typography.caption}>Recent Uploads</p>
+                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.recentUploads}</h3>
+              </div>
+              <div className={`p-3 rounded-xl bg-teal-50`}>
+                <ArrowUpTrayIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className={`${theme.card} p-6`}
+        >
+          <h2 className={theme.typography.h2}>Recent Activity</h2>
+          <div className="mt-4 space-y-4">
             {dashboardData.recentQuotes && dashboardData.recentQuotes.length > 0 ? (
-            <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-slate-200">
                 {dashboardData.recentQuotes.map((quote: any, index: number) => (
-                <FadeIn key={quote.id} delay={0.1 * index}>
-                  <li>
-                    <HoverScale scale={1.01}>
-                      <Link to={`/quotes/${quote.id}`} className="block">
-                        <div className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-secondary-800 truncate">{quote.name}</p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <StatusBadge status={quote.status} />
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </HoverScale>
-                  </li>
-                </FadeIn>
+                  <motion.li
+                    key={quote.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 + index * 0.1 }}
+                    className="flex items-center space-x-4"
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`p-2 rounded-lg ${quote.status === 'Active' ? 'bg-teal-50' : quote.status === 'Pending' ? 'bg-amber-50' : quote.status === 'Inactive' ? 'bg-gray-50' : 'bg-red-50'}`}
+                    >
+                      {quote.name}
+                    </motion.div>
+                    <motion.div className="flex-1">
+                      <p className={theme.typography.body}>{quote.status === 'Active' ? 'Approved' : quote.status === 'Pending' ? 'Pending' : quote.status === 'Inactive' ? 'Inactive' : 'Rejected'}</p>
+                      <p className={theme.typography.caption}>{quote.date}</p>
+                    </motion.div>
+                    <motion.div className="flex-shrink-0 flex">
+                      <StatusBadge status={quote.status} theme={theme} />
+                    </motion.div>
+                  </motion.li>
                 ))}
-            </ul>
+              </ul>
             ) : (
-            <div className="px-4 py-5 text-center text-sm text-secondary-500">
-              No recent quotes found.
-            </div>
+              <div className="px-4 py-5 text-center text-sm text-slate-500">
+                No recent quotes found.
+              </div>
             )}
           </div>
-        </div>
-      </SlideIn>
+        </motion.div>
 
-      {/* Quick Actions */}
-      <SlideIn direction="up" delay={0.6}>
-        <div>
-          <h3 className="text-lg font-medium text-secondary-800 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <HoverScale>
-              <Link
-                to="/quotes/new"
-                className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                <DocumentPlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Create Quote
-              </Link>
-            </HoverScale>
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className={`${theme.card} p-6`}
+        >
+          <h2 className={theme.typography.h2}>Quick Actions</h2>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2`}
+            >
+              <Plus className="h-5 w-5" aria-hidden="true" />
+              <span className="text-sm font-medium">Create Quote</span>
+            </motion.button>
             
-            <HoverScale>
-              <Link
-                to="/documents?action=upload"
-                className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                <ArrowUpTrayIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Upload Document
-              </Link>
-            </HoverScale>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2`}
+            >
+              <ArrowUpTrayIcon className="h-5 w-5" aria-hidden="true" />
+              <span className="text-sm font-medium">Upload Document</span>
+            </motion.button>
             
-            <HoverScale>
-              <Link
-                to="/reports"
-                className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                <ChartBarIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Generate Report
-              </Link>
-            </HoverScale>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2`}
+            >
+              <ChartBarIcon className="h-5 w-5" aria-hidden="true" />
+              <span className="text-sm font-medium">Generate Report</span>
+            </motion.button>
           </div>
-        </div>
-      </SlideIn>
+        </motion.div>
+      </div>
     </div>
   );
-} 
+};
+
+export default Dashboard; 

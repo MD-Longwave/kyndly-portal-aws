@@ -1,11 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  User,
+  Mail,
+  Phone,
+  Building,
+  MapPin,
+  Calendar,
+  Shield,
+  Key,
+  Bell,
+  Globe,
+  Edit,
+  Save,
+  X
+} from 'lucide-react';
+import { getThemeStyles, commonStyles } from '../styles/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
 
 const UserProfile: React.FC = () => {
   const { user } = useAuth();
   const { hasRole, isKyndlyTeam, isTpaAdmin } = usePermission();
-  
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const theme = getThemeStyles(isDarkMode);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 (555) 123-4567',
+    company: 'Acme Corporation',
+    location: 'San Francisco, CA',
+    joinDate: 'January 15, 2024',
+    role: 'Administrator',
+    notifications: true,
+    language: 'English',
+    timezone: 'Pacific Time (PT)'
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditing(false);
+    // Here you would typically make an API call to update the user's profile
+  };
+
   // If no user is logged in, show a message
   if (!user) {
     return (
@@ -18,140 +65,184 @@ const UserProfile: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">My Profile</h1>
-      
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-        <div className="p-6 flex items-start gap-6">
-          <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-2xl font-bold text-primary-700">
-            {user.username.charAt(0).toUpperCase()}
-          </div>
-          
-          <div>
-            <h2 className="text-xl font-bold">{user.username}</h2>
-            <p className="text-gray-600">{user.email}</p>
-            
-            <div className="mt-3 flex flex-wrap gap-2">
-              {user.roles.map(role => (
-                <span 
-                  key={role} 
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    role === 'admin' ? 'bg-red-100 text-red-800' : 
-                    role === 'kyndly_staff' ? 'bg-blue-100 text-blue-800' : 
-                    role === 'tpa_admin' ? 'bg-purple-100 text-purple-800' : 
-                    'bg-green-100 text-green-800'
-                  }`}
-                >
-                  {role.replace('_', ' ')}
-                </span>
-              ))}
+    <div className={`min-h-screen ${theme.layout.container}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className={theme.typography.h1}>User Profile</h1>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`${theme.button.primary} flex items-center space-x-2`}
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? (
+              <>
+                <X size={20} />
+                <span>Cancel</span>
+              </>
+            ) : (
+              <>
+                <Edit size={20} />
+                <span>Edit Profile</span>
+              </>
+            )}
+          </motion.button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Profile Overview */}
+          <div className={`${theme.card} p-6`}>
+            <div className="flex items-center space-x-4 mb-6">
+              <div className={`${theme.layout.section} rounded-full p-3`}>
+                <User size={24} className="text-slate-400" />
+              </div>
+              <div>
+                <h2 className={theme.typography.h2}>{formData.firstName} {formData.lastName}</h2>
+                <p className={theme.typography.caption}>{formData.role}</p>
+              </div>
             </div>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Mail size={18} className="text-slate-400" />
+                <span className={theme.typography.body}>{formData.email}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Phone size={18} className="text-slate-400" />
+                <span className={theme.typography.body}>{formData.phone}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Building size={18} className="text-slate-400" />
+                <span className={theme.typography.body}>{formData.company}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <MapPin size={18} className="text-slate-400" />
+                <span className={theme.typography.body}>{formData.location}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Calendar size={18} className="text-slate-400" />
+                <span className={theme.typography.body}>Joined {formData.joinDate}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Settings */}
+          <div className="lg:col-span-2 space-y-6">
+            <form onSubmit={handleSubmit}>
+              <div className={`${theme.card} p-6`}>
+                <h2 className={`${theme.typography.h2} mb-6`}>Account Settings</h2>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div>
+                    <label className={theme.typography.label}>First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`mt-1 ${theme.input}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={theme.typography.label}>Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`mt-1 ${theme.input}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={theme.typography.label}>Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`mt-1 ${theme.input}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={theme.typography.label}>Phone</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`mt-1 ${theme.input}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className={`${theme.card} p-6 mt-6`}>
+                <h2 className={`${theme.typography.h2} mb-6`}>Preferences</h2>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div>
+                    <label className={theme.typography.label}>Language</label>
+                    <select
+                      name="language"
+                      value={formData.language}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`mt-1 ${theme.input}`}
+                    >
+                      <option value="English">English</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={theme.typography.label}>Timezone</label>
+                    <select
+                      name="timezone"
+                      value={formData.timezone}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`mt-1 ${theme.input}`}
+                    >
+                      <option value="Pacific Time (PT)">Pacific Time (PT)</option>
+                      <option value="Mountain Time (MT)">Mountain Time (MT)</option>
+                      <option value="Central Time (CT)">Central Time (CT)</option>
+                      <option value="Eastern Time (ET)">Eastern Time (ET)</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        name="notifications"
+                        checked={formData.notifications}
+                        onChange={handleInputChange}
+                        disabled={!isEditing}
+                        className={theme.input}
+                      />
+                      <span className={theme.typography.body}>Enable email notifications</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {isEditing && (
+                <div className="mt-6 flex justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    className={`${theme.button.primary} flex items-center space-x-2`}
+                  >
+                    <Save size={20} />
+                    <span>Save Changes</span>
+                  </motion.button>
+                </div>
+              )}
+            </form>
           </div>
         </div>
       </div>
-      
-      {/* Organization Information */}
-      {user.organization && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-medium">Organization Details</h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Organization Name</p>
-                <p className="font-medium">{user.organization.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Organization Type</p>
-                <p className="font-medium capitalize">{user.organization.type}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">ID</p>
-                <p className="font-medium">{user.organization.id}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Role-specific information */}
-      {isKyndlyTeam && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="border-b border-gray-200 px-6 py-4 bg-blue-50">
-            <h3 className="text-lg font-medium">Kyndly Team Access</h3>
-          </div>
-          <div className="p-6">
-            <p className="mb-4">As a Kyndly team member, you have access to:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>All employer accounts</li>
-              <li>Quote management system</li>
-              <li>Document repository</li>
-              {hasRole(['admin']) && (
-                <>
-                  <li>User management</li>
-                  <li>System settings</li>
-                </>
-              )}
-              <li>Reporting dashboard</li>
-            </ul>
-          </div>
-        </div>
-      )}
-      
-      {!isKyndlyTeam && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="border-b border-gray-200 px-6 py-4 bg-purple-50">
-            <h3 className="text-lg font-medium">TPA Access</h3>
-          </div>
-          <div className="p-6">
-            <p className="mb-4">As a TPA user, you have access to:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Your assigned employer accounts</li>
-              <li>Quote creation and management</li>
-              <li>Document uploads and downloads</li>
-              {isTpaAdmin && (
-                <>
-                  <li>TPA team management</li>
-                  <li>Organization settings</li>
-                </>
-              )}
-            </ul>
-          </div>
-        </div>
-      )}
-      
-      {/* Permissions */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h3 className="text-lg font-medium">My Permissions</h3>
-        </div>
-        <div className="p-6">
-          {user.permissions && user.permissions.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {user.permissions.map(permission => (
-                <span 
-                  key={permission} 
-                  className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-medium"
-                >
-                  {permission}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">No specific permissions assigned.</p>
-          )}
-        </div>
-      </div>
-      
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-6 p-4 bg-yellow-50 rounded-md">
-          <p className="text-sm text-yellow-800">
-            <strong>Note:</strong> In development mode, user data may be simulated.
-            In production, this information will come directly from AWS Cognito.
-          </p>
-        </div>
-      )}
     </div>
   );
 };
