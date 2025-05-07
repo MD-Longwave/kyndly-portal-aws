@@ -2,7 +2,7 @@
   "name": "kyndly-ichra-frontend-aws",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "/",
   "dependencies": {
     "@aws-amplify/ui-react": "^4.6.5",
     "@headlessui/react": "^2.2.0",
