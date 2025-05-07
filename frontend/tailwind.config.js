@@ -4,6 +4,7 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
     "./public/index.html"
   ],
+  darkMode: 'class', // Enable dark mode with class strategy
   theme: {
     extend: {
       colors: {
@@ -49,6 +50,15 @@ module.exports = {
         mint: '#E6F6F4',  // Light mint background
         teal: '#81C7BB',  // Teal accent
         navy: '#122F3D',  // Dark navy text
+        // Dark mode specific colors
+        dark: {
+          bg: '#0F172A',       // Dark background
+          surface: '#1E293B',  // Dark surface
+          border: '#334155',   // Dark border
+          text: '#F8FAFC',     // Dark mode text
+          muted: '#94A3B8',    // Dark mode muted text
+          highlight: '#2DD4BF' // Dark mode highlight (a bright teal)
+        }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

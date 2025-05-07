@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIService, ChatMessage } from '../services/ai.service';
 import ChatMessageComponent from '../components/ui/ChatMessage';
-import ChatInput from '../components/ui/ChatInput';
 
 // Flag to control whether to use the actual API or simulated responses
 // Set to false until backend is ready
@@ -20,14 +19,45 @@ const SIMULATED_RESPONSES = [
   "When transitioning from a group plan to an ICHRA, employers should provide clear communication about the change, help employees understand how to shop for individual coverage, consider timing the transition during open enrollment, and ensure compliance with notice requirements."
 ];
 
+// Starting prompt cards to help users know what to ask
+const PROMPT_CARDS = [
+  {
+    category: "ICHRA Basics",
+    description: "Learn the fundamentals",
+    prompts: [
+      "What is an ICHRA and how does it work?",
+      "What are the key benefits of an ICHRA for employers?"
+    ]
+  },
+  {
+    category: "Implementation",
+    description: "Practical guidance",
+    prompts: [
+      "What steps should I take to implement an ICHRA?",
+      "How should I communicate ICHRA benefits to employees?"
+    ]
+  },
+  {
+    category: "Regulations",
+    description: "Stay compliant",
+    prompts: [
+      "What are the key regulatory requirements for ICHRAs?",
+      "How do ICHRAs comply with ACA requirements?"
+    ]
+  },
+  {
+    category: "Cost Analysis",
+    description: "Understand savings",
+    prompts: [
+      "How can an ICHRA save money for employers?",
+      "What factors affect ICHRA allowance amounts?"
+    ]
+  }
+];
+
 const KnowledgeCenter: React.FC = () => {
   // State for chat conversation history
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: 'Hello! I\'m the Kyndly Assistant, your ICHRA expert. How can I help you today?'
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   // State for loading indicator
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +65,16 @@ const KnowledgeCenter: React.FC = () => {
   // State for error messages
   const [error, setError] = useState<string | null>(null);
   
+  // State for input message
+  const [inputMessage, setInputMessage] = useState('');
+  
+  // State for showing prompt cards
+  const [showPrompts, setShowPrompts] = useState(true);
+  
   // Reference for chat container to auto-scroll
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   // Auto-scroll to bottom of chat when messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,13 +93,21 @@ const KnowledgeCenter: React.FC = () => {
   
   // Handle sending a new message
   const handleSendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return;
+    
     try {
+      // Hide prompts once user starts chatting
+      setShowPrompts(false);
+      
       // Clear any previous errors
       setError(null);
       
       // Add user message to chat
       const userMessage: ChatMessage = { role: 'user', content };
       setMessages(prev => [...prev, userMessage]);
+      
+      // Clear input
+      setInputMessage('');
       
       // Set loading state
       setIsLoading(true);
@@ -72,7 +117,7 @@ const KnowledgeCenter: React.FC = () => {
       // Decide whether to use actual API or simulated response
       if (USE_ACTUAL_API) {
         // Convert messages to format expected by API (excluding the welcome message)
-        const apiMessages = messages.slice(1).concat(userMessage);
+        const apiMessages = messages.concat(userMessage);
         
         // Send message to API
         const response = await AIService.sendMessage(content, apiMessages);
@@ -98,48 +143,60 @@ const KnowledgeCenter: React.FC = () => {
     }
   };
   
+  // Handle prompt card click
+  const handlePromptClick = (prompt: string) => {
+    setInputMessage(prompt);
+    handleSendMessage(prompt);
+  };
+  
   // Handle clearing the chat
   const handleClearChat = () => {
-    setMessages([
-      {
-        role: 'assistant',
-        content: 'Hello! I\'m the Kyndly Assistant, your ICHRA expert. How can I help you today?'
-      }
-    ]);
+    setMessages([]);
     setError(null);
+    setShowPrompts(true);
+  };
+
+  // Handle keypress in input field
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(inputMessage);
+    }
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[calc(100vh-180px)]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col h-[calc(100vh-140px)]">
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold text-secondary-800">ICHRA Knowledge Center</h1>
-        
-        <button
-          onClick={handleClearChat}
-          className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          Clear Chat
-        </button>
+        <p className="text-sm text-secondary-500">Ask questions about Individual Coverage Health Reimbursement Arrangements</p>
       </div>
       
-      <div className="bg-white rounded-lg shadow overflow-hidden flex flex-col flex-grow">
+      <div className="flex-1 bg-white rounded-lg shadow overflow-hidden flex flex-col">
         {/* Chat header */}
-        <div className="bg-primary-600 text-white px-4 py-3 flex items-center">
-          <div className="rounded-full bg-white w-10 h-10 flex items-center justify-center mr-3">
-            <span className="text-primary-600 text-lg font-bold">K</span>
+        <div className="bg-primary-600 text-white px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="rounded-full bg-white w-8 h-8 flex items-center justify-center mr-3">
+              <span className="text-primary-600 text-lg font-bold">K</span>
+            </div>
+            <div>
+              <h2 className="font-semibold">Kyndly Assistant</h2>
+              <p className="text-xs opacity-80">AI ICHRA Expert</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold">Kyndly Assistant</h2>
-            <p className="text-xs opacity-80">ICHRA Expert</p>
-          </div>
+          <button
+            onClick={handleClearChat}
+            className="text-white hover:text-primary-100 p-1 rounded"
+            title="Clear chat"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
         
         {/* Error message */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 m-4">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-4 my-2">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -153,47 +210,111 @@ const KnowledgeCenter: React.FC = () => {
           </div>
         )}
         
-        {/* Chat messages */}
-        <div className="flex-grow overflow-y-auto p-4">
-          <div className="space-y-2">
-            {messages.map((message, index) => (
-              <ChatMessageComponent key={index} message={message} />
-            ))}
-            {isLoading && (
-              <div className="flex justify-start mb-4">
-                <div className="bg-gray-100 rounded-lg px-4 py-3 max-w-[80%]">
-                  <div className="flex items-center space-x-2">
-                    <div className="rounded-full bg-secondary-600 w-6 h-6 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">AI</span>
+        {/* Chat messages or prompt cards */}
+        <div 
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto px-4 py-2 bg-neutral-50"
+        >
+          {/* Show prompt cards if no messages and showPrompts is true */}
+          {messages.length === 0 && showPrompts ? (
+            <div className="py-4">
+              {/* Welcome message */}
+              <div className="mb-6 text-center">
+                <h3 className="text-xl font-semibold text-secondary-800 mb-2">Welcome to the Kyndly Assistant</h3>
+                <p className="text-secondary-600">
+                  I'm your ICHRA expert. Ask me anything about Individual Coverage Health Reimbursement Arrangements.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {PROMPT_CARDS.map((cardGroup, groupIndex) => (
+                  <div 
+                    key={groupIndex} 
+                    className="bg-white p-4 rounded-lg border border-neutral-200 shadow-sm"
+                  >
+                    <h3 className="font-medium text-primary-700 mb-1">{cardGroup.category}</h3>
+                    <p className="text-xs text-neutral-500 mb-3">{cardGroup.description}</p>
+                    <div className="space-y-2">
+                      {cardGroup.prompts.map((prompt, promptIndex) => (
+                        <button
+                          key={`${groupIndex}-${promptIndex}`}
+                          className="w-full text-left p-2 rounded-md bg-primary-50 hover:bg-primary-100 text-sm text-secondary-700 transition-colors"
+                          onClick={() => handlePromptClick(prompt)}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
                     </div>
-                    <div className="h-2 w-6 bg-gray-300 rounded-full animate-pulse"></div>
-                    <div className="h-2 w-6 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="h-2 w-6 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                ))}
+              </div>
+              
+              {!USE_ACTUAL_API && (
+                <div className="mt-4 text-center text-xs text-neutral-400 italic">
+                  Note: This is a preview with simulated responses. Full AI functionality coming soon.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-2 space-y-3">
+              {messages.map((message, index) => (
+                <ChatMessageComponent key={index} message={message} />
+              ))}
+              {messages.length > 0 && !USE_ACTUAL_API && (
+                <div className="text-center text-xs text-neutral-400 italic py-1">
+                  Using simulated responses. Full AI integration coming soon.
+                </div>
+              )}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="rounded-full bg-primary-600 w-6 h-6 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">K</span>
+                      </div>
+                      <div className="h-2 w-6 bg-primary-200 rounded-full animate-pulse"></div>
+                      <div className="h-2 w-6 bg-primary-200 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="h-2 w-6 bg-primary-200 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
         
         {/* Chat input */}
-        <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-      </div>
-      
-      {/* Informational box */}
-      <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h3 className="font-medium text-gray-900">About the Knowledge Center</h3>
-        <p className="mt-1 text-sm text-gray-600">
-          The Kyndly Assistant is powered by AI and specializes in ICHRA regulations, implementation strategies, 
-          cost considerations, and employee education. Ask any questions about Individual Coverage Health Reimbursement Arrangements.
-        </p>
-        {!USE_ACTUAL_API && (
-          <p className="mt-2 text-xs text-gray-500 italic">
-            Note: This is a preview of the Knowledge Center with simulated responses.
-            Full AI functionality will be implemented soon.
-          </p>
-        )}
+        <div className="border-t border-neutral-200 p-3">
+          <div className="flex items-center bg-neutral-50 rounded-lg border border-neutral-300 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500">
+            <textarea
+              className="flex-1 resize-none bg-transparent border-0 focus:ring-0 p-3 h-12 max-h-32 text-neutral-900 placeholder-neutral-400"
+              placeholder="Ask about ICHRA..."
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              disabled={isLoading}
+              rows={1}
+            />
+            <button
+              className={`mx-2 rounded-md p-2 ${
+                isLoading || !inputMessage.trim()
+                  ? 'text-neutral-400 cursor-not-allowed'
+                  : 'text-primary-600 hover:bg-primary-50'
+              }`}
+              onClick={() => handleSendMessage(inputMessage)}
+              disabled={isLoading || !inputMessage.trim()}
+              title="Send message"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+              </svg>
+            </button>
+          </div>
+          <div className="mt-1 text-xs text-center text-neutral-500">
+            Press Enter to send, Shift+Enter for new line
+          </div>
+        </div>
       </div>
     </div>
   );
