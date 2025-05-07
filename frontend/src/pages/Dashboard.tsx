@@ -6,28 +6,20 @@ import {
   ArrowUpTrayIcon,
   DocumentPlusIcon,
   ChartBarIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BellIcon,
+  ChevronDownIcon,
+  PlusIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  ExclamationCircleIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { FadeIn, SlideIn, HoverScale } from '../components/animations';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  FileText, 
-  MessageSquare, 
-  Settings, 
-  Search,
-  Bell,
-  ChevronDown,
-  Plus,
-  ArrowUpRight,
-  ArrowDownRight,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  AlertCircle,
-  Upload,
-  BarChart
-} from 'lucide-react';
 import { getThemeStyles, commonStyles } from '../styles/theme';
 
 // Status Badge Component
@@ -169,7 +161,7 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center space-x-4">
             <h1 className={theme.typography.h1}>Dashboard</h1>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
               <input
                 type="text"
                 placeholder="Search..."
@@ -179,14 +171,14 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="flex items-center space-x-4">
             <button className={`p-2 ${theme.button.secondary} rounded-full`}>
-              <Bell size={20} />
+              <BellIcon className="h-5 w-5" aria-hidden="true" />
             </button>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white">
                 JD
               </div>
               <span className={theme.typography.body}>John Doe</span>
-              <ChevronDown size={16} className="text-slate-400" />
+              <ChevronDownIcon className="h-5 w-5 text-slate-400" />
             </div>
           </div>
         </div>
@@ -330,7 +322,7 @@ const Dashboard: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2`}
             >
-              <Plus className="h-5 w-5" aria-hidden="true" />
+              <PlusIcon className="h-5 w-5" aria-hidden="true" />
               <span className="text-sm font-medium">Create Quote</span>
             </motion.button>
             

@@ -1,173 +1,143 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  User,
-  Bell,
-  Lock,
-  Globe,
-  Palette,
-  Moon,
-  Sun,
-  Save
-} from 'lucide-react';
-import { getThemeStyles, commonStyles } from '../styles/theme';
+import {
+  UserIcon,
+  BellIcon,
+  LockClosedIcon,
+  GlobeAltIcon,
+  SwatchIcon,
+  MoonIcon,
+  SunIcon,
+  CheckIcon
+} from '@heroicons/react/24/outline';
+import { getThemeStyles } from '../styles/theme';
 
 const Settings: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getThemeStyles(isDarkMode);
 
-  const settingsSections = [
-    {
-      title: 'Profile Settings',
-      icon: <User size={20} />,
-      iconBg: 'bg-blue-50 text-blue-600',
-      content: (
-        <div className="space-y-4">
-          <div>
-            <label className={theme.typography.caption}>Display Name</label>
-            <input
-              type="text"
-              className={`mt-1 block w-full ${theme.input}`}
-              placeholder="Enter your display name"
-            />
-          </div>
-          <div>
-            <label className={theme.typography.caption}>Email</label>
-            <input
-              type="email"
-              className={`mt-1 block w-full ${theme.input}`}
-              placeholder="Enter your email"
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Notifications',
-      icon: <Bell size={20} />,
-      iconBg: 'bg-purple-50 text-purple-600',
-      content: (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={theme.typography.h3}>Email Notifications</h3>
-              <p className={theme.typography.caption}>Receive email updates about your account</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-            </label>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={theme.typography.h3}>Push Notifications</h3>
-              <p className={theme.typography.caption}>Receive push notifications in your browser</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-            </label>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Security',
-      icon: <Lock size={20} />,
-      iconBg: 'bg-red-50 text-red-600',
-      content: (
-        <div className="space-y-4">
-          <div>
-            <label className={theme.typography.caption}>Current Password</label>
-            <input
-              type="password"
-              className={`mt-1 block w-full ${theme.input}`}
-              placeholder="Enter your current password"
-            />
-          </div>
-          <div>
-            <label className={theme.typography.caption}>New Password</label>
-            <input
-              type="password"
-              className={`mt-1 block w-full ${theme.input}`}
-              placeholder="Enter your new password"
-            />
-          </div>
-          <div>
-            <label className={theme.typography.caption}>Confirm New Password</label>
-            <input
-              type="password"
-              className={`mt-1 block w-full ${theme.input}`}
-              placeholder="Confirm your new password"
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Appearance',
-      icon: <Palette size={20} />,
-      iconBg: 'bg-amber-50 text-amber-600',
-      content: (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={theme.typography.h3}>Dark Mode</h3>
-              <p className={theme.typography.caption}>Switch between light and dark themes</p>
-            </div>
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full ${theme.button.secondary}`}
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-          </div>
-          <div>
-            <label className={theme.typography.caption}>Font Size</label>
-            <select className={`mt-1 block w-full ${theme.input}`}>
-              <option>Small</option>
-              <option>Medium</option>
-              <option>Large</option>
-            </select>
-          </div>
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <div className={`min-h-screen ${theme.layout.container}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
+    <div className={theme.layout.container}>
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex items-center justify-between">
           <h1 className={theme.typography.h1}>Settings</h1>
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className={`${theme.button.primary} flex items-center space-x-2`}
           >
-            <Save size={20} />
+            <CheckIcon className="h-5 w-5" />
             <span>Save Changes</span>
           </motion.button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          {settingsSections.map((section, index) => (
-            <motion.div
-              key={section.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`${theme.card} p-6`}
-            >
-              <div className="flex items-center space-x-4 mb-6">
-                <div className={`p-3 rounded-xl ${section.iconBg}`}>
-                  {section.icon}
-                </div>
-                <h2 className={theme.typography.h2}>{section.title}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Profile Settings */}
+          <div className={theme.card}>
+            <div className="flex items-center space-x-3 mb-6">
+              <UserIcon className="h-6 w-6 text-blue-500" />
+              <h2 className={theme.typography.h2}>Profile Settings</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className={theme.typography.label}>Display Name</label>
+                <input
+                  type="text"
+                  className={theme.input}
+                  placeholder="Enter your display name"
+                />
               </div>
-              {section.content}
-            </motion.div>
-          ))}
+              <div>
+                <label className={theme.typography.label}>Email</label>
+                <input
+                  type="email"
+                  className={theme.input}
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Notifications */}
+          <div className={theme.card}>
+            <div className="flex items-center space-x-3 mb-6">
+              <BellIcon className="h-6 w-6 text-blue-500" />
+              <h2 className={theme.typography.h2}>Notifications</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className={theme.typography.body}>Email Notifications</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={theme.typography.body}>Push Notifications</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Security */}
+          <div className={theme.card}>
+            <div className="flex items-center space-x-3 mb-6">
+              <LockClosedIcon className="h-6 w-6 text-blue-500" />
+              <h2 className={theme.typography.h2}>Security</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className={theme.typography.label}>Current Password</label>
+                <input
+                  type="password"
+                  className={theme.input}
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className={theme.typography.label}>New Password</label>
+                <input
+                  type="password"
+                  className={theme.input}
+                  placeholder="Enter new password"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Appearance */}
+          <div className={theme.card}>
+            <div className="flex items-center space-x-3 mb-6">
+              <SwatchIcon className="h-6 w-6 text-blue-500" />
+              <h2 className={theme.typography.h2}>Appearance</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className={theme.typography.body}>Dark Mode</span>
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className={`p-2 rounded-full ${theme.button.secondary}`}
+                >
+                  {isDarkMode ? (
+                    <SunIcon className="h-5 w-5" />
+                  ) : (
+                    <MoonIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              <div>
+                <label className={theme.typography.label}>Language</label>
+                <select className={theme.input}>
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
