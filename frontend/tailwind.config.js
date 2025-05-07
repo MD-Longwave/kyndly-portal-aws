@@ -18,8 +18,8 @@ module.exports = {
           600: '#6BB5A9',
           700: '#55A397',
           800: '#3F9185',
-          900: '#297F73',
-          950: '#1C6D61',
+          900: '#274D4A', // Darker teal from the homepage
+          950: '#1C3634',
         },
         secondary: {
           50: '#E6EBF0',
@@ -47,17 +47,18 @@ module.exports = {
           900: '#171717',
           950: '#0a0a0a',
         },
-        mint: '#E6F6F4',  // Light mint background
+        mint: '#F2FAFA',  // Light mint background from homepage
         teal: '#81C7BB',  // Teal accent
+        forest: '#274D4A', // Dark green from homepage CTA button
         navy: '#122F3D',  // Dark navy text
         // Dark mode specific colors
         dark: {
-          bg: '#0F172A',       // Dark background
-          surface: '#1E293B',  // Dark surface
-          border: '#334155',   // Dark border
+          bg: '#132F2D',       // Dark background based on forest color
+          surface: '#1D3E3C',  // Dark surface
+          border: '#335957',   // Dark border
           text: '#F8FAFC',     // Dark mode text
-          muted: '#94A3B8',    // Dark mode muted text
-          highlight: '#2DD4BF' // Dark mode highlight (a bright teal)
+          muted: '#94B8B3',    // Dark mode muted text
+          highlight: '#81C7BB' // Dark mode highlight (teal from design)
         }
       },
       fontFamily: {

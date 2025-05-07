@@ -14,6 +14,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import kyndlyLogo from '../../assets/images/Kyndly-Temp-web-logo-blue.png';
+import kyndlyLogoWhite from '../../assets/images/Kyndly-Temp-web-logo-white.png';
 
 // Navigation links for the sidebar
 const navigation = [
@@ -187,12 +188,12 @@ export function AppLayout() {
                   </div>
                 </Transition.Child>
 
-                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-secondary-800 px-6 pb-4">
+                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest px-6 pb-4">
                   <div className="flex h-16 items-center justify-center">
-                    <Link to="/dashboard" className="bg-white p-2 rounded-md">
+                    <Link to="/dashboard" className="p-2 rounded-md">
                       <img
                         className="h-10 w-auto mx-auto"
-                        src={kyndlyLogo}
+                        src={kyndlyLogoWhite}
                         alt="Kyndly"
                       />
                     </Link>
@@ -208,7 +209,7 @@ export function AppLayout() {
                                   href={item.href}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-primary-500 hover:text-secondary-800"
+                                  className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
                                 >
                                   <item.icon aria-hidden="true" />
                                   {item.name}
@@ -216,7 +217,7 @@ export function AppLayout() {
                               ) : (
                                 <Link
                                   to={item.href}
-                                  className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-primary-500 hover:text-secondary-800"
+                                  className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
                                 >
                                   <item.icon aria-hidden="true" />
                                   {item.name}
@@ -237,12 +238,12 @@ export function AppLayout() {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-secondary-800 dark:bg-dark-surface px-6 pb-4">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest dark:bg-dark-surface px-6 pb-4">
           <div className="flex h-16 items-center justify-center">
-            <Link to="/dashboard" className="bg-white p-2 rounded-md">
+            <Link to="/dashboard" className="p-2 rounded-md">
               <img
                 className="h-10 w-auto mx-auto"
-                src={kyndlyLogo}
+                src={kyndlyLogoWhite}
                 alt="Kyndly"
               />
             </Link>
@@ -258,7 +259,7 @@ export function AppLayout() {
                           href={item.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-primary-500 hover:text-secondary-800"
+                          className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
                         >
                           <item.icon aria-hidden="true" />
                           {item.name}
@@ -266,7 +267,7 @@ export function AppLayout() {
                       ) : (
                         <Link
                           to={item.href}
-                          className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-primary-500 hover:text-secondary-800"
+                          className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
                         >
                           <item.icon aria-hidden="true" />
                           {item.name}
@@ -282,10 +283,10 @@ export function AppLayout() {
       </div>
 
       <div className="lg:pl-72">
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-primary-100 dark:border-dark-border bg-white dark:bg-dark-surface px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-gray-700 dark:text-neutral-300 lg:hidden"
+            className="-m-2.5 p-2.5 text-forest dark:text-neutral-300 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
@@ -293,7 +294,7 @@ export function AppLayout() {
           </button>
 
           {/* Separator */}
-          <div className="h-6 w-px bg-gray-200 dark:bg-dark-border lg:hidden" aria-hidden="true" />
+          <div className="h-6 w-px bg-primary-200 dark:bg-dark-border lg:hidden" aria-hidden="true" />
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-end">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
@@ -301,7 +302,7 @@ export function AppLayout() {
               <button
                 type="button"
                 onClick={handleThemeToggle}
-                className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:text-neutral-300 dark:hover:text-neutral-100"
+                className="-m-2.5 p-2.5 text-forest hover:text-primary-700 dark:text-neutral-300 dark:hover:text-neutral-100"
                 aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               >
                 {theme === 'light' ? (
@@ -313,7 +314,7 @@ export function AppLayout() {
               
               <button
                 type="button"
-                className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:text-neutral-300"
+                className="-m-2.5 p-2.5 text-forest hover:text-primary-700 dark:text-neutral-300"
               >
                 <span className="sr-only">View notifications</span>
                 <BellIcon className="h-6 w-6" aria-hidden="true" />
@@ -323,11 +324,11 @@ export function AppLayout() {
               <Menu as="div" className="relative">
                 <Menu.Button className="-m-1.5 flex items-center p-1.5">
                   <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-sm font-semibold text-primary-700 dark:text-primary-100">
+                  <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-sm font-semibold text-forest dark:text-primary-100">
                     {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <span className="hidden lg:flex lg:items-center">
-                    <span className="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-neutral-200" aria-hidden="true">
+                    <span className="ml-4 text-sm font-semibold leading-6 text-forest dark:text-neutral-200" aria-hidden="true">
                       {user?.username || 'User'}
                     </span>
                   </span>
@@ -341,7 +342,7 @@ export function AppLayout() {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <Menu.Items className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white dark:bg-dark-surface py-2 shadow-lg ring-1 ring-gray-900/5 dark:ring-dark-border focus:outline-none">
+                  <Menu.Items className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white dark:bg-dark-surface py-2 shadow-lg ring-1 ring-primary-100 dark:ring-dark-border focus:outline-none">
                     {userNavigation.map((item) => (
                       <Menu.Item key={item.name}>
                         {({ active }) => (
@@ -352,10 +353,10 @@ export function AppLayout() {
                                 ? handleUserNavigation(e, item.href, handleLogout) 
                                 : handleUserNavigation(e, item.href)
                             }
-                            className={`${active ? 'bg-gray-50 dark:bg-dark-bg' : ''} block px-3 py-1 text-sm leading-6 text-gray-900 dark:text-neutral-200`}
+                            className={`${active ? 'bg-primary-50 dark:bg-dark-bg' : ''} block px-3 py-1 text-sm leading-6 text-forest dark:text-neutral-200`}
                           >
                             <div className="flex items-center">
-                              <item.icon className="h-5 w-5 mr-2 text-gray-500 dark:text-neutral-400" aria-hidden="true" />
+                              <item.icon className="h-5 w-5 mr-2 text-primary-500 dark:text-neutral-400" aria-hidden="true" />
                               {item.name}
                             </div>
                           </a>
@@ -369,7 +370,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <main className="py-4 dark:bg-dark-bg">
+        <main className="py-4 bg-mint dark:bg-dark-bg">
           <Outlet />
         </main>
       </div>
