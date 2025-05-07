@@ -1,6 +1,8 @@
 import React from 'react';
 import { ChatMessage as ChatMessageType } from '../../services/ai.service';
 import { SlideIn } from '../animations';
+import DOMPurify from 'dompurify'; // Add DOMPurify import for sanitizing HTML
+import './ChatMessage.css'; // Import the CSS file
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -10,8 +12,8 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, index = 0 }) => {
   const isUser = message.role === 'user';
 
-  // Function to render the content with proper formatting
-  const renderContent = (content: string) => {
+  // Function to render user content with proper formatting
+  const renderUserContent = (content: string) => {
     // Convert markdown-style lists (- item) to HTML lists
     const processedContent = content.replace(/^- (.+)$/gm, '• $1');
     
@@ -21,6 +23,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, index = 0 }) => {
         {paragraph}
       </p>
     ));
+  };
+
+  // Function to sanitize HTML content for assistant messages
+  const sanitizeHtml = (content: string) => {
+    return DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3'],
+      ALLOWED_ATTR: ['href', 'target', 'rel']
+    });
   };
 
   return (
@@ -48,7 +58,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, index = 0 }) => {
           )}
           
           <div className={`${isUser ? 'text-white' : 'text-secondary-800'} text-sm`}>
-            {renderContent(message.content)}
+            {isUser ? (
+              // Render user messages normally
+              renderUserContent(message.content)
+            ) : (
+              // Render assistant messages as HTML
+              <div
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.content) }}
+                className="ai-response"
+              />
+            )}
           </div>
         </div>
       </div>
