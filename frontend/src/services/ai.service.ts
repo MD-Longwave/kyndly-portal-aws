@@ -3,7 +3,7 @@
  */
 
 // API Gateway URL from environment variables or use current value as fallback
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://1yjrrbeu87.execute-api.us-east-2.amazonaws.com/prod';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://1yjrrbeu87.execute-api.us-east-2.amazonaws.com';
 
 // Types for chat functionality
 export interface ChatMessage {
