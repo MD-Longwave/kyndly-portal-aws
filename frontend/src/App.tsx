@@ -16,6 +16,7 @@ import KyndChoice from './pages/KyndChoice';
 import KnowledgeCenter from './pages/KnowledgeCenter';
 import { AuthProvider, UserRole } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Check if the app is running in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -149,7 +150,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }
