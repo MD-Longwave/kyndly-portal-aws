@@ -3,7 +3,7 @@
  */
 
 // API Gateway URL from environment variables or use current value as fallback
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://82ic0z3bab.execute-api.us-east-2.amazonaws.com/Prod';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://1yjrrbeu87.execute-api.us-east-2.amazonaws.com/prod';
 
 // Types for chat functionality
 export interface ChatMessage {
@@ -51,13 +51,13 @@ export const AIService = {
       }
 
       // Log full URL for debugging
-      const url = `${API_BASE_URL}/kyndly-ai-lambda/ai/chat`;
+      const url = `${API_BASE_URL}/ai/chat`;
       console.log('Making API request to:', url);
 
       const response = await fetch(url, {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
+        
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
@@ -90,13 +90,13 @@ export const AIService = {
       const authToken = await getAuthToken();
 
       // Log full URL for debugging
-      const url = `${API_BASE_URL}/kyndly-ai-lambda/ai/ichra-info`;
+      const url = `${API_BASE_URL}/ai/ichra-info`;
       console.log('Making API request to:', url);
 
       const response = await fetch(url, {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
+        
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
