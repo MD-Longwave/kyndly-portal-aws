@@ -3,7 +3,7 @@
  */
 
 // API Gateway URL from environment variables or use current value as fallback
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://irl951cfeb.execute-api.us-east-2.amazonaws.com/prod';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://82ic0z3bab.execute-api.us-east-2.amazonaws.com/Prod';
 
 // Types for chat functionality
 export interface ChatMessage {
@@ -41,12 +41,20 @@ export const AIService = {
   sendMessage: async (message: string, conversationHistory: ChatMessage[] = []): Promise<ChatResponse> => {
     try {
       const authToken = await getAuthToken();
+      
+      // For debugging - log token info without revealing full token
+      if (authToken) {
+        console.log('Auth token obtained successfully', 
+          authToken.substring(0, 10) + '...' + authToken.substring(authToken.length - 5));
+      } else {
+        console.log('Failed to get auth token');
+      }
 
-      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+      const response = await fetch(`${API_BASE_URL}/kyndly-ai-lambda/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authToken
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
           message,
@@ -75,11 +83,11 @@ export const AIService = {
     try {
       const authToken = await getAuthToken();
 
-      const response = await fetch(`${API_BASE_URL}/ai/ichra-info`, {
+      const response = await fetch(`${API_BASE_URL}/kyndly-ai-lambda/ai/ichra-info`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authToken
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({ query }),
       });

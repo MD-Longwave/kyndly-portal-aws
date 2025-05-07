@@ -119,9 +119,18 @@ const KnowledgeCenter: React.FC = () => {
         // Convert messages to format expected by API (excluding the welcome message)
         const apiMessages = messages.concat(userMessage);
         
+        console.log('Sending message to API:', content);
+        console.log('With conversation history:', apiMessages);
+        
         // Send message to API
-        const response = await AIService.sendMessage(content, apiMessages);
-        assistantResponse = response.data.response;
+        try {
+          const response = await AIService.sendMessage(content, apiMessages);
+          assistantResponse = response.data.response;
+          console.log('Received API response:', response);
+        } catch (apiError: any) {
+          console.error('API call failed:', apiError);
+          throw new Error(`API call failed: ${apiError.message || 'Unknown error'}`);
+        }
       } else {
         // Use simulated response and add a delay to mimic API call
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -137,7 +146,7 @@ const KnowledgeCenter: React.FC = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (err: any) {
       console.error('Error sending message:', err);
-      setError('The AI service is currently unavailable. We\'ll be implementing this feature soon!');
+      setError(`The AI service is currently unavailable: ${err.message || 'Unknown error'}. Please try again later.`);
     } finally {
       setIsLoading(false);
     }
