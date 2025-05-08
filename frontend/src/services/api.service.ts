@@ -26,7 +26,9 @@ console.log(`Using API URL: ${API_BASE_URL} in ${process.env.NODE_ENV || 'develo
 const getAuthToken = async (): Promise<string | null> => {
   try {
     const session = await Auth.currentSession();
-    return session.getIdToken().getJwtToken();
+    const token = session.getIdToken().getJwtToken();
+    console.log('Auth token successfully retrieved, length:', token.length);
+    return token;
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;
@@ -131,14 +133,17 @@ export const QuoteService = {
         
         console.log('Sending multipart form data request...');
         
-        // For form data, we need to get headers without Content-Type
-        // and then add the Authorization header separately
+        // For form data requests, create headers with auth token
         const token = await getAuthToken();
-        const headers: HeadersInit = { 'x-api-key': API_KEY };
+        const headers: HeadersInit = { 
+          'x-api-key': API_KEY 
+        };
         
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
           console.log('Added Authorization header with JWT token to form data request');
+        } else {
+          console.warn('No JWT token available for form data request');
         }
         
         try {
