@@ -111,11 +111,28 @@ export const QuoteService = {
     try {
       console.log('QuoteService.submitQuote called with data:', quoteData);
       
+      // IMPORTANT: Ensure we have the auth token before proceeding with any API calls
+      // This ensures the token is fully retrieved before any API calls are made
+      let authToken = quoteData.authToken;
+      if (!authToken) {
+        console.log('No token provided in quoteData, retrieving from Cognito...');
+        try {
+          const session = await Auth.currentSession();
+          authToken = session.getIdToken().getJwtToken();
+          console.log('Successfully retrieved auth token at the beginning of submitQuote');
+          
+          // Store it back in quoteData for later use
+          quoteData.authToken = authToken;
+        } catch (tokenError) {
+          console.error('Failed to get token at the beginning of submitQuote:', tokenError);
+          throw new Error('Authentication required. Please sign in again.');
+        }
+      }
+      
       const apiUrl = `${API_BASE_URL}/quotes`;
       console.log('Using API endpoint:', apiUrl);
       
-      // Extract auth token if provided (and then remove it from the data to be sent)
-      const authToken = quoteData.authToken;
+      // Extract auth token from the data to be sent
       if (authToken) {
         delete quoteData.authToken;
       }
