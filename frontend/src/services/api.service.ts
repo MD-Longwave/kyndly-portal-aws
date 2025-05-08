@@ -173,7 +173,7 @@ export const QuoteService = {
             method: 'POST',
             headers,
             body: formData,
-            credentials: 'include',  // Include cookies and authentication
+            credentials: 'omit',  // Don't include credentials - fixes CORS issue
             // Don't set Content-Type header, browser will set it with boundary
           });
         } catch (fetchError) {
@@ -202,7 +202,7 @@ export const QuoteService = {
             method: 'POST',
             headers,
             body: JSON.stringify(quoteData),
-            credentials: 'include',  // Include cookies and authentication
+            credentials: 'omit',  // Don't include credentials - fixes CORS issue
           });
         } catch (fetchError) {
           console.error('Fetch error during JSON submission:', fetchError);
