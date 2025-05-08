@@ -114,10 +114,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Function to get the current user's ID token
   const getIdToken = async (): Promise<string | null> => {
     try {
+      console.log('AuthContext: Getting ID token...');
       const session = await Auth.currentSession();
-      return session.getIdToken().getJwtToken();
+      const token = session.getIdToken().getJwtToken();
+      console.log(`AuthContext: Token retrieved successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
+      
+      // Get the payload for debugging
+      const payload = session.getIdToken().decodePayload();
+      console.log('AuthContext: Token payload:', payload);
+      
+      // Specifically log TPA and employer IDs if present
+      if (payload['custom:tpa_id']) {
+        console.log(`AuthContext: Found custom:tpa_id = ${payload['custom:tpa_id']}`);
+      } else {
+        console.warn('AuthContext: No custom:tpa_id found in token');
+      }
+      
+      if (payload['custom:employer_id']) {
+        console.log(`AuthContext: Found custom:employer_id = ${payload['custom:employer_id']}`);
+      } else {
+        console.warn('AuthContext: No custom:employer_id found in token');
+      }
+      
+      return token;
     } catch (error) {
-      console.error('Error getting ID token:', error);
+      console.error('AuthContext: Error getting ID token:', error);
       return null;
     }
   };

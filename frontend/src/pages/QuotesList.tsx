@@ -42,7 +42,10 @@ const QuotesList: React.FC = () => {
             console.warn('No JWT token available for quotes request');
           }
           
-          const response = await fetch('/api/quotes', { headers });
+          const response = await fetch('/api/quotes', { 
+            headers,
+            credentials: 'include' // Include cookies and auth tokens
+          });
           
           if (response.ok) {
             const data = await response.json();

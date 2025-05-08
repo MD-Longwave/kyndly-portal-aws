@@ -25,9 +25,21 @@ console.log(`Using API URL: ${API_BASE_URL} in ${process.env.NODE_ENV || 'develo
  */
 const getAuthToken = async (): Promise<string | null> => {
   try {
+    console.log('Retrieving auth token from Cognito...');
     const session = await Auth.currentSession();
     const token = session.getIdToken().getJwtToken();
-    console.log('Auth token successfully retrieved, length:', token.length);
+    const tokenFirstPart = token.substring(0, 20) + '...';
+    console.log(`Auth token retrieved successfully: ${tokenFirstPart} (Length: ${token.length})`);
+    
+    try {
+      // Get user info for debugging
+      const user = await Auth.currentAuthenticatedUser();
+      console.log('Current authenticated user:', user.username);
+      console.log('User attributes:', user.attributes);
+    } catch (userError) {
+      console.warn('Error fetching user details:', userError);
+    }
+    
     return token;
   } catch (error) {
     console.error('Error getting auth token:', error);
@@ -151,6 +163,7 @@ export const QuoteService = {
             method: 'POST',
             headers,
             body: formData,
+            credentials: 'include',  // Include cookies and authentication
             // Don't set Content-Type header, browser will set it with boundary
           });
         } catch (fetchError) {
@@ -167,6 +180,7 @@ export const QuoteService = {
             method: 'POST',
             headers,
             body: JSON.stringify(quoteData),
+            credentials: 'include',  // Include cookies and authentication
           });
         } catch (fetchError) {
           console.error('Fetch error during JSON submission:', fetchError);
