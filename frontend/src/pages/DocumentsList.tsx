@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // Types for document data
 interface Document {
@@ -48,12 +49,29 @@ const DocumentsList: React.FC = () => {
   const [selectedType, setSelectedType] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getIdToken } = useAuth();
   
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/documents');
+        
+        // Get JWT token
+        const token = await getIdToken();
+        
+        // Create headers with Authorization if token is available
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json'
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('Added Authorization header with JWT token to documents request');
+        } else {
+          console.warn('No JWT token available for documents request');
+        }
+        
+        const response = await fetch('/api/documents', { headers });
         
         if (!response.ok) {
           throw new Error('Failed to fetch documents');
@@ -71,7 +89,7 @@ const DocumentsList: React.FC = () => {
     };
     
     fetchDocuments();
-  }, []);
+  }, [getIdToken]);
   
   // Filter documents based on search and filters
   const filteredDocuments = documents.filter(doc => {
@@ -187,9 +205,9 @@ const DocumentsList: React.FC = () => {
                     <div className="sm:flex">
                       <p className="flex items-center text-sm text-gray-500">
                         {document.quote && (
-                          <Link to={`/quotes/${document.quote.id}`} className="text-primary-600 hover:text-primary-900">
-                            {document.quote.name}
-                          </Link>
+                        <Link to={`/quotes/${document.quote.id}`} className="text-primary-600 hover:text-primary-900">
+                          {document.quote.name}
+                        </Link>
                         )}
                       </p>
                     </div>
@@ -215,4 +233,4 @@ const DocumentsList: React.FC = () => {
   );
 };
 
-export default DocumentsList;
+export default DocumentsList; 

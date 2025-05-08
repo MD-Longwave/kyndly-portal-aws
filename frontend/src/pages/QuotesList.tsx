@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Auth } from 'aws-amplify';
+import { useAuth } from '../contexts/AuthContext';
 
 // Quote type definition based on the actual form fields
 interface Quote {
@@ -16,6 +18,7 @@ const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getIdToken } = useAuth();
   
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -24,7 +27,22 @@ const QuotesList: React.FC = () => {
         
         // Try to fetch from API
         try {
-          const response = await fetch('/api/quotes');
+          // Get JWT token
+          const token = await getIdToken();
+          
+          // Create headers with Authorization if token is available
+          const headers: HeadersInit = {
+            'Content-Type': 'application/json'
+          };
+          
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('Added Authorization header with JWT token to quotes request');
+          } else {
+            console.warn('No JWT token available for quotes request');
+          }
+          
+          const response = await fetch('/api/quotes', { headers });
           
           if (response.ok) {
             const data = await response.json();
@@ -49,7 +67,7 @@ const QuotesList: React.FC = () => {
     };
     
     fetchQuotes();
-  }, []);
+  }, [getIdToken]);
 
   if (isLoading) {
     return (
@@ -168,46 +186,46 @@ const QuotesList: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {quotes.length > 0 ? (
                     quotes.map((quote) => (
-                      <tr key={quote.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Link
-                            to={`/quotes/${quote.id}`}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
+                    <tr key={quote.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link
+                          to={`/quotes/${quote.id}`}
+                          className="text-primary-600 hover:text-primary-900"
+                        >
                             {quote.companyName}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{quote.transperraRep}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{quote.ichraEffectiveDate}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           ${quote.pepm.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 text-xs font-semibold rounded-full ${
-                              quote.status === 'Approved'
-                                ? 'bg-green-100 text-green-800'
-                                : quote.status === 'Pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
-                          >
-                            {quote.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link
-                            to={`/quotes/${quote.id}`}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
-                            View
-                          </Link>
-                        </td>
-                      </tr>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 text-xs font-semibold rounded-full ${
+                            quote.status === 'Approved'
+                              ? 'bg-green-100 text-green-800'
+                              : quote.status === 'Pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {quote.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link
+                          to={`/quotes/${quote.id}`}
+                          className="text-primary-600 hover:text-primary-900"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
                     ))
                   ) : (
                     <tr>

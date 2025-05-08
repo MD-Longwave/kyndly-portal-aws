@@ -1,7 +1,9 @@
 /**
- * API Service - Updated with API key for health checks
+ * API Service - Updated with API key and Auth token for authenticated requests
  * Provides methods for interacting with the backend API
  */
+
+import { Auth } from 'aws-amplify';
 
 // Use AWS API Gateway URL and API key for the API in production
 // For local development, use a relative path that will be proxied
@@ -18,9 +20,23 @@ const API_KEY = process.env.REACT_APP_API_KEY || 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG
 console.log(`Using API URL: ${API_BASE_URL} in ${process.env.NODE_ENV || 'development'} mode with version ${API_VERSION}`);
 
 /**
- * Add API key to request headers if in production
+ * Get the current user's ID token from Cognito
+ * @returns Promise with the ID token or null
  */
-const getApiHeaders = (contentType = 'application/json'): HeadersInit => {
+const getAuthToken = async (): Promise<string | null> => {
+  try {
+    const session = await Auth.currentSession();
+    return session.getIdToken().getJwtToken();
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+};
+
+/**
+ * Add API key and Auth token to request headers
+ */
+const getApiHeaders = async (contentType = 'application/json'): Promise<HeadersInit> => {
   const headers: HeadersInit = {
     'Content-Type': contentType,
   };
@@ -28,6 +44,15 @@ const getApiHeaders = (contentType = 'application/json'): HeadersInit => {
   // Add API key if in production
   if (process.env.NODE_ENV === 'production' && API_KEY) {
     headers['x-api-key'] = API_KEY;
+  }
+  
+  // Add Authorization header with JWT token if available
+  const token = await getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    console.log('Added Authorization header with JWT token');
+  } else {
+    console.warn('No JWT token available for request');
   }
   
   return headers;
@@ -41,6 +66,7 @@ export const checkApiHealth = async (): Promise<boolean> => {
     const healthEndpoint = `${API_BASE_URL}/health`;
     console.log(`Checking API health at: ${healthEndpoint}`);
     
+    // Health endpoint usually doesn't require authentication
     const response = await fetch(healthEndpoint, {
       headers: {
         'Content-Type': 'application/json',
@@ -105,10 +131,20 @@ export const QuoteService = {
         
         console.log('Sending multipart form data request...');
         
+        // For form data, we need to get headers without Content-Type
+        // and then add the Authorization header separately
+        const token = await getAuthToken();
+        const headers: HeadersInit = { 'x-api-key': API_KEY };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('Added Authorization header with JWT token to form data request');
+        }
+        
         try {
           response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'x-api-key': API_KEY },
+            headers,
             body: formData,
             // Don't set Content-Type header, browser will set it with boundary
           });
@@ -121,9 +157,10 @@ export const QuoteService = {
         console.log('Sending JSON request...');
         
         try {
+          const headers = await getApiHeaders();
           response = await fetch(apiUrl, {
             method: 'POST',
-            headers: getApiHeaders(),
+            headers,
             body: JSON.stringify(quoteData),
           });
         } catch (fetchError) {
@@ -196,9 +233,8 @@ export const QuoteService = {
         ? `${API_BASE_URL}/quotes?tpaId=${encodeURIComponent(tpaId)}` 
         : `${API_BASE_URL}/quotes`;
         
-      const response = await fetch(url, {
-        headers: getApiHeaders()
-      });
+      const headers = await getApiHeaders();
+      const response = await fetch(url, { headers });
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -218,9 +254,8 @@ export const QuoteService = {
    */
   getQuoteById: async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/quotes/${id}`, {
-        headers: getApiHeaders()
-      });
+      const headers = await getApiHeaders();
+      const response = await fetch(`${API_BASE_URL}/quotes/${id}`, { headers });
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);

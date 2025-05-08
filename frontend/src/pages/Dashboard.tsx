@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   DocumentTextIcon,
   DocumentIcon,
@@ -58,6 +59,7 @@ const Dashboard: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getIdToken } = useAuth();
   
   // Check if we're in development mode
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -69,8 +71,23 @@ const Dashboard: React.FC = () => {
         
         // Try to fetch data from API endpoints
         try {
-          const quotesResponse = await fetch('/api/quotes/summary');
-          const documentsResponse = await fetch('/api/documents/summary');
+          // Get JWT token
+          const token = await getIdToken();
+          
+          // Create headers with Authorization if token is available
+          const headers: HeadersInit = {
+            'Content-Type': 'application/json'
+          };
+          
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('Added Authorization header with JWT token to dashboard requests');
+          } else {
+            console.warn('No JWT token available for dashboard requests');
+          }
+          
+          const quotesResponse = await fetch('/api/quotes/summary', { headers });
+          const documentsResponse = await fetch('/api/documents/summary', { headers });
           
           if (quotesResponse.ok && documentsResponse.ok) {
             const quotes = await quotesResponse.json();
@@ -120,7 +137,7 @@ const Dashboard: React.FC = () => {
     };
 
     fetchDashboardData();
-  }, [isDevelopment]);
+  }, [isDevelopment, getIdToken]);
 
   if (isLoading) {
     return (
