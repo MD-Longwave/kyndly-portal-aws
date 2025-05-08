@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Storage } from 'aws-amplify';
-import { QuoteService, checkApiHealth } from '../services/temp-api.service';
+import { QuoteService, checkApiHealth } from '../services/api.service';
 import { Auth } from 'aws-amplify';
 
 // Mock reps data for dropdown
@@ -127,20 +127,39 @@ const NewQuote: React.FC = () => {
       // Get the authentication token before submitting the quote
       // This ensures the token is available before the API call
       let token;
+      let tpaId = 'default-tpa-id';
+      let employerId = 'default-employer-id';
+      
       try {
         const session = await Auth.currentSession();
         token = session.getIdToken().getJwtToken();
         console.log('Successfully retrieved auth token before form submission');
+        
+        // Extract custom attributes directly from token
+        const payload = session.getIdToken().decodePayload();
+        console.log('Token payload for debugging:', payload);
+        
+        // Extract TPA ID from token
+        if (payload['custom:tpa_id']) {
+          tpaId = payload['custom:tpa_id'];
+          console.log(`Found custom:tpa_id in token: ${tpaId}`);
+        } else {
+          console.warn('No custom:tpa_id found in token, using default');
+        }
+        
+        // Extract Employer ID from token
+        if (payload['custom:employer_id']) {
+          employerId = payload['custom:employer_id'];
+          console.log(`Found custom:employer_id in token: ${employerId}`);
+        } else {
+          console.warn('No custom:employer_id found in token, using default');
+        }
       } catch (authError) {
         console.error('Error getting authentication token:', authError);
         alert('Failed to authenticate. Please make sure you are logged in and try again.');
         setIsSubmitting(false);
         return;
       }
-      
-      // Set default TPA and employer IDs if not provided
-      const tpaId = 'default-tpa-id';
-      const employerId = 'default-employer-id';
       
       console.log(`Using TPA ID: ${tpaId} and Employer ID: ${employerId}`);
       
