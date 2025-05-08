@@ -52,6 +52,12 @@ export const QuoteService = {
       const apiUrl = `${API_BASE_URL}/quotes`;
       console.log('Using API endpoint:', apiUrl);
       
+      // Extract auth token if provided (and then remove it from the data to be sent)
+      const authToken = quoteData.authToken;
+      if (authToken) {
+        delete quoteData.authToken;
+      }
+      
       // Check if we need to use form data (for file uploads)
       const hasFiles = quoteData.censusFile || quoteData.planComparisonFile;
       console.log('Has files:', hasFiles);
@@ -81,10 +87,19 @@ export const QuoteService = {
         
         console.log('Sending multipart form data request...');
         
+        // Add auth token to headers if available
+        const headers: HeadersInit = { 'x-api-key': API_KEY };
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`;
+          console.log('Added Authorization header with JWT token to form data request');
+        } else {
+          console.warn('No JWT token available for form data request');
+        }
+        
         try {
           response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'x-api-key': API_KEY },
+            headers,
             body: formData,
             // Don't set Content-Type header, browser will set it with boundary
           });
@@ -97,12 +112,22 @@ export const QuoteService = {
         console.log('Sending JSON request...');
         
         try {
+          // Add auth token to headers if available
+          const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY
+          };
+          
+          if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+            console.log('Added Authorization header with JWT token');
+          } else {
+            console.warn('No JWT token available for request');
+          }
+          
           response = await fetch(apiUrl, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': API_KEY
-            },
+            headers,
             body: JSON.stringify(quoteData),
           });
         } catch (fetchError) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Storage } from 'aws-amplify';
 import { QuoteService, checkApiHealth } from '../services/temp-api.service';
+import { Auth } from 'aws-amplify';
 
 // Mock reps data for dropdown
 const mockTransperraReps = [
@@ -123,6 +124,20 @@ const NewQuote: React.FC = () => {
     try {
       console.log('Starting form submission...');
       
+      // Get the authentication token before submitting the quote
+      // This ensures the token is available before the API call
+      let token;
+      try {
+        const session = await Auth.currentSession();
+        token = session.getIdToken().getJwtToken();
+        console.log('Successfully retrieved auth token before form submission');
+      } catch (authError) {
+        console.error('Error getting authentication token:', authError);
+        alert('Failed to authenticate. Please make sure you are logged in and try again.');
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Set default TPA and employer IDs if not provided
       const tpaId = 'default-tpa-id';
       const employerId = 'default-employer-id';
@@ -149,7 +164,9 @@ const NewQuote: React.FC = () => {
         isGLI: formData.contactTypeGLI,
         // Include the actual file objects
         censusFile: formData.censusFile,
-        planComparisonFile: formData.planComparisonFile
+        planComparisonFile: formData.planComparisonFile,
+        // Include auth token to ensure it's passed to the API service
+        authToken: token
       };
       
       console.log('Submitting quote data to API:', quoteData);

@@ -116,6 +116,12 @@ export const QuoteService = {
       const apiUrl = `${API_BASE_URL}/quotes`;
       console.log('Using API endpoint:', apiUrl);
       
+      // Extract auth token if provided (and then remove it from the data to be sent)
+      const authToken = quoteData.authToken;
+      if (authToken) {
+        delete quoteData.authToken;
+      }
+      
       // Check if we need to use form data (for file uploads)
       const hasFiles = quoteData.censusFile || quoteData.planComparisonFile;
       console.log('Has files:', hasFiles);
@@ -146,16 +152,22 @@ export const QuoteService = {
         console.log('Sending multipart form data request...');
         
         // For form data requests, create headers with auth token
-        const token = await getAuthToken();
         const headers: HeadersInit = { 
           'x-api-key': API_KEY 
         };
         
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-          console.log('Added Authorization header with JWT token to form data request');
+        // Use the provided token if available, otherwise try to get it
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`;
+          console.log('Added Authorization header with provided JWT token to form data request');
         } else {
-          console.warn('No JWT token available for form data request');
+          const token = await getAuthToken();
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('Added Authorization header with retrieved JWT token to form data request');
+          } else {
+            console.warn('No JWT token available for form data request');
+          }
         }
         
         try {
@@ -175,7 +187,19 @@ export const QuoteService = {
         console.log('Sending JSON request...');
         
         try {
-          const headers = await getApiHeaders();
+          let headers: HeadersInit;
+          // Use the provided token if available, otherwise try to get it via getApiHeaders
+          if (authToken) {
+            headers = {
+              'Content-Type': 'application/json',
+              'x-api-key': API_KEY,
+              'Authorization': `Bearer ${authToken}`
+            };
+            console.log('Added Authorization header with provided JWT token');
+          } else {
+            headers = await getApiHeaders();
+          }
+          
           response = await fetch(apiUrl, {
             method: 'POST',
             headers,
