@@ -31,13 +31,14 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void | { challengeName: string, challengeUser: any }>;
   logout: () => Promise<void>;
   hasRole: (role: UserRole | UserRole[]) => boolean;
   hasPermission: (permission: string | string[]) => boolean;
   getIdToken: () => Promise<string | null>;
   forgotPassword: (username: string) => Promise<void>;
   confirmForgotPassword: (username: string, code: string, newPassword: string) => Promise<void>;
+  completeNewPasswordChallenge: (user: any, newPassword: string) => Promise<void>;
 }
 
 // Create the auth context
@@ -144,11 +145,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Function to login
-  const login = async (username: string, password: string): Promise<void> => {
+  const login = async (username: string, password: string): Promise<void | { challengeName: string, challengeUser: any }> => {
     setIsLoading(true);
     
     try {
       const cognitoUser = await Auth.signIn(username, password);
+      
+      // Check if this is a "forced password change" situation
+      if (cognitoUser.challengeName === 'NEW_PASSWORD_REQUIRED') {
+        console.log('User needs to set a new password');
+        setIsLoading(false);
+        // Return the challenge information to handle in the login UI
+        return {
+          challengeName: cognitoUser.challengeName,
+          challengeUser: cognitoUser
+        };
+      }
+      
+      // Normal login flow
       const user = await mapCognitoUserToUser(cognitoUser);
       setUser(user);
       setIsAuthenticated(true);
@@ -195,6 +209,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error confirming forgot password:', error);
       throw error;
+    }
+  };
+
+  // Function to complete the new password challenge when a user is forced to change password
+  const completeNewPasswordChallenge = async (challengeUser: any, newPassword: string): Promise<void> => {
+    setIsLoading(true);
+    
+    try {
+      console.log('Completing new password challenge');
+      const cognitoUser = await Auth.completeNewPassword(
+        challengeUser,
+        newPassword
+      );
+      
+      console.log('Password change successful, user authenticated');
+      const user = await mapCognitoUserToUser(cognitoUser);
+      setUser(user);
+      setIsAuthenticated(true);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error completing new password challenge:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -251,7 +289,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasPermission,
     getIdToken,
     forgotPassword,
-    confirmForgotPassword
+    confirmForgotPassword,
+    completeNewPasswordChallenge
   };
   
   return (

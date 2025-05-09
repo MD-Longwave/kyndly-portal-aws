@@ -9,19 +9,26 @@ type ForgotPasswordStep = 'initial' | 'code';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, forgotPassword, confirmForgotPassword } = useAuth();
+  const { login, forgotPassword, confirmForgotPassword, completeNewPasswordChallenge } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  
+  // New password challenge state
+  const [newPasswordRequired, setNewPasswordRequired] = useState(false);
+  const [challengeUser, setChallengeUser] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [newPasswordError, setNewPasswordError] = useState<string | null>(null);
   
   // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<ForgotPasswordStep>('initial');
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmNewPassword, setForgotConfirmNewPassword] = useState('');
   const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null);
   const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState<string | null>(null);
   
@@ -47,8 +54,18 @@ const Login: React.FC = () => {
     }
     
     try {
-      await login(username, password);
-      // Navigate will happen in the AuthContext after successful login
+      const result = await login(username, password);
+      
+      // Check if this is a forced password change
+      if (result && result.challengeName === 'NEW_PASSWORD_REQUIRED') {
+        console.log('New password required for user');
+        setNewPasswordRequired(true);
+        setChallengeUser(result.challengeUser);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Normal login flow will navigate in the AuthContext
     } catch (error: any) {
       console.error('Login error:', error);
       setIsLoading(false);
@@ -65,6 +82,47 @@ const Login: React.FC = () => {
       } else {
         setLoginError(error.message || 'An error occurred during login. Please try again.');
       }
+    }
+  };
+  
+  // Handle the new password submission for forced password change
+  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewPasswordError(null);
+    setIsLoading(true);
+    
+    if (!newPassword || !confirmNewPassword) {
+      setNewPasswordError('Both fields are required');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (newPassword !== confirmNewPassword) {
+      setNewPasswordError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!validatePassword(newPassword)) {
+      setNewPasswordError(
+        'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character'
+      );
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      await completeNewPasswordChallenge(challengeUser, newPassword);
+      // The navigation will happen in the AuthContext
+    } catch (error: any) {
+      console.error('Error setting new password:', error);
+      
+      if (error.code === 'InvalidPasswordException') {
+        setNewPasswordError('Password does not meet requirements. Please use a stronger password.');
+      } else {
+        setNewPasswordError(error.message || 'An error occurred. Please try again.');
+      }
+      setIsLoading(false);
     }
   };
   
@@ -111,19 +169,19 @@ const Login: React.FC = () => {
     setForgotPasswordSuccess(null);
     setIsLoading(true);
     
-    if (!forgotPasswordEmail || !verificationCode || !newPassword) {
+    if (!forgotPasswordEmail || !verificationCode || !forgotNewPassword) {
       setForgotPasswordError('All fields are required');
       setIsLoading(false);
       return;
     }
     
-    if (newPassword !== confirmNewPassword) {
+    if (forgotNewPassword !== forgotConfirmNewPassword) {
       setForgotPasswordError('Passwords do not match');
       setIsLoading(false);
       return;
     }
     
-    if (!validatePassword(newPassword)) {
+    if (!validatePassword(forgotNewPassword)) {
       setForgotPasswordError(
         'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character'
       );
@@ -133,7 +191,7 @@ const Login: React.FC = () => {
     
     try {
       console.log('Confirming password reset for:', forgotPasswordEmail);
-      await confirmForgotPassword(forgotPasswordEmail, verificationCode, newPassword);
+      await confirmForgotPassword(forgotPasswordEmail, verificationCode, forgotNewPassword);
       setForgotPasswordSuccess('Password reset successful! You can now login with your new password.');
       
       // Reset the form after a short delay
@@ -142,8 +200,8 @@ const Login: React.FC = () => {
         setForgotPasswordStep('initial');
         // Clear form fields
         setVerificationCode('');
-        setNewPassword('');
-        setConfirmNewPassword('');
+        setForgotNewPassword('');
+        setForgotConfirmNewPassword('');
       }, 3000);
     } catch (error: any) {
       console.error('Confirm forgot password error:', error);
@@ -195,10 +253,69 @@ const Login: React.FC = () => {
     setForgotPasswordStep('initial');
     setForgotPasswordEmail('');
     setVerificationCode('');
-    setNewPassword('');
-    setConfirmNewPassword('');
+    setForgotNewPassword('');
+    setForgotConfirmNewPassword('');
     setForgotPasswordError(null);
     setForgotPasswordSuccess(null);
+  };
+
+  // Render new password challenge form
+  const renderNewPasswordForm = () => {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-md bg-blue-50 p-4 text-sm text-blue-700">
+          <p>Your account requires a password change. Please set a new password to continue.</p>
+        </div>
+        
+        {newPasswordError && (
+          <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+            <p>{newPasswordError}</p>
+          </div>
+        )}
+        
+        <form onSubmit={handleNewPasswordSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="new-password" className="block text-sm font-medium text-secondary-700">
+              New Password
+            </label>
+            <input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              placeholder="Minimum 8 characters"
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Password must have at least 8 characters with uppercase, lowercase, number, and special character.
+            </p>
+          </div>
+          
+          <div>
+            <label htmlFor="confirm-password" className="block text-sm font-medium text-secondary-700">
+              Confirm New Password
+            </label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              placeholder="Confirm your password"
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            className="w-full rounded-md bg-primary-500 py-3 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
+          >
+            Set New Password
+          </button>
+        </form>
+      </div>
+    );
   };
 
   // Show loading indicator
@@ -287,15 +404,15 @@ const Login: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="new-password" className="block text-sm font-medium text-secondary-700">
+                <label htmlFor="forgot-new-password" className="block text-sm font-medium text-secondary-700">
                   New Password
                 </label>
                 <input
-                  id="new-password"
+                  id="forgot-new-password"
                   type="password"
                   required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={forgotNewPassword}
+                  onChange={(e) => setForgotNewPassword(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   placeholder="Minimum 8 characters"
                 />
@@ -305,15 +422,15 @@ const Login: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-secondary-700">
+                <label htmlFor="forgot-confirm-password" className="block text-sm font-medium text-secondary-700">
                   Confirm New Password
                 </label>
                 <input
-                  id="confirm-password"
+                  id="forgot-confirm-password"
                   type="password"
                   required
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  value={forgotConfirmNewPassword}
+                  onChange={(e) => setForgotConfirmNewPassword(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   placeholder="Confirm your password"
                 />
@@ -362,96 +479,100 @@ const Login: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          {loginError && (
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
-              <p>{loginError}</p>
+        {newPasswordRequired ? (
+          renderNewPasswordForm()
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-6">
+            {loginError && (
+              <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+                <p>{loginError}</p>
+              </div>
+            )}
+            
+            {forgotPasswordSuccess && (
+              <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
+                <p>{forgotPasswordSuccess}</p>
+              </div>
+            )}
+            
+            <div className="rounded-md bg-mint p-4 text-sm text-secondary-800">
+              <p>
+                Welcome to the Kyndly ICHRA Portal. Please log in with your credentials to access your dashboard.
+              </p>
             </div>
-          )}
-          
-          {forgotPasswordSuccess && (
-            <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
-              <p>{forgotPasswordSuccess}</p>
+
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-secondary-700">
+                Username or Email
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              />
             </div>
-          )}
-          
-          <div className="rounded-md bg-mint p-4 text-sm text-secondary-800">
-            <p>
-              Welcome to the Kyndly ICHRA Portal. Please log in with your credentials to access your dashboard.
-            </p>
-          </div>
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-secondary-700">
-              Username or Email
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-secondary-700">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <button 
-                type="button"
-                onClick={() => {
-                  setShowForgotPassword(true);
-                  setForgotPasswordEmail(username);
-                }}
-                className="font-medium text-primary-600 hover:text-primary-500"
-              >
-                Forgot your password?
-              </button>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-secondary-700">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              />
             </div>
-          </div>
 
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary-500 py-3 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
-          >
-            Sign in
-          </button>
-
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-center text-sm text-neutral-500">
-              <p>Development Mode - Form validation enabled but authentication is simulated</p>
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(true);
+                    setForgotPasswordEmail(username);
+                  }}
+                  className="font-medium text-primary-600 hover:text-primary-500"
+                >
+                  Forgot your password?
+                </button>
+              </div>
             </div>
-          )}
-          
-          <div className="text-center text-xs text-neutral-400 mt-4">
-            <p>
-              By signing in, you agree to our Terms of Service and Privacy Policy.
-            </p>
-          </div>
-        </form>
+
+            <button
+              type="submit"
+              className="w-full rounded-md bg-primary-500 py-3 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
+            >
+              Sign in
+            </button>
+
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-center text-sm text-neutral-500">
+                <p>Development Mode - Form validation enabled but authentication is simulated</p>
+              </div>
+            )}
+            
+            <div className="text-center text-xs text-neutral-400 mt-4">
+              <p>
+                By signing in, you agree to our Terms of Service and Privacy Policy.
+              </p>
+            </div>
+          </form>
+        )}
       </div>
       
-      {showForgotPassword && renderForgotPasswordModal()}
+      {showForgotPassword && !newPasswordRequired && renderForgotPasswordModal()}
     </div>
   );
 };
 
-export default Login; 
+export default Login;
