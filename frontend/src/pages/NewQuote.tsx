@@ -4,14 +4,6 @@ import { Storage } from 'aws-amplify';
 import { QuoteService, checkApiHealth } from '../services/api.service';
 import { Auth } from 'aws-amplify';
 
-// Mock reps data for dropdown
-const mockTransperraReps = [
-  { id: 'rep1', name: 'Sean Rafferty' },
-  { id: 'rep2', name: 'J. P. Barta' },
-  { id: 'rep3', name: 'Clayton Kovaleski' },
-  { id: 'rep4', name: 'Chris Barnes' }
-];
-
 const NewQuote: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,7 +94,7 @@ const NewQuote: React.FC = () => {
     
     // Check required fields
     if (!formData.transperraRep) {
-      alert('Please select a Transperra Rep');
+      alert('Please enter a Rep name');
       return;
     }
     
@@ -216,7 +208,7 @@ const NewQuote: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Transperra Choice Quoting Tool Submission</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Quoting Tool Submission Form</h1>
       </div>
 
       {apiConnected === false && (
@@ -227,51 +219,23 @@ const NewQuote: React.FC = () => {
       )}
       
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Transperra Rep */}
+        {/* Rep */}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Transperra Rep</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Rep</h3>
           </div>
           <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-            <div className="space-y-4">
-              {mockTransperraReps.map(rep => (
-                <div key={rep.id} className="flex items-center">
-                  <input
-                    id={`rep-${rep.id}`}
-                    name="transperraRep"
-                    type="radio"
-                    value={rep.name}
-                    checked={formData.transperraRep === rep.name}
-                    onChange={handleChange}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
-                  />
-                  <label htmlFor={`rep-${rep.id}`} className="ml-3 block text-sm font-medium text-gray-700">
-                    {rep.name}
-                  </label>
-                </div>
-              ))}
-              <div className="flex items-center">
-                <input
-                  id="rep-other"
-                  name="transperraRep"
-                  type="radio"
-                  value="Other"
-                  checked={formData.transperraRep === "Other"}
-                  onChange={handleChange}
-                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
-                />
-                <label htmlFor="rep-other" className="ml-3 block text-sm font-medium text-gray-700">
-                  Other:
-                </label>
-                {formData.transperraRep === "Other" && (
-                  <input
-                    type="text"
-                    name="transperraRepOther"
-                    className="ml-2 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    onChange={(e) => setFormData(prev => ({ ...prev, transperraRep: e.target.value }))}
-                  />
-                )}
-              </div>
+            <div className="mt-1">
+              <input
+                type="text"
+                name="transperraRep"
+                id="transperraRep"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                value={formData.transperraRep}
+                onChange={handleChange}
+                required
+                placeholder="Enter representative name"
+              />
             </div>
           </div>
         </div>
@@ -291,7 +255,7 @@ const NewQuote: React.FC = () => {
                     type="checkbox"
                     checked={formData.contactTypeGLI}
                     onChange={handleCheckboxChange}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
+                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
@@ -306,7 +270,7 @@ const NewQuote: React.FC = () => {
                     type="checkbox"
                     checked={formData.contactTypeNonGLI}
                     onChange={handleCheckboxChange}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
+                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
@@ -328,7 +292,7 @@ const NewQuote: React.FC = () => {
                 type="text"
                 name="companyName"
                 id="companyName"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.companyName}
                 onChange={handleChange}
                 required
@@ -357,7 +321,7 @@ const NewQuote: React.FC = () => {
                 htmlFor="censusFile"
                 className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
               >
-                <span className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <span className="inline-flex items-center px-4 py-2 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                   Add file
                 </span>
               </label>
@@ -388,7 +352,7 @@ const NewQuote: React.FC = () => {
                 htmlFor="planComparisonFile"
                 className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
               >
-                <span className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <span className="inline-flex items-center px-4 py-2 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                   Add file
                 </span>
               </label>
@@ -410,7 +374,7 @@ const NewQuote: React.FC = () => {
                 type="date"
                 name="ichraEffectiveDate"
                 id="ichraEffectiveDate"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.ichraEffectiveDate}
                 onChange={handleChange}
                 required
@@ -430,7 +394,7 @@ const NewQuote: React.FC = () => {
                 type="text"
                 name="pepm"
                 id="pepm"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.pepm}
                 onChange={handleChange}
               />
@@ -450,7 +414,7 @@ const NewQuote: React.FC = () => {
                 name="currentFundingStrategy"
                 id="currentFundingStrategy"
                 rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.currentFundingStrategy}
                 onChange={handleChange}
               />
@@ -469,7 +433,7 @@ const NewQuote: React.FC = () => {
               <select
                 id="targetDeductible"
                 name="targetDeductible"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.targetDeductible}
                 onChange={handleChange}
               >
@@ -503,7 +467,7 @@ const NewQuote: React.FC = () => {
               <select
                 id="targetHSA"
                 name="targetHSA"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.targetHSA}
                 onChange={handleChange}
               >
@@ -527,7 +491,7 @@ const NewQuote: React.FC = () => {
                 type="text"
                 name="brokerName"
                 id="brokerName"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.brokerName}
                 onChange={handleChange}
               />
@@ -546,7 +510,7 @@ const NewQuote: React.FC = () => {
                 type="email"
                 name="brokerEmail"
                 id="brokerEmail"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.brokerEmail}
                 onChange={handleChange}
               />
@@ -569,7 +533,7 @@ const NewQuote: React.FC = () => {
                   value="asap"
                   checked={formData.priorityLevel === 'asap'}
                   onChange={handleChange}
-                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
+                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400"
                 />
                 <label htmlFor="asap" className="ml-3 block text-sm font-medium text-gray-700">
                   ASAP
@@ -583,7 +547,7 @@ const NewQuote: React.FC = () => {
                   value="earliest"
                   checked={formData.priorityLevel === 'earliest'}
                   onChange={handleChange}
-                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
+                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400"
                 />
                 <label htmlFor="earliest" className="ml-3 block text-sm font-medium text-gray-700">
                   Earliest Convenience
@@ -604,7 +568,7 @@ const NewQuote: React.FC = () => {
                 id="additionalNotes"
                 name="additionalNotes"
                 rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
                 value={formData.additionalNotes}
                 onChange={handleChange}
               />
@@ -616,7 +580,7 @@ const NewQuote: React.FC = () => {
         <div className="flex justify-end space-x-3">
           <Link
             to="/quotes"
-            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex justify-center py-2 px-4 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Cancel
           </Link>
@@ -641,7 +605,7 @@ const NewQuote: React.FC = () => {
               priorityLevel: 'earliest',
               additionalNotes: ''
             })}
-            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex justify-center py-2 px-4 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Clear form
           </button>
