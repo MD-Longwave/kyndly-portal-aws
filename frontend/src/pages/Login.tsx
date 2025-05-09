@@ -21,10 +21,18 @@ const Login: React.FC = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null);
   const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState<string | null>(null);
   
   const from = location.state?.from?.pathname || '/dashboard';
+
+  // Password validation function
+  const validatePassword = (password: string): boolean => {
+    // Password should be at least 8 characters with numbers, special chars, uppercase and lowercase
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
 
   // Handle login with Cognito
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,6 +60,8 @@ const Login: React.FC = () => {
         setLoginError('Incorrect username or password.');
       } else if (error.code === 'UserNotFoundException') {
         setLoginError('User does not exist.');
+      } else if (error.code === 'PasswordResetRequiredException') {
+        setLoginError('You need to reset your password. Please click on "Forgot your password?" below.');
       } else {
         setLoginError(error.message || 'An error occurred during login. Please try again.');
       }
@@ -72,12 +82,23 @@ const Login: React.FC = () => {
     }
     
     try {
+      console.log('Initiating forgot password for:', forgotPasswordEmail);
       await forgotPassword(forgotPasswordEmail);
       setForgotPasswordStep('code');
-      setForgotPasswordSuccess('Verification code sent to your email');
+      setForgotPasswordSuccess('Verification code sent to your email. Please check your inbox (and spam folder).');
     } catch (error: any) {
       console.error('Forgot password error:', error);
-      setForgotPasswordError(error.message || 'An error occurred. Please try again.');
+      
+      // Handle specific Cognito error cases
+      if (error.code === 'UserNotFoundException') {
+        setForgotPasswordError('No account found with this email address.');
+      } else if (error.code === 'InvalidParameterException') {
+        setForgotPasswordError('Invalid email format. Please enter a valid email address.');
+      } else if (error.code === 'LimitExceededException') {
+        setForgotPasswordError('Too many attempts. Please try again later.');
+      } else {
+        setForgotPasswordError(error.message || 'An error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -96,17 +117,73 @@ const Login: React.FC = () => {
       return;
     }
     
+    if (newPassword !== confirmNewPassword) {
+      setForgotPasswordError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!validatePassword(newPassword)) {
+      setForgotPasswordError(
+        'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character'
+      );
+      setIsLoading(false);
+      return;
+    }
+    
     try {
+      console.log('Confirming password reset for:', forgotPasswordEmail);
       await confirmForgotPassword(forgotPasswordEmail, verificationCode, newPassword);
-      setForgotPasswordSuccess('Password reset successful. You can now login with your new password.');
-      setShowForgotPassword(false);
-      setForgotPasswordStep('initial');
-      // Clear form fields
-      setVerificationCode('');
-      setNewPassword('');
+      setForgotPasswordSuccess('Password reset successful! You can now login with your new password.');
+      
+      // Reset the form after a short delay
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setForgotPasswordStep('initial');
+        // Clear form fields
+        setVerificationCode('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      }, 3000);
     } catch (error: any) {
       console.error('Confirm forgot password error:', error);
-      setForgotPasswordError(error.message || 'An error occurred. Please try again.');
+      
+      // Handle specific Cognito error cases
+      if (error.code === 'CodeMismatchException') {
+        setForgotPasswordError('Invalid verification code. Please try again or request a new code.');
+      } else if (error.code === 'ExpiredCodeException') {
+        setForgotPasswordError('Verification code has expired. Please request a new code.');
+      } else if (error.code === 'InvalidPasswordException') {
+        setForgotPasswordError('Password does not meet requirements. Please use a stronger password.');
+      } else if (error.code === 'LimitExceededException') {
+        setForgotPasswordError('Too many attempts. Please try again later.');
+      } else {
+        setForgotPasswordError(error.message || 'An error occurred. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Resend verification code
+  const handleResendCode = async () => {
+    setForgotPasswordError(null);
+    setForgotPasswordSuccess(null);
+    setIsLoading(true);
+    
+    if (!forgotPasswordEmail) {
+      setForgotPasswordError('Email is required');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      console.log('Resending verification code to:', forgotPasswordEmail);
+      await forgotPassword(forgotPasswordEmail);
+      setForgotPasswordSuccess('New verification code sent to your email');
+    } catch (error: any) {
+      console.error('Resend code error:', error);
+      setForgotPasswordError(error.message || 'Failed to send new code. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +196,7 @@ const Login: React.FC = () => {
     setForgotPasswordEmail('');
     setVerificationCode('');
     setNewPassword('');
+    setConfirmNewPassword('');
     setForgotPasswordError(null);
     setForgotPasswordSuccess(null);
   };
@@ -176,7 +254,7 @@ const Login: React.FC = () => {
                   required
                   value={forgotPasswordEmail}
                   onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                 />
               </div>
               
@@ -203,7 +281,8 @@ const Login: React.FC = () => {
                   required
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  placeholder="Enter the 6-digit code"
                 />
               </div>
               
@@ -217,7 +296,26 @@ const Login: React.FC = () => {
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  placeholder="Minimum 8 characters"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Password must have at least 8 characters with uppercase, lowercase, number, and special character.
+                </p>
+              </div>
+              
+              <div>
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-secondary-700">
+                  Confirm New Password
+                </label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  required
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  placeholder="Confirm your password"
                 />
               </div>
               
@@ -228,13 +326,23 @@ const Login: React.FC = () => {
                 Reset Password
               </button>
               
-              <button
-                type="button"
-                onClick={() => setForgotPasswordStep('initial')}
-                className="w-full text-center text-sm text-primary-600 hover:text-primary-500"
-              >
-                Back to email
-              </button>
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setForgotPasswordStep('initial')}
+                  className="text-sm text-primary-600 hover:text-primary-500"
+                >
+                  Back to email
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  className="text-sm text-primary-600 hover:text-primary-500"
+                >
+                  Resend code
+                </button>
+              </div>
             </form>
           )}
         </div>
@@ -285,7 +393,7 @@ const Login: React.FC = () => {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full rounded-md border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
             />
           </div>
 
@@ -301,7 +409,7 @@ const Login: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
             />
           </div>
 
