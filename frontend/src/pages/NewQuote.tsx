@@ -224,13 +224,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Rep</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <input
                 type="text"
                 name="transperraRep"
                 id="transperraRep"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.transperraRep}
                 onChange={handleChange}
                 required
@@ -245,7 +245,7 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Contact Type</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="space-y-4">
               <div className="relative flex items-start">
                 <div className="flex items-center h-5">
@@ -255,7 +255,7 @@ const NewQuote: React.FC = () => {
                     type="checkbox"
                     checked={formData.contactTypeGLI}
                     onChange={handleCheckboxChange}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400 rounded"
+                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-500 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
@@ -270,7 +270,7 @@ const NewQuote: React.FC = () => {
                     type="checkbox"
                     checked={formData.contactTypeNonGLI}
                     onChange={handleCheckboxChange}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400 rounded"
+                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-500 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
@@ -286,13 +286,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Company Name</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <input
                 type="text"
                 name="companyName"
                 id="companyName"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.companyName}
                 onChange={handleChange}
                 required
@@ -307,7 +307,7 @@ const NewQuote: React.FC = () => {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Census File</h3>
             <p className="mt-1 text-sm text-gray-500">Upload up to 5 supported files: PDF, document, image, or spreadsheet. Max 100 MB per file.</p>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1 flex items-center">
               <input
                 type="file"
@@ -321,7 +321,7 @@ const NewQuote: React.FC = () => {
                 htmlFor="censusFile"
                 className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
               >
-                <span className="inline-flex items-center px-4 py-2 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <span className="inline-flex items-center px-4 py-2 border border-gray-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                   Add file
                 </span>
               </label>
@@ -338,7 +338,7 @@ const NewQuote: React.FC = () => {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Plan Comparison Information</h3>
             <p className="mt-1 text-sm text-gray-500">Upload up to 5 supported files: PDF, document, image, or spreadsheet. Max 100 MB per file.</p>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1 flex items-center">
               <input
                 type="file"
@@ -352,7 +352,7 @@ const NewQuote: React.FC = () => {
                 htmlFor="planComparisonFile"
                 className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
               >
-                <span className="inline-flex items-center px-4 py-2 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <span className="inline-flex items-center px-4 py-2 border border-gray-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                   Add file
                 </span>
               </label>
@@ -368,13 +368,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">ICHRA Effective Date</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <input
                 type="date"
                 name="ichraEffectiveDate"
                 id="ichraEffectiveDate"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.ichraEffectiveDate}
                 onChange={handleChange}
                 required
@@ -388,13 +388,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">PEPM (default $70)</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <input
                 type="text"
                 name="pepm"
                 id="pepm"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.pepm}
                 onChange={handleChange}
               />
@@ -408,13 +408,13 @@ const NewQuote: React.FC = () => {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Current Funding Strategy</h3>
             <p className="mt-1 text-sm text-gray-500">How does the employer currently contribute to their group health plan?</p>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <textarea
                 name="currentFundingStrategy"
                 id="currentFundingStrategy"
                 rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.currentFundingStrategy}
                 onChange={handleChange}
               />
@@ -428,12 +428,12 @@ const NewQuote: React.FC = () => {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Target Plan: Deductible</h3>
             <p className="mt-1 text-sm text-gray-500">What individual deductible would be ideal?</p>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <select
                 id="targetDeductible"
                 name="targetDeductible"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.targetDeductible}
                 onChange={handleChange}
               >
@@ -462,12 +462,12 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Target Plan: HSA?</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <select
                 id="targetHSA"
                 name="targetHSA"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.targetHSA}
                 onChange={handleChange}
               >
@@ -485,13 +485,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Broker Name</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <input
                 type="text"
                 name="brokerName"
                 id="brokerName"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.brokerName}
                 onChange={handleChange}
               />
@@ -504,13 +504,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Broker Email Address</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <input
                 type="email"
                 name="brokerEmail"
                 id="brokerEmail"
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.brokerEmail}
                 onChange={handleChange}
               />
@@ -523,7 +523,7 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Level of Priority</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -533,7 +533,7 @@ const NewQuote: React.FC = () => {
                   value="asap"
                   checked={formData.priorityLevel === 'asap'}
                   onChange={handleChange}
-                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400"
+                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-500"
                 />
                 <label htmlFor="asap" className="ml-3 block text-sm font-medium text-gray-700">
                   ASAP
@@ -547,7 +547,7 @@ const NewQuote: React.FC = () => {
                   value="earliest"
                   checked={formData.priorityLevel === 'earliest'}
                   onChange={handleChange}
-                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-400"
+                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-500"
                 />
                 <label htmlFor="earliest" className="ml-3 block text-sm font-medium text-gray-700">
                   Earliest Convenience
@@ -562,13 +562,13 @@ const NewQuote: React.FC = () => {
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Additional Notes</h3>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-300 px-4 py-5 sm:p-6">
             <div className="mt-1">
               <textarea
                 id="additionalNotes"
                 name="additionalNotes"
                 rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-400 rounded-md"
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-500 rounded-md"
                 value={formData.additionalNotes}
                 onChange={handleChange}
               />
@@ -580,7 +580,7 @@ const NewQuote: React.FC = () => {
         <div className="flex justify-end space-x-3">
           <Link
             to="/quotes"
-            className="inline-flex justify-center py-2 px-4 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex justify-center py-2 px-4 border border-gray-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Cancel
           </Link>
@@ -605,7 +605,7 @@ const NewQuote: React.FC = () => {
               priorityLevel: 'earliest',
               additionalNotes: ''
             })}
-            className="inline-flex justify-center py-2 px-4 border border-gray-400 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex justify-center py-2 px-4 border border-gray-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Clear form
           </button>
