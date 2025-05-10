@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   UserIcon,
@@ -15,6 +15,8 @@ import {
 import { getThemeStyles, commonStyles } from '../styles/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
+import cognitoService from '../utils/cognitoService';
+import { Auth } from 'aws-amplify';
 
 const UserProfile: React.FC = () => {
   const { user } = useAuth();
@@ -23,18 +25,49 @@ const UserProfile: React.FC = () => {
   const theme = getThemeStyles(isDarkMode);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    company: 'Acme Corporation',
-    location: 'San Francisco, CA',
-    joinDate: 'January 15, 2024',
-    role: 'Administrator',
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    location: '',
+    joinDate: '',
+    role: '',
     notifications: true,
     language: 'English',
     timezone: 'Pacific Time (PT)'
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch user attributes from Cognito on mount
+  useEffect(() => {
+    const fetchUserAttributes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const cognitoUser = await cognitoService.getCurrentUser();
+        let attributes: Record<string, string> = {};
+        if (cognitoUser) {
+          const attrsArray = await Auth.userAttributes(cognitoUser);
+          attributes = attrsArray.reduce((acc: Record<string, string>, attr: any) => {
+            acc[attr.Name] = attr.Value;
+            return acc;
+          }, {});
+        }
+        setFormData(prev => ({
+          ...prev,
+          name: attributes.name || '',
+          email: attributes.email || '',
+          phone: attributes.phone_number || '',
+        }));
+      } catch (err: any) {
+        setError('Failed to load user info');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserAttributes();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -44,13 +77,27 @@ const UserProfile: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsEditing(false);
-    // Here you would typically make an API call to update the user's profile
+    setLoading(true);
+    setError(null);
+    try {
+      await cognitoService.updateUserAttributes({ name: formData.name });
+      // Optionally update other attributes here
+      // Refresh user info in context (if available)
+      // You may want to call a refreshUser() from useAuth if you add it
+    } catch (err: any) {
+      setError('Failed to update name');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // If no user is logged in, show a message
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
   if (!user) {
     return (
       <div className="p-6">
@@ -86,6 +133,8 @@ const UserProfile: React.FC = () => {
           </motion.button>
         </div>
 
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Profile Overview */}
           <div className={`${theme.card} p-6`}>
@@ -94,7 +143,7 @@ const UserProfile: React.FC = () => {
                 <UserIcon className="h-6 w-6 text-slate-400" />
               </div>
               <div>
-                <h2 className={theme.typography.h2}>{formData.firstName} {formData.lastName}</h2>
+                <h2 className={theme.typography.h2}>{formData.name}</h2>
                 <p className={theme.typography.caption}>{formData.role}</p>
               </div>
             </div>
@@ -107,18 +156,6 @@ const UserProfile: React.FC = () => {
                 <LockClosedIcon className="h-4 w-4 text-slate-400" />
                 <span className={theme.typography.body}>{formData.phone}</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <GlobeAltIcon className="h-4 w-4 text-slate-400" />
-                <span className={theme.typography.body}>{formData.company}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <UserIcon className="h-4 w-4 text-slate-400" />
-                <span className={theme.typography.body}>{formData.location}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <CheckIcon className="h-4 w-4 text-slate-400" />
-                <span className={theme.typography.body}>Joined {formData.joinDate}</span>
-              </div>
             </div>
           </div>
 
@@ -128,23 +165,12 @@ const UserProfile: React.FC = () => {
               <div className={`${theme.card} p-6`}>
                 <h2 className={`${theme.typography.h2} mb-6`}>Account Settings</h2>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                    <label className={theme.typography.label}>First Name</label>
+                  <div className="md:col-span-2">
+                    <label className={theme.typography.label}>Name</label>
                     <input
                       type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`mt-1 ${theme.input}`}
-                    />
-                  </div>
-                  <div>
-                    <label className={theme.typography.label}>Last Name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
+                      name="name"
+                      value={formData.name}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       className={`mt-1 ${theme.input}`}
@@ -157,7 +183,7 @@ const UserProfile: React.FC = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      disabled={!isEditing}
+                      disabled
                       className={`mt-1 ${theme.input}`}
                     />
                   </div>
@@ -171,54 +197,6 @@ const UserProfile: React.FC = () => {
                       disabled={!isEditing}
                       className={`mt-1 ${theme.input}`}
                     />
-                  </div>
-                </div>
-              </div>
-
-              <div className={`${theme.card} p-6 mt-6`}>
-                <h2 className={`${theme.typography.h2} mb-6`}>Preferences</h2>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                    <label className={theme.typography.label}>Language</label>
-                    <select
-                      name="language"
-                      value={formData.language}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`mt-1 ${theme.input}`}
-                    >
-                      <option value="English">English</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={theme.typography.label}>Timezone</label>
-                    <select
-                      name="timezone"
-                      value={formData.timezone}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`mt-1 ${theme.input}`}
-                    >
-                      <option value="Pacific Time (PT)">Pacific Time (PT)</option>
-                      <option value="Mountain Time (MT)">Mountain Time (MT)</option>
-                      <option value="Central Time (CT)">Central Time (CT)</option>
-                      <option value="Eastern Time (ET)">Eastern Time (ET)</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="notifications"
-                        checked={formData.notifications}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={theme.input}
-                      />
-                      <span className={theme.typography.body}>Enable email notifications</span>
-                    </label>
                   </div>
                 </div>
               </div>
