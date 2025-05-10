@@ -113,29 +113,43 @@ const UserProfile: React.FC = () => {
           <h1 className={theme.typography.h1}>User Profile</h1>
         </div>
 
-        {/* Make Edit Profile button more visible and above Account Settings */}
-        <div className="flex items-center justify-end mb-4">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className={`px-3 py-2 rounded text-base font-semibold shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-              ${isEditing ? 'bg-green-600 text-white' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
-            onClick={() => setIsEditing(!isEditing)}
-            title={isEditing ? 'Cancel editing' : 'Edit your profile'}
-            type="button"
-          >
-            {isEditing ? (
-              <>
+        {/* Edit/Cancel and Save Changes buttons at the top right */}
+        <div className="flex items-center justify-end mb-4 space-x-2">
+          {isEditing ? (
+            <>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-3 py-2 rounded text-base font-semibold shadow-sm bg-green-600 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                onClick={handleSubmit}
+                type="button"
+              >
+                <CheckIcon className="h-5 w-5 inline-block mr-1" />
+                Save Changes
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-3 py-2 rounded text-base font-semibold shadow-sm bg-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+                onClick={() => setIsEditing(false)}
+                type="button"
+              >
                 <XMarkIcon className="h-5 w-5 inline-block mr-1" />
                 Cancel
-              </>
-            ) : (
-              <>
-                <PencilIcon className="h-5 w-5 inline-block mr-1" />
-                Edit
-              </>
-            )}
-          </motion.button>
+              </motion.button>
+            </>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-3 py-2 rounded text-base font-semibold shadow-sm bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              onClick={() => setIsEditing(true)}
+              type="button"
+            >
+              <PencilIcon className="h-5 w-5 inline-block mr-1" />
+              Edit
+            </motion.button>
+          )}
         </div>
 
         {error && <div className="text-red-500 mb-4">{error}</div>}
@@ -205,20 +219,6 @@ const UserProfile: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {isEditing && (
-                <div className="mt-6 flex justify-end">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    className={`${theme.button.primary} flex items-center space-x-2`}
-                  >
-                    <CheckIcon className="h-5 w-5" />
-                    <span>Save Changes</span>
-                  </motion.button>
-                </div>
-              )}
             </form>
           </div>
         </div>
