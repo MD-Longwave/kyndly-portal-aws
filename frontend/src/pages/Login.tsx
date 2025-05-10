@@ -358,20 +358,21 @@ const Login: React.FC = () => {
           {forgotPasswordStep === 'initial' ? (
             <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
               <p className="text-sm text-secondary-700 mb-4">
-                Enter your email address and we'll send you a verification code to reset your password.
+                Enter your username and we'll send you a verification code to reset your password.
               </p>
               
               <div>
-                <label htmlFor="forgot-email" className="block text-sm font-medium text-secondary-700">
-                  Email
+                <label htmlFor="forgot-username" className="block text-sm font-medium text-secondary-700">
+                  Username
                 </label>
                 <input
-                  id="forgot-email"
-                  type="email"
+                  id="forgot-username"
+                  type="text"
                   required
                   value={forgotPasswordEmail}
                   onChange={(e) => setForgotPasswordEmail(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  placeholder="Enter your username"
                 />
               </div>
               
