@@ -113,21 +113,28 @@ const UserProfile: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className={theme.typography.h1}>User Profile</h1>
+        </div>
+
+        {/* Make Edit Profile button more visible and above Account Settings */}
+        <div className="flex items-center justify-end mb-4">
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`${theme.button.primary} flex items-center space-x-2`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            className={`px-6 py-3 rounded-lg text-lg font-bold shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+              ${isEditing ? 'bg-green-600 text-white' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
             onClick={() => setIsEditing(!isEditing)}
+            title={isEditing ? 'Cancel editing' : 'Edit your profile'}
+            type="button"
           >
             {isEditing ? (
               <>
-                <XMarkIcon className="h-5 w-5" />
-                <span>Cancel</span>
+                <XMarkIcon className="h-6 w-6 inline-block mr-2" />
+                Cancel Editing
               </>
             ) : (
               <>
-                <PencilIcon className="h-5 w-5" />
-                <span>Edit Profile</span>
+                <PencilIcon className="h-6 w-6 inline-block mr-2" />
+                Edit Profile
               </>
             )}
           </motion.button>
