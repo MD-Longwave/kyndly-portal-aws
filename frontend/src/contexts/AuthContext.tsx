@@ -21,6 +21,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  name?: string;
   roles: UserRole[];
   organization: Organization;
   permissions: string[];
@@ -69,6 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Extract custom attributes
     const username = payload['cognito:username'] || '';
     const email = payload.email || '';
+    const name = payload.name || '';
     const roles = payload['custom:roles'] ? JSON.parse(payload['custom:roles']) : [];
     const permissions = payload['custom:permissions'] ? JSON.parse(payload['custom:permissions']) : [];
     const orgId = payload['custom:organization_id'] || '';
@@ -79,6 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       id: username,
       username,
       email,
+      name,
       roles,
       permissions,
       organization: {
