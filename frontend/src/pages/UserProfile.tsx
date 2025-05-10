@@ -19,7 +19,7 @@ import cognitoService from '../utils/cognitoService';
 import { Auth } from 'aws-amplify';
 
 const UserProfile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { hasRole, isKyndlyTeam, isTpaAdmin } = usePermission();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getThemeStyles(isDarkMode);
@@ -84,9 +84,7 @@ const UserProfile: React.FC = () => {
     setError(null);
     try {
       await cognitoService.updateUserAttributes({ name: formData.name });
-      // Optionally update other attributes here
-      // Refresh user info in context (if available)
-      // You may want to call a refreshUser() from useAuth if you add it
+      if (refreshUser) await refreshUser(); // Refresh user info in context
     } catch (err: any) {
       setError('Failed to update name');
     } finally {
@@ -118,9 +116,9 @@ const UserProfile: React.FC = () => {
         {/* Make Edit Profile button more visible and above Account Settings */}
         <div className="flex items-center justify-end mb-4">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            className={`px-6 py-3 rounded-lg text-lg font-bold shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            className={`px-3 py-2 rounded text-base font-semibold shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
               ${isEditing ? 'bg-green-600 text-white' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
             onClick={() => setIsEditing(!isEditing)}
             title={isEditing ? 'Cancel editing' : 'Edit your profile'}
@@ -128,13 +126,13 @@ const UserProfile: React.FC = () => {
           >
             {isEditing ? (
               <>
-                <XMarkIcon className="h-6 w-6 inline-block mr-2" />
-                Cancel Editing
+                <XMarkIcon className="h-5 w-5 inline-block mr-1" />
+                Cancel
               </>
             ) : (
               <>
-                <PencilIcon className="h-6 w-6 inline-block mr-2" />
-                Edit Profile
+                <PencilIcon className="h-5 w-5 inline-block mr-1" />
+                Edit
               </>
             )}
           </motion.button>

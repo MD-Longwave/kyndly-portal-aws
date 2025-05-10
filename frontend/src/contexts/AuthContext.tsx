@@ -39,6 +39,7 @@ interface AuthContextType {
   forgotPassword: (username: string) => Promise<void>;
   confirmForgotPassword: (username: string, code: string, newPassword: string) => Promise<void>;
   completeNewPasswordChallenge: (user: any, newPassword: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 // Create the auth context
@@ -236,6 +237,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Function to refresh the current user from Cognito
+  const refreshUser = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const cognitoUser = await Auth.currentAuthenticatedUser();
+      const user = await mapCognitoUserToUser(cognitoUser);
+      setUser(user);
+      setIsAuthenticated(true);
+    } catch (error) {
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Check the user's auth state when the component mounts
   useEffect(() => {
     const checkUser = async (): Promise<void> => {
@@ -290,7 +307,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getIdToken,
     forgotPassword,
     confirmForgotPassword,
-    completeNewPasswordChallenge
+    completeNewPasswordChallenge,
+    refreshUser
   };
   
   return (
