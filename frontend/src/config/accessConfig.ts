@@ -4,7 +4,7 @@ export const featureAccess = {
   quotes: ['admin', 'tpa', 'broker'],
   employers: ['admin', 'tpa'],
   soldCases: ['admin', 'tpa', 'broker'],
-  enrollments: ['admin', 'tpa', 'employer'],
+  enrollments: ['admin', 'tpa', 'broker', 'employer'],
   kyndChoice: ['admin', 'tpa', 'broker'],
   knowledgeCenter: ['admin', 'tpa', 'broker', 'employer'],
   documents: ['admin', 'tpa', 'broker', 'employer'],
