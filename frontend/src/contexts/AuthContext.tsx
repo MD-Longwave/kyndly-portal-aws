@@ -105,11 +105,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Function to check if the current user has a specific role
   const hasRole = (roleToCheck: UserRole | UserRole[]): boolean => {
     if (!user) return false;
-    
+    // Check against user.role (string)
     if (Array.isArray(roleToCheck)) {
+      if (roleToCheck.includes(user.role as UserRole)) return true;
+      // Also check user.roles array for legacy/compatibility
       return roleToCheck.some(role => user.roles.includes(role));
     }
-    
+    if (user.role === roleToCheck) return true;
     return user.roles.includes(roleToCheck);
   };
 
