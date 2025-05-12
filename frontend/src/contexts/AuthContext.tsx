@@ -22,6 +22,10 @@ export interface User {
   username: string;
   email: string;
   name?: string;
+  tpaId?: string;
+  brokerId?: string;
+  employerId?: string;
+  role: 'admin' | 'tpa' | 'broker' | 'employer';
   roles: UserRole[];
   organization: Organization;
   permissions: string[];
@@ -60,28 +64,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Function to convert Cognito user to our User interface
   const mapCognitoUserToUser = async (cognitoUser: CognitoUser): Promise<User> => {
-    // Get the current session
     const session = await Auth.currentSession();
-    
-    // Get the ID token
     const idToken = session.getIdToken();
     const payload = idToken.decodePayload();
-    
-    // Extract custom attributes
     const username = payload['cognito:username'] || '';
     const email = payload.email || '';
     const name = payload.name || '';
+    const tpaId = payload['custom:tpa_id'] || undefined;
+    const brokerId = payload['custom:broker_id'] || undefined;
+    const employerId = payload['custom:employer_id'] || undefined;
+    let role: 'admin' | 'tpa' | 'broker' | 'employer' = 'admin';
+    if (tpaId && brokerId && employerId) role = 'employer';
+    else if (tpaId && brokerId) role = 'broker';
+    else if (tpaId) role = 'tpa';
+    // else default to 'admin' (or you can add more logic)
     const roles = payload['custom:roles'] ? JSON.parse(payload['custom:roles']) : [];
     const permissions = payload['custom:permissions'] ? JSON.parse(payload['custom:permissions']) : [];
     const orgId = payload['custom:organization_id'] || '';
     const orgName = payload['custom:organization_name'] || '';
     const orgType = payload['custom:organization_type'] || 'tpa';
-    
     return {
       id: username,
       username,
       email,
       name,
+      tpaId,
+      brokerId,
+      employerId,
+      role,
       roles,
       permissions,
       organization: {

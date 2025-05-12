@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import kyndlyLogo from '../../assets/images/Kyndly-Temp-web-logo-blue.png';
 import kyndlyLogoWhite from '../../assets/images/Kyndly-Temp-web-logo-white.png';
+import { featureAccess } from '../../config/accessConfig';
 
 // Navigation links for the sidebar
 const navigation = [
@@ -143,6 +144,11 @@ export function AppLayout() {
     }
   };
   
+  const hasRole = (allowedRoles: string[]) => {
+    if (!user) return false;
+    return allowedRoles.includes(user.role);
+  };
+  
   return (
     <div className="min-h-screen bg-mint dark:bg-dark-bg">
       {/* Mobile sidebar */}
@@ -202,29 +208,34 @@ export function AppLayout() {
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul role="list" className="-mx-2 space-y-1">
-                          {navigation.map((item) => (
-                            <li key={item.name}>
-                              {item.isExternal ? (
-                                <a
-                                  href={item.href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
-                                >
-                                  <item.icon aria-hidden="true" />
-                                  {item.name}
-                                </a>
-                              ) : (
-                                <Link
-                                  to={item.href}
-                                  className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
-                                >
-                                  <item.icon aria-hidden="true" />
-                                  {item.name}
-                                </Link>
-                              )}
-                            </li>
-                          ))}
+                          {navigation.map((item) => {
+                            // Map nav item name to featureAccess key
+                            const key = item.name.replace(/\s+/g, '').toLowerCase() as keyof typeof featureAccess;
+                            if (!featureAccess[key] || !hasRole(featureAccess[key])) return null;
+                            return (
+                              <li key={item.name}>
+                                {item.isExternal ? (
+                                  <a
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                                  >
+                                    <item.icon aria-hidden="true" />
+                                    {item.name}
+                                  </a>
+                                ) : (
+                                  <Link
+                                    to={item.href}
+                                    className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                                  >
+                                    <item.icon aria-hidden="true" />
+                                    {item.name}
+                                  </Link>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </li>
                     </ul>
@@ -252,29 +263,34 @@ export function AppLayout() {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => (
-                    <li key={item.name}>
-                      {item.isExternal ? (
-                        <a
-                          href={item.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
-                        >
-                          <item.icon aria-hidden="true" />
-                          {item.name}
-                        </a>
-                      ) : (
-                        <Link
-                          to={item.href}
-                          className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
-                        >
-                          <item.icon aria-hidden="true" />
-                          {item.name}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
+                  {navigation.map((item) => {
+                    // Map nav item name to featureAccess key
+                    const key = item.name.replace(/\s+/g, '').toLowerCase() as keyof typeof featureAccess;
+                    if (!featureAccess[key] || !hasRole(featureAccess[key])) return null;
+                    return (
+                      <li key={item.name}>
+                        {item.isExternal ? (
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                          >
+                            <item.icon aria-hidden="true" />
+                            {item.name}
+                          </a>
+                        ) : (
+                          <Link
+                            to={item.href}
+                            className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                          >
+                            <item.icon aria-hidden="true" />
+                            {item.name}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </li>
             </ul>
