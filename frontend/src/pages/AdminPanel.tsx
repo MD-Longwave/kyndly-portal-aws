@@ -5,7 +5,7 @@ import {
   UserGroupIcon, 
   ShieldCheckIcon 
 } from '@heroicons/react/24/outline';
-import AdminPanelComponent from '../../../app/components/AdminPanel';
+import AdminPanelComponent from '../components/admin/AdminPanel';
 import { PageTransition } from '../components/animations';
 
 const AdminPanelPage: React.FC = () => {

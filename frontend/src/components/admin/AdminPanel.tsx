@@ -10,19 +10,38 @@ import {
   TrashIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { getThemeStyles } from '../styles/theme';
+import { getThemeStyles } from '../../utils/theme';
 
 // API URL - replace with your deployed API URL
 const API_URL = process.env.REACT_APP_API_URL || 'https://example.execute-api.us-east-2.amazonaws.com';
 
-const AdminPanel = () => {
+interface Employer {
+  id: string;
+  name: string;
+  brokerName?: string;
+  brokerId?: string;
+}
+
+interface Broker {
+  id: string;
+  name: string;
+  employers?: Employer[];
+}
+
+interface TPA {
+  id: string;
+  name: string;
+  brokers?: Broker[];
+}
+
+const AdminPanel: React.FC = () => {
   const { user, route } = useAuthenticator((context) => [context.user, context.route]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getThemeStyles(isDarkMode);
   
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tpa, setTpa] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [tpa, setTpa] = useState<TPA | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [brokerDialogOpen, setBrokerDialogOpen] = useState(false);
   const [employerDialogOpen, setEmployerDialogOpen] = useState(false);
@@ -69,7 +88,7 @@ const AdminPanel = () => {
         const data = await response.json();
         setTpa(data);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching TPA data:', err);
         setError(err.message);
       } finally {
@@ -119,7 +138,7 @@ const AdminPanel = () => {
       setNewBroker({ name: '' });
       setBrokerDialogOpen(false);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error adding broker:', err);
       setError(err.message);
     }
@@ -169,15 +188,15 @@ const AdminPanel = () => {
       setNewEmployer({ name: '', brokerId: '' });
       setEmployerDialogOpen(false);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error adding employer:', err);
       setError(err.message);
     }
   };
 
   // Handle deleting a broker
-  const handleDeleteBroker = async (brokerId) => {
-    if (!confirm("Are you sure you want to delete this broker? This will also delete all associated employers.")) {
+  const handleDeleteBroker = async (brokerId: string) => {
+    if (!window.confirm("Are you sure you want to delete this broker? This will also delete all associated employers.")) {
       return;
     }
     
@@ -209,15 +228,15 @@ const AdminPanel = () => {
       const tpaData = await tpaResponse.json();
       setTpa(tpaData);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting broker:', err);
       setError(err.message);
     }
   };
 
   // Handle deleting an employer
-  const handleDeleteEmployer = async (brokerId, employerId) => {
-    if (!confirm("Are you sure you want to delete this employer?")) {
+  const handleDeleteEmployer = async (brokerId: string, employerId: string) => {
+    if (!window.confirm("Are you sure you want to delete this employer?")) {
       return;
     }
     
@@ -249,7 +268,7 @@ const AdminPanel = () => {
       const tpaData = await tpaResponse.json();
       setTpa(tpaData);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting employer:', err);
       setError(err.message);
     }
@@ -290,16 +309,6 @@ const AdminPanel = () => {
   return (
     <div className={theme.layout.container}>
       <div className="max-w-6xl mx-auto space-y-8 p-4">
-        <div className="flex items-center justify-between">
-          <h1 className={theme.typography.h1}>Admin Panel - {tpa.name}</h1>
-        </div>
-        
-        {isAdmin && (
-          <div className="text-blue-500 font-medium">
-            You have admin access
-          </div>
-        )}
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Brokers Section */}
           <div className={theme.card}>
@@ -401,7 +410,7 @@ const AdminPanel = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleDeleteEmployer(employer.brokerId, employer.id)}
+                        onClick={() => handleDeleteEmployer(employer.brokerId!, employer.id)}
                         className="text-red-500 hover:text-red-700"
                       >
                         <TrashIcon className="h-5 w-5" />
