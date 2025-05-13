@@ -7,5 +7,5 @@ export const featureAccess = {
   kyndchoice: ['admin', 'tpa_admin', 'tpa_user'],
   knowledgecenter: ['admin', 'tpa_admin', 'tpa_user', 'broker', 'employer'],
   documents: ['admin', 'tpa_admin', 'tpa_user', 'broker', 'employer'], // All roles need access here for plan docs
-  adminpanel: ['admin', 'tpa'], // Only admin and TPA users can access AdminPanel
+  adminpanel: ['admin', 'tpa_admin', 'tpa_user'], // Only admin and TPA users can access AdminPanel
 };

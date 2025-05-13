@@ -150,8 +150,8 @@ export function AppLayout() {
     return allowedRoles.includes(user.role);
   };
   
-  // Helper to check if user is admin or tpa
-  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa');
+  // Helper to check if user is admin, tpa_admin, or tpa_user
+  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa_admin' || user.role === 'tpa_user');
   
   // Add this right before rendering the Menu.Items
   const filteredUserNavigation = userNavigation.filter(item => 

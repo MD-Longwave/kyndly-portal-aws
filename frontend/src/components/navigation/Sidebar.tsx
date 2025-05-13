@@ -25,7 +25,7 @@ const adminItems = [
 
 const Sidebar: React.FC = () => {
   const { hasRole, user } = useAuth();
-  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa');
+  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa_admin' || user.role === 'tpa_user');
 
   return (
     <div className="hidden w-64 flex-shrink-0 bg-primary-800 text-white md:block">

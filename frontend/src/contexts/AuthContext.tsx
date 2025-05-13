@@ -4,7 +4,7 @@ import { CognitoUser } from '@aws-amplify/auth';
 import { useNavigate } from 'react-router-dom';
 
 // Define the user role type
-export type UserRole = 'admin' | 'kyndly_staff' | 'tpa_admin' | 'tpa_user';
+export type UserRole = 'admin' | 'kyndly_staff' | 'tpa_admin' | 'tpa_user' | 'tpa' | 'broker' | 'employer';
 
 // Define the organization type
 type OrganizationType = 'kyndly' | 'tpa';
@@ -25,7 +25,7 @@ export interface User {
   tpaId?: string;
   brokerId?: string;
   employerId?: string;
-  role: 'admin' | 'tpa' | 'broker' | 'employer';
+  role: UserRole;
   roles: UserRole[];
   organization: Organization;
   permissions: string[];
@@ -73,10 +73,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const tpaId = payload['custom:tpa_id'] || undefined;
     const brokerId = payload['custom:broker_id'] || undefined;
     const employerId = payload['custom:employer_id'] || undefined;
-    let role: 'admin' | 'tpa' | 'broker' | 'employer' = 'admin';
+    let role: UserRole = 'admin';
     if (tpaId && brokerId && employerId) role = 'employer';
     else if (tpaId && brokerId) role = 'broker';
-    else if (tpaId) role = 'tpa';
+    else if (tpaId) role = 'tpa_admin'; // Default TPA users to tpa_admin
     // else default to 'admin' (or you can add more logic)
     const roles = payload['custom:roles'] ? JSON.parse(payload['custom:roles']) : [];
     const permissions = payload['custom:permissions'] ? JSON.parse(payload['custom:permissions']) : [];
