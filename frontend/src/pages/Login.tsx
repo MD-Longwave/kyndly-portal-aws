@@ -435,7 +435,7 @@ const Login: React.FC = () => {
                 </div>
               )}
               
-              <div className="rounded-brand bg-sky-50 dark:bg-night-700 p-4 border-l-4 border-seafoam dark:border-sky text-sm text-night-800 dark:text-white">
+              <div className="rounded-brand bg-sky-50 dark:bg-night-700 p-4 text-sm text-night-800 dark:text-white">
                 <p>
                   Welcome to the Kyndly ICHRA Portal. Please log in with your credentials to access your dashboard.
                 </p>
@@ -477,7 +477,7 @@ const Login: React.FC = () => {
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full py-3"
+                className="w-full py-3 bg-seafoam hover:bg-seafoam-600 transition-colors duration-300 font-medium text-white shadow-md"
               >
                 Sign in
               </Button>
