@@ -7,6 +7,19 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Mobile-specific styling for browser chrome */
+  background-color: #0E2C3A; /* Night color for top and bottom bars */
+  color-scheme: light dark;
+}
+
+/* App-specific wrapper to ensure content has the right background */
+#root {
+  background-color: #F2FAFA; /* Light mint background for light mode */
+  min-height: 100vh;
+}
+
+html.dark #root {
+  background-color: #0A1C24; /* Night-950 for dark mode */
 }
 
 /* Logo customization */
@@ -20,7 +33,12 @@ body {
 
 /* Custom utility classes */
 .bg-gradient-primary {
-  background: linear-gradient(to right, #0284c7, #0369a1);
+  background: linear-gradient(to right, #0B4E4A, #0E2C3A); /* Moss to Night gradient */
+}
+
+/* Dark theme gradient */
+.dark .bg-gradient-primary {
+  background: linear-gradient(to right, #0A1A19, #0A1C24); /* Darker gradient for dark mode */
 }
 
 /* Center content vertically and horizontally */
@@ -30,13 +48,81 @@ body {
   justify-content: center;
 }
 
+/* Mobile specific styles */
+@media (max-width: 768px) {
+  body::before, body::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 1rem;
+    z-index: 50;
+    background-color: #0E2C3A; /* Night color for top and bottom bars */
+  }
+  
+  body::before {
+    top: 0;
+  }
+  
+  body::after {
+    bottom: 0;
+  }
+  
+  /* For browsers that support it, use the safe-area-inset values */
+  @supports (padding: max(0px)) {
+    body {
+      padding-top: env(safe-area-inset-top, 0);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+  }
+  
+  /* Fix for iOS Safari notch */
+  @media screen and (orientation: landscape) {
+    body {
+      padding-left: env(safe-area-inset-left, 0);
+      padding-right: env(safe-area-inset-right, 0);
+    }
+  }
+}
+
+/* Custom scrollbar that matches the Kyndly brand colors */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F2FAFA; /* Light mint background */
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0A1C24; /* Night-950 for dark mode */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6BC5A7; /* Seafoam color */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #45B48F; /* Seafoam-600 for hover */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3F9185; /* Moss-500 for dark mode */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #276F58; /* Seafoam-800 for hover in dark mode */
+}
+
 @layer base {
   html {
-    @apply text-neutral-800;
+    @apply text-neutral-800 dark:text-white;
   }
   
   body {
-    @apply bg-neutral-50;
+    @apply bg-neutral-50 dark:bg-night-950;
   }
   
   h1 {
@@ -62,6 +148,11 @@ body {
   h6 {
     @apply text-sm font-semibold;
   }
+  
+  /* Focus outlines for accessibility */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    @apply outline-none ring-2 ring-seafoam dark:ring-sky ring-offset-2 ring-offset-white dark:ring-offset-night-800;
+  }
 }
 
 @layer components {
@@ -70,22 +161,37 @@ body {
   }
   
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700;
+    @apply bg-seafoam text-white hover:bg-seafoam-600;
   }
   
   .btn-secondary {
-    @apply bg-secondary-600 text-white hover:bg-secondary-700;
+    @apply bg-night text-white hover:bg-night-700;
   }
   
   .btn-outline {
-    @apply border border-neutral-300 bg-white hover:bg-neutral-50;
+    @apply border border-neutral-300 dark:border-night-700 bg-white dark:bg-night-800 dark:text-white hover:bg-neutral-50 dark:hover:bg-night-700;
   }
   
   .input {
-    @apply px-3 py-2 rounded-md border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply px-3 py-2 rounded-md border border-neutral-300 dark:border-night-700 focus:outline-none focus:ring-2 focus:ring-seafoam dark:focus:ring-sky focus:border-transparent dark:bg-night-800 dark:text-white;
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-card p-6;
+    @apply bg-white dark:bg-night-800 rounded-brand shadow-card dark:shadow-dark p-6;
+  }
+}
+
+/* Additional animation utilities */
+@layer utilities {
+  .transition-brand {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+  
+  .hover-grow {
+    @apply transition-transform duration-300 hover:scale-105;
   }
 } 

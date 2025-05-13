@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import kyndlyLogo from '../assets/images/Kyndly-Temp-web-logo-blue.png';
 import { useAuth } from '../contexts/AuthContext';
+import { Input, Button } from '../components/ui/FormElements';
+import { ExclamationTriangleIcon, XMarkIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 // Define types for the forgot password form state
 type ForgotPasswordStep = 'initial' | 'code';
@@ -85,8 +87,8 @@ const Login: React.FC = () => {
     }
   };
   
-  // Handle the new password submission for forced password change
-  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
+  // Handle completing the new password challenge
+  const handleCompleteNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setNewPasswordError(null);
     setIsLoading(true);
@@ -112,16 +114,14 @@ const Login: React.FC = () => {
     }
     
     try {
-      await completeNewPasswordChallenge(challengeUser, newPassword);
-      // The navigation will happen in the AuthContext
-    } catch (error: any) {
-      console.error('Error setting new password:', error);
-      
-      if (error.code === 'InvalidPasswordException') {
-        setNewPasswordError('Password does not meet requirements. Please use a stronger password.');
-      } else {
-        setNewPasswordError(error.message || 'An error occurred. Please try again.');
+      // Complete the new password challenge
+      if (challengeUser) {
+        await completeNewPasswordChallenge(challengeUser, newPassword);
       }
+    } catch (error: any) {
+      console.error('Error completing new password challenge:', error);
+      setNewPasswordError(error.message || 'Failed to set new password. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -190,31 +190,27 @@ const Login: React.FC = () => {
     }
     
     try {
-      console.log('Confirming password reset for:', forgotPasswordEmail);
+      console.log('Confirming new password for:', forgotPasswordEmail);
       await confirmForgotPassword(forgotPasswordEmail, verificationCode, forgotNewPassword);
-      setForgotPasswordSuccess('Password reset successful! You can now login with your new password.');
       
-      // Reset the form after a short delay
-      setTimeout(() => {
-        setShowForgotPassword(false);
-        setForgotPasswordStep('initial');
-        // Clear form fields
-        setVerificationCode('');
-        setForgotNewPassword('');
-        setForgotConfirmNewPassword('');
-      }, 3000);
+      // Close the modal and show success message on login screen
+      setShowForgotPassword(false);
+      setForgotPasswordStep('initial');
+      setForgotPasswordEmail('');
+      setVerificationCode('');
+      setForgotNewPassword('');
+      setForgotConfirmNewPassword('');
+      setForgotPasswordSuccess('Password reset successful. You can now log in with your new password.');
     } catch (error: any) {
       console.error('Confirm forgot password error:', error);
       
       // Handle specific Cognito error cases
       if (error.code === 'CodeMismatchException') {
-        setForgotPasswordError('Invalid verification code. Please try again or request a new code.');
+        setForgotPasswordError('Invalid verification code. Please try again.');
       } else if (error.code === 'ExpiredCodeException') {
-        setForgotPasswordError('Verification code has expired. Please request a new code.');
+        setForgotPasswordError('Verification code has expired. Please request a new one.');
       } else if (error.code === 'InvalidPasswordException') {
-        setForgotPasswordError('Password does not meet requirements. Please use a stronger password.');
-      } else if (error.code === 'LimitExceededException') {
-        setForgotPasswordError('Too many attempts. Please try again later.');
+        setForgotPasswordError('Password does not meet complexity requirements.');
       } else {
         setForgotPasswordError(error.message || 'An error occurred. Please try again.');
       }
@@ -223,106 +219,80 @@ const Login: React.FC = () => {
     }
   };
   
-  // Resend verification code
-  const handleResendCode = async () => {
-    setForgotPasswordError(null);
-    setForgotPasswordSuccess(null);
-    setIsLoading(true);
-    
-    if (!forgotPasswordEmail) {
-      setForgotPasswordError('Email is required');
-      setIsLoading(false);
-      return;
-    }
-    
-    try {
-      console.log('Resending verification code to:', forgotPasswordEmail);
-      await forgotPassword(forgotPasswordEmail);
-      setForgotPasswordSuccess('New verification code sent to your email');
-    } catch (error: any) {
-      console.error('Resend code error:', error);
-      setForgotPasswordError(error.message || 'Failed to send new code. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Reset forgot password modal state
+  // Close forgot password modal
   const closeForgotPasswordModal = () => {
     setShowForgotPassword(false);
     setForgotPasswordStep('initial');
-    setForgotPasswordEmail('');
-    setVerificationCode('');
-    setForgotNewPassword('');
-    setForgotConfirmNewPassword('');
     setForgotPasswordError(null);
     setForgotPasswordSuccess(null);
   };
-
-  // Render new password challenge form
+  
+  // Render new password form
   const renderNewPasswordForm = () => {
     return (
-      <div className="space-y-6">
-        <div className="rounded-md bg-blue-50 p-4 text-sm text-blue-700">
-          <p>Your account requires a password change. Please set a new password to continue.</p>
+      <form onSubmit={handleCompleteNewPassword} className="space-y-6">
+        <div className="flex items-center mb-4">
+          <button
+            type="button"
+            onClick={() => setNewPasswordRequired(false)}
+            className="inline-flex items-center mr-4 text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400"
+          >
+            <ArrowLeftIcon className="h-4 w-4 mr-1" />
+            Back
+          </button>
+          <h2 className="text-xl font-semibold text-night dark:text-white">Create New Password</h2>
         </div>
         
         {newPasswordError && (
-          <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
-            <p>{newPasswordError}</p>
+          <div className="rounded-brand bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
+            <p className="flex items-start">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+              <span>{newPasswordError}</span>
+            </p>
           </div>
         )}
         
-        <form onSubmit={handleNewPasswordSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="new-password" className="block text-sm font-medium text-secondary-700">
-              New Password
-            </label>
-            <input
-              id="new-password"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-              placeholder="Minimum 8 characters"
-              required
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Password must have at least 8 characters with uppercase, lowercase, number, and special character.
-            </p>
-          </div>
-          
-          <div>
-            <label htmlFor="confirm-password" className="block text-sm font-medium text-secondary-700">
-              Confirm New Password
-            </label>
-            <input
-              id="confirm-password"
-              type="password"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
-          
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary-500 py-3 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
-          >
-            Set New Password
-          </button>
-        </form>
-      </div>
+        <div className="rounded-brand bg-sky-50 dark:bg-sky-900/20 p-4 text-sm text-night-800 dark:text-white">
+          <p>
+            You need to create a new password before continuing. Please choose a strong password that meets the requirements.
+          </p>
+        </div>
+        
+        <Input
+          label="New Password"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+        />
+        <p className="mt-1 -mb-2 text-xs text-gray-500 dark:text-gray-400">
+          Password must have at least 8 characters with uppercase, lowercase, number, and special character.
+        </p>
+        
+        <Input
+          label="Confirm New Password"
+          type="password"
+          value={confirmNewPassword}
+          onChange={(e) => setConfirmNewPassword(e.target.value)}
+          required
+        />
+        
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full py-3"
+        >
+          Set New Password
+        </Button>
+      </form>
     );
   };
 
   // Show loading indicator
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-moss to-night">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
       </div>
     );
   }
@@ -331,244 +301,201 @@ const Login: React.FC = () => {
   const renderForgotPasswordModal = () => {
     return (
       <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="relative p-8 bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="relative p-8 bg-white dark:bg-night-800 rounded-brand shadow-xl max-w-md w-full mx-4">
           <button 
             onClick={closeForgotPasswordModal}
-            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white"
+            aria-label="Close"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <XMarkIcon className="h-6 w-6" />
           </button>
           
-          <h2 className="text-xl font-semibold mb-6">Reset Password</h2>
+          <h2 className="text-xl font-semibold mb-6 text-night dark:text-white">Reset Password</h2>
           
           {forgotPasswordError && (
-            <div className="rounded-md bg-red-50 p-4 mb-4 text-sm text-red-700">
-              <p>{forgotPasswordError}</p>
+            <div className="rounded-brand bg-red-50 dark:bg-red-900/20 p-4 mb-4 text-sm text-red-700 dark:text-red-300">
+              <p className="flex items-start">
+                <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                <span>{forgotPasswordError}</span>
+              </p>
             </div>
           )}
           
           {forgotPasswordSuccess && (
-            <div className="rounded-md bg-green-50 p-4 mb-4 text-sm text-green-700">
+            <div className="rounded-brand bg-green-50 dark:bg-green-900/20 p-4 mb-4 text-sm text-green-700 dark:text-green-300">
               <p>{forgotPasswordSuccess}</p>
             </div>
           )}
           
           {forgotPasswordStep === 'initial' ? (
             <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
-              <p className="text-sm text-secondary-700 mb-4">
+              <p className="text-sm text-night-600 dark:text-night-200 mb-4">
                 Enter your username and we'll send you a verification code to reset your password.
               </p>
               
-              <div>
-                <label htmlFor="forgot-username" className="block text-sm font-medium text-secondary-700">
-                  Username
-                </label>
-                <input
-                  id="forgot-username"
-                  type="text"
-                  required
-                  value={forgotPasswordEmail}
-                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  placeholder="Enter your username"
-                />
-              </div>
+              <Input
+                label="Username"
+                type="text"
+                required
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                placeholder="Enter your username"
+              />
               
-              <button
+              <Button
                 type="submit"
-                className="w-full rounded-md bg-primary-500 py-2 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
+                variant="primary"
+                className="w-full"
               >
                 Send Verification Code
-              </button>
+              </Button>
             </form>
-          ) : (
+          ) :
             <form onSubmit={handleForgotPasswordConfirm} className="space-y-4">
-              <p className="text-sm text-secondary-700 mb-4">
+              <p className="text-sm text-night-600 dark:text-night-200 mb-4">
                 Enter the verification code sent to your email and your new password.
               </p>
               
-              <div>
-                <label htmlFor="verification-code" className="block text-sm font-medium text-secondary-700">
-                  Verification Code
-                </label>
-                <input
-                  id="verification-code"
-                  type="text"
-                  required
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  placeholder="Enter the 6-digit code"
-                />
-              </div>
+              <Input
+                label="Verification Code"
+                type="text"
+                required
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                placeholder="Enter the 6-digit code"
+              />
               
-              <div>
-                <label htmlFor="forgot-new-password" className="block text-sm font-medium text-secondary-700">
-                  New Password
-                </label>
-                <input
-                  id="forgot-new-password"
-                  type="password"
-                  required
-                  value={forgotNewPassword}
-                  onChange={(e) => setForgotNewPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  placeholder="Minimum 8 characters"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Password must have at least 8 characters with uppercase, lowercase, number, and special character.
-                </p>
-              </div>
+              <Input
+                label="New Password"
+                type="password"
+                required
+                value={forgotNewPassword}
+                onChange={(e) => setForgotNewPassword(e.target.value)}
+                placeholder="Minimum 8 characters"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Password must have at least 8 characters with uppercase, lowercase, number, and special character.
+              </p>
               
-              <div>
-                <label htmlFor="forgot-confirm-password" className="block text-sm font-medium text-secondary-700">
-                  Confirm New Password
-                </label>
-                <input
-                  id="forgot-confirm-password"
-                  type="password"
-                  required
-                  value={forgotConfirmNewPassword}
-                  onChange={(e) => setForgotConfirmNewPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  placeholder="Confirm your password"
-                />
-              </div>
+              <Input
+                label="Confirm New Password"
+                type="password"
+                required
+                value={forgotConfirmNewPassword}
+                onChange={(e) => setForgotConfirmNewPassword(e.target.value)}
+                placeholder="Confirm your password"
+              />
               
-              <button
+              <Button
                 type="submit"
-                className="w-full rounded-md bg-primary-500 py-2 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
+                variant="primary"
+                className="w-full"
               >
                 Reset Password
-              </button>
-              
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setForgotPasswordStep('initial')}
-                  className="text-sm text-primary-600 hover:text-primary-500"
-                >
-                  Back to email
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handleResendCode}
-                  className="text-sm text-primary-600 hover:text-primary-500"
-                >
-                  Resend code
-                </button>
-              </div>
+              </Button>
             </form>
-          )}
+          }
         </div>
       </div>
     );
   };
 
   return (
-    <div className="flex min-h-screen bg-secondary-800">
-      <div className="m-auto w-full max-w-md rounded-lg bg-white p-8 shadow-xl">
-        <div className="text-center mb-6">
-          <div className="bg-white p-2 rounded-md inline-block mb-4">
-            <img src={kyndlyLogo} alt="Kyndly" className="h-16 mx-auto" />
-          </div>
-          <p className="text-lg text-secondary-800 font-medium">
-            ICHRA Management Portal
-          </p>
-        </div>
-
-        {newPasswordRequired ? (
-          renderNewPasswordForm()
-        ) : (
-          <form onSubmit={handleLogin} className="space-y-6">
-            {loginError && (
-              <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
-                <p>{loginError}</p>
-              </div>
-            )}
-            
-            {forgotPasswordSuccess && (
-              <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
-                <p>{forgotPasswordSuccess}</p>
-              </div>
-            )}
-            
-            <div className="rounded-md bg-mint p-4 text-sm text-secondary-800">
-              <p>
-                Welcome to the Kyndly ICHRA Portal. Please log in with your credentials to access your dashboard.
-              </p>
+    <div className="flex min-h-screen bg-gradient-to-r from-moss to-night dark:from-night-950 dark:to-night-800">
+      <div className="m-auto w-full max-w-md px-4">
+        <div className="bg-white dark:bg-night-800 rounded-brand shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="bg-white dark:bg-night-700 p-3 rounded-full inline-block mb-4">
+              <img src={kyndlyLogo} alt="Kyndly" className="h-16 mx-auto" />
             </div>
+            <h1 className="text-2xl font-bold text-night dark:text-white">
+              ICHRA Management Portal
+            </h1>
+            <p className="text-sm text-night-600 dark:text-night-200 mt-1">
+              Simplifying health benefit administration
+            </p>
+          </div>
 
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-secondary-700">
-                Username or Email
-              </label>
-              <input
-                id="username"
-                name="username"
+          {newPasswordRequired ? (
+            renderNewPasswordForm()
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-6">
+              {loginError && (
+                <div className="rounded-brand bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
+                  <p className="flex items-start">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                    <span>{loginError}</span>
+                  </p>
+                </div>
+              )}
+              
+              {forgotPasswordSuccess && (
+                <div className="rounded-brand bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-700 dark:text-green-300">
+                  <p>{forgotPasswordSuccess}</p>
+                </div>
+              )}
+              
+              <div className="rounded-brand bg-sky-50 dark:bg-night-700 p-4 border-l-4 border-seafoam dark:border-sky text-sm text-night-800 dark:text-white">
+                <p>
+                  Welcome to the Kyndly ICHRA Portal. Please log in with your credentials to access your dashboard.
+                </p>
+              </div>
+
+              <Input
+                label="Username or Email"
                 type="text"
                 autoComplete="username"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
               />
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-secondary-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
+              <Input
+                label="Password"
                 type="password"
                 autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-500 shadow-sm focus:border-primary-500 focus:ring-primary-500"
               />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setShowForgotPassword(true);
-                    setForgotPasswordEmail(username);
-                  }}
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Forgot your password?
-                </button>
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setForgotPasswordEmail(username);
+                    }}
+                    className="font-medium text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              className="w-full rounded-md bg-primary-500 py-3 px-4 text-center font-medium text-white shadow-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
-            >
-              Sign in
-            </button>
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full py-3"
+              >
+                Sign in
+              </Button>
 
-            {process.env.NODE_ENV === 'development' && (
-              <div className="text-center text-sm text-neutral-500">
-                <p>Development Mode - Form validation enabled but authentication is simulated</p>
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+                  <p>Development Mode - Form validation enabled but authentication is simulated</p>
+                </div>
+              )}
+              
+              <div className="text-center text-xs text-neutral-400 dark:text-neutral-500 mt-4">
+                <p>
+                  By signing in, you agree to our Terms of Service and Privacy Policy.
+                </p>
               </div>
-            )}
-            
-            <div className="text-center text-xs text-neutral-400 mt-4">
-              <p>
-                By signing in, you agree to our Terms of Service and Privacy Policy.
-              </p>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
       
       {showForgotPassword && !newPasswordRequired && renderForgotPasswordModal()}
