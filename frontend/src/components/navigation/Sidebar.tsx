@@ -20,12 +20,12 @@ const userItems = [
 ];
 
 const adminItems = [
-  { name: 'Settings', path: '/settings', icon: Cog6ToothIcon },
+  { name: 'Admin Panel', path: '/admin-panel', icon: Cog6ToothIcon },
 ];
 
 const Sidebar: React.FC = () => {
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole('admin') || hasRole('tpa_admin');
+  const { hasRole, user } = useAuth();
+  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa');
 
   return (
     <div className="hidden w-64 flex-shrink-0 bg-primary-800 text-white md:block">

@@ -182,9 +182,9 @@ function AppContent() {
               </PageTransition>
             } />
             <Route 
-              path="/settings" 
+              path="/admin-panel" 
               element={
-                <ProtectedRoute requiredRoles={['admin', 'tpa_admin', 'tpa_user']}>
+                <ProtectedRoute requiredRoles={['admin', 'tpa']}>
                   <PageTransition>
                     <AdminPanel />
                   </PageTransition>

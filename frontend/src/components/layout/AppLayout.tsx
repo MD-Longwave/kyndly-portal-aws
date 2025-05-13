@@ -26,12 +26,13 @@ const navigation = [
   { name: 'Kynd Choice', href: 'https://ichra.kyndchoice.com/clients?locale=en', icon: KyndChoiceIcon, isExternal: true },
   { name: 'Knowledge Center', href: '/knowledge-center', icon: KnowledgeCenterIcon, isExternal: false },
   { name: 'Documents', href: '/documents', icon: DocumentsIcon, isExternal: false },
+  { name: 'Admin Panel', href: '/admin-panel', icon: Cog6ToothIcon, isExternal: false },
 ];
 
 // User menu items for dropdown
 const userNavigation = [
   { name: 'Your Profile', href: '/profile', icon: UserCircleIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  { name: 'Admin Panel', href: '/admin-panel', icon: Cog6ToothIcon },
   { name: 'Sign out', href: '#', icon: ArrowRightOnRectangleIcon },
 ];
 
@@ -149,6 +150,14 @@ export function AppLayout() {
     return allowedRoles.includes(user.role);
   };
   
+  // Helper to check if user is admin or tpa
+  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa');
+  
+  // Add this right before rendering the Menu.Items
+  const filteredUserNavigation = userNavigation.filter(item => 
+    !(item.name === 'Admin Panel' && !isAdmin)
+  );
+  
   return (
     <div className="min-h-screen bg-mint dark:bg-dark-bg">
       {/* Mobile sidebar */}
@@ -209,9 +218,19 @@ export function AppLayout() {
                       <li>
                         <ul role="list" className="-mx-2 space-y-1">
                           {navigation.map((item) => {
+                            // Don't show Admin Panel if user is not an admin
+                            if (item.name === 'Admin Panel' && !isAdmin) {
+                              return null;
+                            }
+                            
                             // Map nav item name to featureAccess key
-                            const key = item.name.replace(/\s+/g, '').toLowerCase() as keyof typeof featureAccess;
-                            if (!featureAccess[key] || !hasRole(featureAccess[key])) return null;
+                            const featureKey = item.name.toLowerCase().replace(/\s+/g, '') as keyof typeof featureAccess;
+                            
+                            // Skip if user doesn't have access to this feature
+                            if (featureAccess[featureKey] && user && !hasRole(featureAccess[featureKey])) {
+                              return null;
+                            }
+                            
                             return (
                               <li key={item.name}>
                                 {item.isExternal ? (
@@ -264,9 +283,19 @@ export function AppLayout() {
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
                   {navigation.map((item) => {
+                    // Don't show Admin Panel if user is not an admin
+                    if (item.name === 'Admin Panel' && !isAdmin) {
+                      return null;
+                    }
+                    
                     // Map nav item name to featureAccess key
-                    const key = item.name.replace(/\s+/g, '').toLowerCase() as keyof typeof featureAccess;
-                    if (!featureAccess[key] || !hasRole(featureAccess[key])) return null;
+                    const featureKey = item.name.toLowerCase().replace(/\s+/g, '') as keyof typeof featureAccess;
+                    
+                    // Skip if user doesn't have access to this feature
+                    if (featureAccess[featureKey] && user && !hasRole(featureAccess[featureKey])) {
+                      return null;
+                    }
+                    
                     return (
                       <li key={item.name}>
                         {item.isExternal ? (
@@ -359,7 +388,7 @@ export function AppLayout() {
                   leaveTo="transform opacity-0 scale-95"
                 >
                   <Menu.Items className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white dark:bg-dark-surface py-2 shadow-lg ring-1 ring-primary-100 dark:ring-dark-border focus:outline-none">
-                    {userNavigation.map((item) => (
+                    {filteredUserNavigation.map((item) => (
                       <Menu.Item key={item.name}>
                         {({ active }) => (
                           <a
