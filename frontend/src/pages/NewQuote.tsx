@@ -252,9 +252,9 @@ const NewQuote: React.FC = () => {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="container">
-          <div className="-mx-4 flex flex-wrap">
+          <div className="flex flex-wrap">
             {/* Rep Name */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Rep">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Representative Name
@@ -273,7 +273,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Contact Type */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Contact Type">
                 <div className="space-y-4">
                   <div className="relative flex items-start">
@@ -311,7 +311,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Company Name */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Company Name">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Company Name
@@ -356,7 +356,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Census File */}
-            <div className="w-full px-4 mb-6">
+            <div className="w-full mb-6">
               <FormSection 
                 title="Census File" 
                 description="Upload up to 5 supported files: PDF, document, image, or spreadsheet. Max 100 MB per file."
@@ -386,7 +386,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Plan Comparison Information */}
-            <div className="w-full px-4 mb-6">
+            <div className="w-full mb-6">
               <FormSection 
                 title="Plan Comparison Information" 
                 description="Upload up to 5 supported files: PDF, document, image, or spreadsheet. Max 100 MB per file."
@@ -416,7 +416,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* ICHRA Effective Date */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="ICHRA Effective Date">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Effective Date
@@ -434,7 +434,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* PEPM */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="PEPM (default $70)">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   PEPM Amount
@@ -456,7 +456,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Current Funding Strategy */}
-            <div className="w-full px-4 mb-6">
+            <div className="w-full mb-6">
               <FormSection 
                 title="Current Funding Strategy" 
                 description="How does the employer currently contribute to their group health plan?"
@@ -476,7 +476,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Target Plan: Deductible */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection 
                 title="Target Plan: Deductible" 
                 description="What individual deductible would be ideal?"
@@ -511,7 +511,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Target Plan: HSA? */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Target Plan: HSA?">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   HSA Plan
@@ -532,7 +532,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Broker Name */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Broker Name">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Broker's Name
@@ -569,7 +569,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Broker Email Address */}
-            <div className="w-full px-4 md:w-1/2 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Broker Email Address">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Broker's Email
@@ -603,7 +603,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Level of Priority */}
-            <div className="w-full px-4 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Level of Priority">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Priority Level
@@ -642,7 +642,7 @@ const NewQuote: React.FC = () => {
             </div>
 
             {/* Additional Notes */}
-            <div className="w-full px-4 mb-6">
+            <div className="w-full mb-6">
               <FormSection title="Additional Notes">
                 <label className="mb-[10px] block text-base font-medium text-dark dark:text-white">
                   Additional Information
