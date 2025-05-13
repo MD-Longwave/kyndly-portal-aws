@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { 
   BuildingOfficeIcon, 
   UserGroupIcon, 
-  ShieldCheckIcon 
+  ShieldCheckIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 import AdminPanelComponent from '../components/admin/AdminPanel';
 import { PageTransition } from '../components/animations';
@@ -37,6 +38,10 @@ const AdminPanelPage: React.FC = () => {
                 <a href="#employers" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white hover:bg-gray-100 dark:hover:bg-night-700">
                   <UserGroupIcon className="mr-3 h-5 w-5 text-blue-500" />
                   Employers
+                </a>
+                <a href="#users" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white hover:bg-gray-100 dark:hover:bg-night-700">
+                  <UserIcon className="mr-3 h-5 w-5 text-blue-500" />
+                  Users
                 </a>
               </nav>
             </div>

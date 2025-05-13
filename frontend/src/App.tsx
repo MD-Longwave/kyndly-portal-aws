@@ -69,6 +69,30 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   return <>{children}</>;
 };
 
+// Add a new RoleRoute component for role-based routing
+const RoleRoute: React.FC<{
+  element: React.ReactNode;
+  requiredRoles: UserRole[];
+  fallbackPath?: string;
+}> = ({ element, requiredRoles, fallbackPath = "/dashboard" }) => {
+  const { hasRole } = useAuth();
+  const location = useLocation();
+  
+  // In development mode, allow all access
+  if (isDevelopment) {
+    return <>{element}</>;
+  }
+  
+  // Check if user has at least one of the required roles
+  const hasRequiredRole = requiredRoles.some(role => hasRole(role));
+  
+  if (!hasRequiredRole) {
+    return <Navigate to={fallbackPath} state={{ from: location }} replace />;
+  }
+  
+  return <>{element}</>;
+};
+
 function AppContent() {
   const [isInitializing, setIsInitializing] = useState(true);
   const location = useLocation();
@@ -184,10 +208,16 @@ function AppContent() {
             <Route 
               path="/admin-panel" 
               element={
-                <ProtectedRoute requiredRoles={['admin', 'tpa_admin', 'tpa_user']}>
-                  <PageTransition>
-                    <AdminPanel />
-                  </PageTransition>
+                <ProtectedRoute>
+                  <RoleRoute 
+                    element={
+                      <PageTransition>
+                        <AdminPanel />
+                      </PageTransition>
+                    }
+                    requiredRoles={['admin', 'tpa_admin', 'tpa_user', 'tpa']}
+                    fallbackPath="/dashboard"
+                  />
                 </ProtectedRoute>
               } 
             />

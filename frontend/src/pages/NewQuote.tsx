@@ -14,6 +14,7 @@ import {
   Button,
   CurrencyInput
 } from '../components/ui/FormElements';
+import { useAuth } from '../contexts/AuthContext';
 
 // Icon components for inputs
 const CompanyIcon = () => (
@@ -74,10 +75,41 @@ const EmailIcon = () => (
   </svg>
 );
 
+// Update the CONFIG_API_URL to use the main API URL
+const API_URL = process.env.REACT_APP_API_URL || 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+
+interface BrokerOption {
+  id: string;
+  name: string;
+}
+
+interface EmployerOption {
+  id: string;
+  name: string;
+}
+
+interface TpaData {
+  id: string;
+  name: string;
+  brokers: {
+    id: string;
+    name: string;
+    employers: {
+      id: string;
+      name: string;
+    }[];
+  }[];
+}
+
 const NewQuote: React.FC = () => {
   const navigate = useNavigate();
+  const { user, getIdToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiConnected, setApiConnected] = useState<boolean | null>(null);
+  const [tpaData, setTpaData] = useState<TpaData | null>(null);
+  const [loadingTpaData, setLoadingTpaData] = useState(false);
+  const [brokers, setBrokers] = useState<BrokerOption[]>([]);
+  const [employers, setEmployers] = useState<EmployerOption[]>([]);
   
   // Check API connection when component mounts
   useEffect(() => {
@@ -98,6 +130,81 @@ const NewQuote: React.FC = () => {
     checkConnection();
   }, []);
   
+  // Fetch TPA data including brokers and employers
+  useEffect(() => {
+    const fetchTpaData = async () => {
+      try {
+        setLoadingTpaData(true);
+        
+        // Get the authentication token
+        const token = await getIdToken();
+        if (!token) {
+          throw new Error("Authentication token not available");
+        }
+        
+        // Fetch TPA data from the configuration API
+        const response = await fetch(`${API_URL}/api/tpa`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setTpaData(data);
+        
+        // Set available brokers
+        if (data && data.brokers) {
+          const brokerOptions = data.brokers.map((broker: any) => ({
+            id: broker.id,
+            name: broker.name
+          }));
+          
+          setBrokers(brokerOptions);
+          
+          // If user is a broker, pre-select their broker
+          if (user?.brokerId) {
+            const userBroker = brokerOptions.find((broker: BrokerOption) => broker.id === user.brokerId);
+            if (userBroker) {
+              setFormData(prev => ({
+                ...prev,
+                brokerId: user.brokerId || ''
+              }));
+              
+              // Load employers for this broker
+              const selectedBroker = data.brokers.find((b: any) => b.id === user.brokerId);
+              if (selectedBroker && selectedBroker.employers) {
+                setEmployers(selectedBroker.employers.map((emp: any) => ({
+                  id: emp.id,
+                  name: emp.name
+                })));
+                
+                // If user is an employer, pre-select their employer
+                if (user?.employerId) {
+                  setFormData(prev => ({
+                    ...prev,
+                    employerId: user.employerId || ''
+                  }));
+                }
+              }
+            }
+          }
+        }
+        
+        console.log('Successfully fetched TPA data:', data);
+      } catch (error) {
+        console.error('Error fetching TPA data:', error);
+      } finally {
+        setLoadingTpaData(false);
+      }
+    };
+    
+    fetchTpaData();
+  }, [user, getIdToken]);
+  
   const [formData, setFormData] = useState({
     transperraRep: '',
     contactTypeGLI: false,
@@ -114,6 +221,8 @@ const NewQuote: React.FC = () => {
     targetHSA: '',
     brokerName: '',
     brokerEmail: '',
+    brokerId: '', // Added for broker selection
+    employerId: '', // Added for employer selection
     priorityLevel: 'earliest', // Default to 'Earliest Convenience'
     additionalNotes: ''
   });
@@ -124,6 +233,26 @@ const NewQuote: React.FC = () => {
       ...prev,
       [name]: value
     }));
+    
+    // If broker changes, update employer options and reset employerId
+    if (name === 'brokerId') {
+      const selectedBroker = tpaData?.brokers.find(broker => broker.id === value);
+      
+      if (selectedBroker && selectedBroker.employers) {
+        setEmployers(selectedBroker.employers.map(employer => ({
+          id: employer.id,
+          name: employer.name
+        })));
+      } else {
+        setEmployers([]);
+      }
+      
+      // Reset employer selection
+      setFormData(prev => ({
+        ...prev,
+        employerId: ''
+      }));
+    }
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,13 +274,24 @@ const NewQuote: React.FC = () => {
     }
   };
 
-  const uploadFileToS3 = async (file: File, path: string): Promise<string> => {
+  const uploadFileToS3 = async (file: File, type: string): Promise<string> => {
     try {
-      const fileName = `${Date.now()}-${file.name}`;
-      const result = await Storage.put(`${path}/${fileName}`, file, {
-        contentType: file.type
+      // Get TPA ID from user
+      const tpaId = user?.tpaId || 'unknown';
+      const brokerId = formData.brokerId || 'unknown';
+      const employerId = formData.employerId || 'unknown';
+      
+      // Create structured path for uploads
+      const path = `submissions/${tpaId}/${brokerId}/${employerId}/${type}/${Date.now()}_${file.name}`;
+      
+      await Storage.put(path, file, {
+        contentType: file.type,
+        progressCallback: (progress: any) => {
+          console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
+        },
       });
-      return result.key;
+      
+      return path;
     } catch (error) {
       console.error('Error uploading file:', error);
       throw error;
@@ -178,6 +318,17 @@ const NewQuote: React.FC = () => {
       return;
     }
     
+    // Check broker and employer selection
+    if (!formData.brokerId) {
+      alert('Please select a Broker');
+      return;
+    }
+    
+    if (!formData.employerId) {
+      alert('Please select an Employer');
+      return;
+    }
+    
     // Prevent double submission
     if (isSubmitting) return;
     
@@ -190,7 +341,6 @@ const NewQuote: React.FC = () => {
       // This ensures the token is available before the API call
       let token;
       let tpaId = 'default-tpa-id';
-      let employerId = 'default-employer-id';
       
       try {
         const session = await Auth.currentSession();
@@ -208,14 +358,6 @@ const NewQuote: React.FC = () => {
         } else {
           console.warn('No custom:tpa_id found in token, using default');
         }
-        
-        // Extract Employer ID from token
-        if (payload['custom:employer_id']) {
-          employerId = payload['custom:employer_id'];
-          console.log(`Found custom:employer_id in token: ${employerId}`);
-        } else {
-          console.warn('No custom:employer_id found in token, using default');
-        }
       } catch (authError) {
         console.error('Error getting authentication token:', authError);
         alert('Failed to authenticate. Please make sure you are logged in and try again.');
@@ -223,7 +365,9 @@ const NewQuote: React.FC = () => {
         return;
       }
       
-      console.log(`Using TPA ID: ${tpaId} and Employer ID: ${employerId}`);
+      // Log the selected broker and employer
+      console.log(`Selected Broker ID: ${formData.brokerId}`);
+      console.log(`Selected Employer ID: ${formData.employerId}`);
       
       // Prepare data for API
       const quoteData = {
@@ -239,9 +383,10 @@ const NewQuote: React.FC = () => {
         brokerEmail: formData.brokerEmail,
         priorityLevel: formData.priorityLevel,
         additionalNotes: formData.additionalNotes,
-        // Required for the backend API
+        // Add the broker and employer IDs from the dropdowns
         tpaId: tpaId,
-        employerId: employerId,
+        brokerId: formData.brokerId,
+        employerId: formData.employerId,
         isGLI: formData.contactTypeGLI,
         // Include the actual file objects
         censusFile: formData.censusFile,
@@ -301,6 +446,29 @@ const NewQuote: React.FC = () => {
     { value: 'no', label: 'No' },
     { value: 'either', label: 'Either' },
   ];
+
+  // Update employers when broker changes
+  const handleBrokerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const brokerId = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      brokerId,
+      employerId: '' // Reset employer when broker changes
+    }));
+    
+    // Find the selected broker and update employers list
+    if (tpaData && tpaData.brokers) {
+      const selectedBroker = tpaData.brokers.find(broker => broker.id === brokerId);
+      if (selectedBroker && selectedBroker.employers) {
+        setEmployers(selectedBroker.employers.map(emp => ({
+          id: emp.id,
+          name: emp.name
+        })));
+      } else {
+        setEmployers([]);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto px-4 py-8">
@@ -366,6 +534,47 @@ const NewQuote: React.FC = () => {
               icon={<CompanyIcon />}
               required
             />
+            
+            {/* Broker Selection */}
+            <div className="space-y-2">
+              <label className="block text-base font-medium text-night dark:text-white">
+                Broker
+              </label>
+              <Select
+                label="Broker"
+                name="brokerId"
+                value={formData.brokerId}
+                onChange={handleBrokerChange}
+                required
+                disabled={loadingTpaData}
+                options={[
+                  { value: "", label: "Select Broker" },
+                  ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
+                ]}
+              />
+            </div>
+            
+            {/* Employer Selection - Only enabled if broker is selected */}
+            <div className="space-y-2">
+              <label className="block text-base font-medium text-night dark:text-white">
+                Employer
+              </label>
+              <Select
+                label="Employer"
+                name="employerId"
+                value={formData.employerId}
+                onChange={handleChange}
+                required
+                disabled={loadingTpaData || !formData.brokerId}
+                options={[
+                  { value: "", label: "Select Employer" },
+                  ...employers.map(employer => ({ value: employer.id, label: employer.name }))
+                ]}
+              />
+              {formData.brokerId && employers.length === 0 && (
+                <p className="text-sm text-gray-500">No employers found for this broker</p>
+              )}
+            </div>
             
             <FileInput
               label="Census File"
@@ -500,6 +709,47 @@ const NewQuote: React.FC = () => {
           </div>
         </FormSection>
 
+        {/* Broker and Employer Selection */}
+        <FormSection title="Account Information">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Only show broker selection if user is not a broker */}
+            {(!user?.brokerId || user?.role === 'admin' || user?.role === 'tpa_admin' || user?.role === 'tpa_user' || user?.role === 'tpa') && (
+              <div>
+                <Select
+                  label="Broker"
+                  name="brokerId"
+                  value={formData.brokerId}
+                  onChange={handleBrokerChange}
+                  required
+                  disabled={loadingTpaData}
+                  options={[
+                    { value: "", label: "Select Broker" },
+                    ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
+                  ]}
+                />
+              </div>
+            )}
+            
+            {/* Only show employer selection if user is not an employer and a broker is selected */}
+            {formData.brokerId && (!user?.employerId || user?.role === 'admin' || user?.role === 'tpa_admin' || user?.role === 'tpa_user' || user?.role === 'tpa' || user?.role === 'broker') && (
+              <div>
+                <Select
+                  label="Employer"
+                  name="employerId"
+                  value={formData.employerId}
+                  onChange={handleChange}
+                  required
+                  disabled={loadingTpaData || !formData.brokerId}
+                  options={[
+                    { value: "", label: "Select Employer" },
+                    ...employers.map(employer => ({ value: employer.id, label: employer.name }))
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        </FormSection>
+
         {/* Form Actions */}
         <div className="flex justify-end space-x-4 pt-4">
           <Link to="/quotes">
@@ -527,6 +777,8 @@ const NewQuote: React.FC = () => {
               targetHSA: '',
               brokerName: '',
               brokerEmail: '',
+              brokerId: '',
+              employerId: '',
               priorityLevel: 'earliest',
               additionalNotes: ''
             })}
