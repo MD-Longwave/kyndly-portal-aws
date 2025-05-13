@@ -26,7 +26,7 @@ const navigation = [
   { name: 'Kynd Choice', href: 'https://ichra.kyndchoice.com/clients?locale=en', icon: KyndChoiceIcon, isExternal: true },
   { name: 'Knowledge Center', href: '/knowledge-center', icon: KnowledgeCenterIcon, isExternal: false },
   { name: 'Documents', href: '/documents', icon: DocumentsIcon, isExternal: false },
-  { name: 'Admin Panel', href: '/admin-panel', icon: Cog6ToothIcon, isExternal: false },
+  { name: 'Admin Panel', href: '/admin-panel', icon: Cog6ToothIcon, isExternal: false, className: 'admin-nav-item' },
 ];
 
 // User menu items for dropdown
@@ -246,7 +246,7 @@ export function AppLayout() {
                                 ) : (
                                   <Link
                                     to={item.href}
-                                    className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                                    className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest ${item.className || ''}`}
                                   >
                                     <item.icon aria-hidden="true" />
                                     {item.name}
@@ -311,7 +311,7 @@ export function AppLayout() {
                         ) : (
                           <Link
                             to={item.href}
-                            className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                            className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest ${item.className || ''}`}
                           >
                             <item.icon aria-hidden="true" />
                             {item.name}

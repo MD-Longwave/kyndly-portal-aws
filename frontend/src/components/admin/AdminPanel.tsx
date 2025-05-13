@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Auth } from 'aws-amplify';
-import { useAuthenticator } from '@aws-amplify/ui-react';
 import { motion } from 'framer-motion';
 import {
   UserIcon,
@@ -10,10 +9,11 @@ import {
   TrashIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { getThemeStyles } from '../../utils/theme';
+import { getThemeStyles } from '../../styles/theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 // API URL - replace with your deployed API URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://example.execute-api.us-east-2.amazonaws.com';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 interface Employer {
   id: string;
@@ -35,7 +35,7 @@ interface TPA {
 }
 
 const AdminPanel: React.FC = () => {
-  const { user, route } = useAuthenticator((context) => [context.user, context.route]);
+  const { user, getIdToken } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getThemeStyles(isDarkMode);
   
@@ -51,29 +51,32 @@ const AdminPanel: React.FC = () => {
 
   // Check if user is in admin group
   useEffect(() => {
-    const checkUserGroups = async () => {
-      try {
-        const userInfo = await Auth.currentAuthenticatedUser();
-        const groups = userInfo.signInUserSession.accessToken.payload['cognito:groups'] || [];
-        setIsAdmin(groups.includes('ADMIN'));
-      } catch (err) {
-        console.error('Error checking user groups:', err);
-      }
-    };
-    
-    if (route === 'authenticated') {
-      checkUserGroups();
+    // Set admin status based on user role
+    if (user) {
+      setIsAdmin(user.role === 'admin' || user.role === 'tpa_admin' || user.role === 'tpa_user');
+    } else {
+      setIsAdmin(false);
     }
-  }, [route]);
+  }, [user]);
 
   // Fetch TPA data
   useEffect(() => {
     const fetchTpa = async () => {
-      if (route !== 'authenticated') return;
+      if (!user) return;
       
       try {
         setLoading(true);
-        const token = (await Auth.currentSession()).getIdToken().getJwtToken();
+        
+        if (!API_URL) {
+          setError("API URL not configured. Please check your environment variables.");
+          setLoading(false);
+          return;
+        }
+        
+        const token = await getIdToken();
+        if (!token) {
+          throw new Error("Authentication token not available");
+        }
         
         const response = await fetch(`${API_URL}/api/tpa`, {
           headers: {
@@ -86,18 +89,19 @@ const AdminPanel: React.FC = () => {
         }
         
         const data = await response.json();
+        console.log("TPA data:", data);  // Log the data for debugging
         setTpa(data);
         setError(null);
       } catch (err: any) {
         console.error('Error fetching TPA data:', err);
-        setError(err.message);
+        setError(err.message || "Failed to fetch TPA data");
       } finally {
         setLoading(false);
       }
     };
     
     fetchTpa();
-  }, [route]);
+  }, [user, getIdToken]);
 
   // Handle adding a new broker
   const handleAddBroker = async () => {
@@ -107,7 +111,15 @@ const AdminPanel: React.FC = () => {
         return;
       }
       
-      const token = (await Auth.currentSession()).getIdToken().getJwtToken();
+      if (!API_URL) {
+        setError("API URL not configured");
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
       
       const response = await fetch(`${API_URL}/api/brokers`, {
         method: 'POST',
@@ -140,7 +152,7 @@ const AdminPanel: React.FC = () => {
       setError(null);
     } catch (err: any) {
       console.error('Error adding broker:', err);
-      setError(err.message);
+      setError(err.message || "Failed to add broker");
     }
   };
 
@@ -157,7 +169,15 @@ const AdminPanel: React.FC = () => {
         return;
       }
       
-      const token = (await Auth.currentSession()).getIdToken().getJwtToken();
+      if (!API_URL) {
+        setError("API URL not configured");
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
       
       const response = await fetch(`${API_URL}/api/employers`, {
         method: 'POST',
@@ -190,7 +210,7 @@ const AdminPanel: React.FC = () => {
       setError(null);
     } catch (err: any) {
       console.error('Error adding employer:', err);
-      setError(err.message);
+      setError(err.message || "Failed to add employer");
     }
   };
 
@@ -201,7 +221,15 @@ const AdminPanel: React.FC = () => {
     }
     
     try {
-      const token = (await Auth.currentSession()).getIdToken().getJwtToken();
+      if (!API_URL) {
+        setError("API URL not configured");
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
       
       const response = await fetch(`${API_URL}/api/brokers/${brokerId}`, {
         method: 'DELETE',
@@ -230,7 +258,7 @@ const AdminPanel: React.FC = () => {
       setError(null);
     } catch (err: any) {
       console.error('Error deleting broker:', err);
-      setError(err.message);
+      setError(err.message || "Failed to delete broker");
     }
   };
 
@@ -241,7 +269,15 @@ const AdminPanel: React.FC = () => {
     }
     
     try {
-      const token = (await Auth.currentSession()).getIdToken().getJwtToken();
+      if (!API_URL) {
+        setError("API URL not configured");
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
       
       const response = await fetch(`${API_URL}/api/brokers/${brokerId}/employers/${employerId}`, {
         method: 'DELETE',
@@ -270,7 +306,7 @@ const AdminPanel: React.FC = () => {
       setError(null);
     } catch (err: any) {
       console.error('Error deleting employer:', err);
-      setError(err.message);
+      setError(err.message || "Failed to delete employer");
     }
   };
 
