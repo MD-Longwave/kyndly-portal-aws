@@ -2,27 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   UserIcon,
-  BellIcon,
   LockClosedIcon,
-  GlobeAltIcon,
-  SwatchIcon,
-  MoonIcon,
-  SunIcon,
   CheckIcon,
   PencilIcon,
-  XMarkIcon
+  XMarkIcon,
+  PhoneIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
-import { getThemeStyles, commonStyles } from '../styles/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
 import cognitoService from '../utils/cognitoService';
 import { Auth } from 'aws-amplify';
+import { FormSection, Input, Button } from '../components/ui/FormElements';
 
 const UserProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { hasRole, isKyndlyTeam, isTpaAdmin } = usePermission();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const theme = getThemeStyles(isDarkMode);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -32,9 +27,6 @@ const UserProfile: React.FC = () => {
     location: '',
     joinDate: '',
     role: '',
-    notifications: true,
-    language: 'English',
-    timezone: 'Pacific Time (PT)'
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +51,8 @@ const UserProfile: React.FC = () => {
           name: attributes.name || '',
           email: attributes.email || '',
           phone: attributes.phone_number || '',
+          role: attributes['custom:role'] || 'User',
+          company: attributes['custom:company'] || '',
         }));
       } catch (err: any) {
         setError('Failed to load user info');
@@ -70,10 +64,10 @@ const UserProfile: React.FC = () => {
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: value
     }));
   };
 
@@ -83,144 +77,189 @@ const UserProfile: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await cognitoService.updateUserAttributes({ name: formData.name });
+      await cognitoService.updateUserAttributes({ 
+        name: formData.name,
+        phone_number: formData.phone
+      });
       if (refreshUser) await refreshUser(); // Refresh user info in context
     } catch (err: any) {
-      setError('Failed to update name');
+      setError('Failed to update profile information');
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+    return (
+      <div className="p-6 text-center">
+        <div className="animate-pulse flex flex-col items-center justify-center">
+          <div className="h-12 w-24 bg-gray-200 dark:bg-night-800 rounded mb-4"></div>
+          <div className="h-64 w-full max-w-3xl bg-gray-100 dark:bg-night-700 rounded"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div className="p-6">
-        <div className="bg-yellow-50 rounded-md p-4">
-          <p className="text-yellow-800">Please log in to view your profile.</p>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-brand border-l-4 border-yellow-400 p-4">
+          <p className="text-yellow-800 dark:text-yellow-200">Please log in to view your profile.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${theme.layout.container}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className={theme.typography.h1}>User Profile</h1>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="bg-brand-gradient dark:bg-dark-gradient rounded-brand p-6 mb-8 text-white shadow-brand dark:shadow-dark">
+        <h1 className="text-3xl font-bold mb-2">User Profile</h1>
+        <p className="text-sky-100">Manage your account information</p>
+      </div>
 
-        {/* Edit/Cancel and Save Changes buttons at the top right */}
-        <div className="flex items-center justify-end mb-4 space-x-2">
-          {isEditing ? (
-            <>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-3 py-2 rounded text-base font-semibold shadow-sm bg-green-600 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                onClick={handleSubmit}
-                type="button"
-              >
-                <CheckIcon className="h-5 w-5 inline-block mr-1" />
-                Save Changes
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-3 py-2 rounded text-base font-semibold shadow-sm bg-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
-                onClick={() => setIsEditing(false)}
-                type="button"
-              >
-                <XMarkIcon className="h-5 w-5 inline-block mr-1" />
-                Cancel
-              </motion.button>
-            </>
-          ) : (
+      {/* Edit/Cancel and Save Changes buttons at the top right */}
+      <div className="flex items-center justify-end mb-4 space-x-2">
+        {isEditing ? (
+          <>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="px-3 py-2 rounded text-base font-semibold shadow-sm bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-brand font-medium border-0 bg-seafoam hover:bg-seafoam-600 text-white"
+              onClick={handleSubmit}
               type="button"
             >
-              <PencilIcon className="h-5 w-5 inline-block mr-1" />
-              Edit
+              <CheckIcon className="h-5 w-5 mr-1" />
+              Save Changes
             </motion.button>
-          )}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-brand font-medium bg-white border border-gray-300 text-night hover:bg-gray-50 dark:bg-night-700 dark:border-night-600 dark:text-white dark:hover:bg-night-600"
+              onClick={() => setIsEditing(false)}
+              type="button"
+            >
+              <XMarkIcon className="h-5 w-5 mr-1" />
+              Cancel
+            </motion.button>
+          </>
+        ) : (
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-brand font-medium bg-night hover:bg-night-700 text-white dark:bg-seafoam dark:hover:bg-seafoam-600"
+            onClick={() => setIsEditing(true)}
+            type="button"
+          >
+            <PencilIcon className="h-5 w-5 mr-1" />
+            Edit Profile
+          </motion.button>
+        )}
+      </div>
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 mb-6 rounded-r-md">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          </div>
         </div>
+      )}
 
-        {error && <div className="text-red-500 mb-4">{error}</div>}
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Profile Overview */}
-          <div className={`${theme.card} p-6`}>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Profile Overview */}
+        <div className="bg-white dark:bg-night-800 shadow-brand dark:shadow-dark rounded-brand overflow-hidden">
+          <div className="bg-gradient-to-r from-moss to-night px-4 py-5 sm:px-6">
+            <h3 className="text-lg font-medium text-white">Profile Information</h3>
+            <p className="mt-1 text-sm text-sky-100">Personal details and account information</p>
+          </div>
+          
+          <div className="p-6">
             <div className="flex items-center space-x-4 mb-6">
-              <div className={`${theme.layout.section} rounded-full p-3`}>
-                <UserIcon className="h-6 w-6 text-slate-400" />
+              <div className="h-14 w-14 rounded-full bg-seafoam/20 flex items-center justify-center text-seafoam">
+                <UserIcon className="h-8 w-8" />
               </div>
               <div>
-                <h2 className={theme.typography.h2}>{formData.name}</h2>
-                <p className={theme.typography.caption}>{formData.role}</p>
+                <h2 className="text-xl font-bold text-night dark:text-white">{formData.name || 'User'}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{formData.role || 'User'}</p>
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <UserIcon className="h-4 w-4 text-slate-400" />
-                <span className={theme.typography.body}>{formData.email}</span>
+            
+            <div className="space-y-4 text-night dark:text-white">
+              <div className="flex items-center space-x-3 border-b border-gray-200 dark:border-night-700 pb-3">
+                <EnvelopeIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                <span className="text-sm">{formData.email}</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <LockClosedIcon className="h-4 w-4 text-slate-400" />
-                <span className={theme.typography.body}>{formData.phone}</span>
+              <div className="flex items-center space-x-3 border-b border-gray-200 dark:border-night-700 pb-3">
+                <PhoneIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                <span className="text-sm">{formData.phone || 'Not provided'}</span>
               </div>
+              {formData.company && (
+                <div className="flex items-center space-x-3 border-b border-gray-200 dark:border-night-700 pb-3">
+                  <UserIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  <span className="text-sm">{formData.company}</span>
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Account Settings */}
-          <div className="lg:col-span-2 space-y-6">
-            <form onSubmit={handleSubmit}>
-              <div className={`${theme.card} p-6`}>
-                <h2 className={`${theme.typography.h2} mb-6`}>Account Settings</h2>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="md:col-span-2">
-                    <label className={theme.typography.label}>Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`mt-1 ${theme.input}`}
-                    />
-                  </div>
-                  <div>
-                    <label className={theme.typography.label}>Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      disabled
-                      className={`mt-1 ${theme.input}`}
-                    />
-                  </div>
-                  <div>
-                    <label className={theme.typography.label}>Phone</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`mt-1 ${theme.input}`}
-                    />
-                  </div>
+        {/* Account Settings */}
+        <div className="lg:col-span-2">
+          <FormSection 
+            title="Account Settings" 
+            description="Update your profile information"
+          >
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Input
+                    label="Full Name"
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    icon={<UserIcon className="h-5 w-5" />}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    disabled
+                    icon={<EnvelopeIcon className="h-5 w-5" />}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    icon={<PhoneIcon className="h-5 w-5" />}
+                    placeholder="+1 (555) 123-4567"
+                  />
                 </div>
               </div>
+              
+              {isEditing && (
+                <div className="flex justify-end pt-4">
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              )}
             </form>
-          </div>
+          </FormSection>
         </div>
       </div>
     </div>
