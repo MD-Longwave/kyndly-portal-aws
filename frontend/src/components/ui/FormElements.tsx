@@ -15,14 +15,14 @@ export const FormSection: React.FC<FormSectionProps> = ({
   children 
 }) => {
   return (
-    <div className="bg-white shadow overflow-hidden rounded-brand mb-6">
-      <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-moss to-night">
+    <div className="bg-white dark:bg-night-800 shadow dark:shadow-dark overflow-hidden rounded-brand mb-6">
+      <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-moss to-night dark:from-night-800 dark:to-night-950">
         <h3 className="text-lg font-medium text-white">{title}</h3>
         {description && (
           <p className="mt-1 text-sm text-sky-100">{description}</p>
         )}
       </div>
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+      <div className="border-t border-gray-200 dark:border-night-700 px-4 py-5 sm:p-6 text-night dark:text-white">
         {children}
       </div>
     </div>
@@ -219,7 +219,7 @@ export const FileInput: React.FC<FileInputProps> = ({
         {label}
       </label>
       {description && (
-        <p className="mb-2 text-sm text-gray-500">{description}</p>
+        <p className="mb-2 text-sm text-gray-500 dark:text-gray-300">{description}</p>
       )}
       <div className="flex items-center">
         <input
@@ -231,13 +231,13 @@ export const FileInput: React.FC<FileInputProps> = ({
         />
         <label
           htmlFor={id}
-          className="relative cursor-pointer bg-white rounded-brand font-medium text-seafoam hover:text-seafoam-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-seafoam"
+          className="relative cursor-pointer rounded-brand font-medium text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-seafoam dark:focus-within:ring-sky"
         >
-          <span className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-brand bg-white hover:bg-gray-50">
+          <span className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-night-600 shadow-sm text-sm font-medium rounded-brand bg-white dark:bg-night-700 hover:bg-gray-50 dark:hover:bg-night-600">
             Choose file
           </span>
         </label>
-        <span className="ml-3 text-sm text-gray-500">
+        <span className="ml-3 text-sm text-gray-500 dark:text-gray-300">
           {fileName || 'No file selected'}
         </span>
       </div>
