@@ -12,8 +12,8 @@ import {
 import { getThemeStyles } from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
 
-// API URL - replace with your deployed API URL
-const API_URL = process.env.REACT_APP_API_URL || '';
+// API URL configuration - using specific API Gateway URL from AWS console
+const API_URL = process.env.REACT_APP_API_URL || 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
 
 interface Employer {
   id: string;
@@ -78,22 +78,34 @@ const AdminPanel: React.FC = () => {
           throw new Error("Authentication token not available");
         }
         
-        const response = await fetch(`${API_URL}/api/tpa`, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        console.log(`Connecting to API: ${API_URL}`);
+        
+        try {
+          const response = await fetch(`${API_URL}/api/tpa`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
           }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          
+          const data = await response.json();
+          console.log("TPA data:", data);  // Log the data for debugging
+          setTpa(data);
+          setError(null);
+        } catch (fetchError: any) {
+          if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('Network request failed')) {
+            console.error('API connection error:', fetchError);
+            setError(`Could not connect to API at ${API_URL}. The API might not be running or might be deployed to a different endpoint.`);
+          } else {
+            console.error('API error:', fetchError);
+            setError(fetchError.message || "Failed to fetch TPA data");
+          }
         }
-        
-        const data = await response.json();
-        console.log("TPA data:", data);  // Log the data for debugging
-        setTpa(data);
-        setError(null);
       } catch (err: any) {
-        console.error('Error fetching TPA data:', err);
+        console.error('Error in TPA data fetch process:', err);
         setError(err.message || "Failed to fetch TPA data");
       } finally {
         setLoading(false);
@@ -325,7 +337,29 @@ const AdminPanel: React.FC = () => {
       <div className={theme.layout.container}>
         <div className="max-w-6xl mx-auto p-4">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
-            <span className="block sm:inline">Error: {error}</span>
+            <div className="flex">
+              <div className="py-1"><svg className="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+              <div>
+                <p className="font-bold">API Connection Error</p>
+                <p className="text-sm">{error}</p>
+                <div className="mt-3">
+                  <p className="text-sm font-medium">Troubleshooting steps:</p>
+                  <ul className="list-disc list-inside text-sm mt-1">
+                    <li>Check that the backend API is running</li>
+                    <li>Verify environment variables are correctly set</li>
+                    <li>Current API URL: {API_URL || 'Not configured'}</li>
+                  </ul>
+                </div>
+                <div className="mt-3">
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+                  >
+                    Retry Connection
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -347,7 +381,7 @@ const AdminPanel: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-8 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Brokers Section */}
-          <div className={theme.card}>
+          <div id="brokers" className={theme.card}>
             <div className="flex items-center justify-between mb-6 p-4">
               <div className="flex items-center space-x-3">
                 <BuildingOfficeIcon className="h-6 w-6 text-blue-500" />
@@ -389,7 +423,7 @@ const AdminPanel: React.FC = () => {
           </div>
           
           {/* Employers Section */}
-          <div className={theme.card}>
+          <div id="employers" className={theme.card}>
             <div className="flex items-center justify-between mb-6 p-4">
               <div className="flex items-center space-x-3">
                 <UserGroupIcon className="h-6 w-6 text-blue-500" />
