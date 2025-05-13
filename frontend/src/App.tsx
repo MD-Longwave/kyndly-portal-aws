@@ -9,7 +9,7 @@ import QuoteDetails from './pages/QuoteDetails';
 import NewQuote from './pages/NewQuote';
 import DocumentsList from './pages/DocumentsList';
 import UserProfile from './pages/UserProfile';
-import Settings from './pages/Settings';
+import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 import SoldCases from './pages/SoldCases';
 import Enrollments from './pages/Enrollments';
@@ -186,7 +186,7 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredRoles={['admin', 'tpa_admin']}>
                   <PageTransition>
-                    <Settings />
+                    <AdminPanel />
                   </PageTransition>
                 </ProtectedRoute>
               } 
