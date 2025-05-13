@@ -132,10 +132,14 @@ module.exports = {
         // Add the teal-to-navy gradient from the brand guidelines
         'brand-gradient': 'linear-gradient(90deg, #0B4E4A 0%, #0E2C3A 100%)',
         'brand-gradient-vertical': 'linear-gradient(180deg, #0B4E4A 0%, #0E2C3A 100%)',
+        // Dark mode gradients with slight adjustments
+        'dark-gradient': 'linear-gradient(90deg, #0A1A19 0%, #0A1C24 100%)',
+        'dark-gradient-vertical': 'linear-gradient(180deg, #0A1A19 0%, #0A1C24 100%)',
       },
       boxShadow: {
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'brand': '0 4px 14px rgba(14, 44, 58, 0.15)',
+        'dark': '0 4px 14px rgba(0, 0, 0, 0.25)',
       },
       borderRadius: {
         'brand': '0.5rem',
@@ -164,10 +168,77 @@ module.exports = {
             },
           },
         },
+        // Add dark mode typography settings
+        dark: {
+          css: {
+            color: '#F8FAFC', // Light text for dark mode
+            h1: {
+              color: '#F8FAFC',
+              fontWeight: 700,
+            },
+            h2: {
+              color: '#F8FAFC',
+              fontWeight: 600,
+            },
+            h3: {
+              color: '#F8FAFC',
+              fontWeight: 600,
+            },
+            a: {
+              color: '#8BD4E1', // Sky color for dark mode links
+              '&:hover': {
+                color: '#52C1D6', // Sky-600 for hover state
+              },
+            },
+            strong: {
+              color: '#8BD4E1', // Sky color for emphasis in dark mode
+            },
+            blockquote: {
+              color: '#CCD8E1', // Night-100 for blockquotes
+              borderLeftColor: '#3F9185', // Moss-500
+            },
+            code: {
+              color: '#8BD4E1', // Sky color for code
+            },
+          },
+        },
       },
     },
   },
   plugins: [
     require('@tailwindcss/typography'), // Add typography plugin if needed
+    // Plugin to add dark mode utilities
+    function({ addBase, addUtilities, theme }) {
+      addBase({
+        // Base dark mode styles
+        '.dark': {
+          'color-scheme': 'dark',
+          '--bg-main': theme('colors.night.950'),
+          '--bg-surface': theme('colors.night.900'),
+          '--text-primary': theme('colors.neutral.100'),
+          '--text-secondary': theme('colors.neutral.300'),
+          '--border-color': theme('colors.night.700'),
+        },
+        'body.dark': {
+          backgroundColor: 'var(--bg-main)',
+          color: 'var(--text-primary)',
+        }
+      });
+      
+      addUtilities({
+        '.bg-dark-surface': {
+          backgroundColor: 'var(--bg-surface)',
+        },
+        '.text-dark-primary': {
+          color: 'var(--text-primary)',
+        },
+        '.text-dark-secondary': {
+          color: 'var(--text-secondary)',
+        },
+        '.border-dark': {
+          borderColor: 'var(--border-color)',
+        },
+      });
+    }
   ],
 } 

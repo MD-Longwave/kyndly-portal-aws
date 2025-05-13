@@ -175,26 +175,26 @@ const KnowledgeCenter: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)]">
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-secondary-800">ICHRA Knowledge Center</h1>
-        <p className="text-sm text-secondary-500">Ask questions about Individual Coverage Health Reimbursement Arrangements</p>
+      <div className="bg-brand-gradient dark:bg-dark-gradient rounded-brand p-6 mb-8 text-white shadow-brand dark:shadow-dark">
+        <h1 className="text-3xl font-bold mb-2">ICHRA Knowledge Center</h1>
+        <p className="text-sky-100">Ask questions about Individual Coverage Health Reimbursement Arrangements</p>
       </div>
 
-      <div className="flex-1 bg-white rounded-lg shadow overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white dark:bg-night-900 rounded-brand shadow-brand dark:shadow-dark overflow-hidden flex flex-col">
         {/* Chat header */}
-        <div className="bg-primary-600 text-white px-4 py-3 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-moss to-night dark:from-night-800 dark:to-night-950 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="rounded-full bg-white w-8 h-8 flex items-center justify-center mr-3">
-              <span className="text-primary-600 text-lg font-bold">K</span>
+            <div className="rounded-full bg-white dark:bg-night-800 w-8 h-8 flex items-center justify-center mr-3">
+              <span className="text-seafoam dark:text-sky text-lg font-bold">K</span>
             </div>
             <div>
-              <h2 className="font-semibold">Kyndly Assistant</h2>
-              <p className="text-xs opacity-80">AI ICHRA Expert</p>
+              <h2 className="font-semibold text-white">Kyndly Assistant</h2>
+              <p className="text-xs text-sky-100">AI ICHRA Expert</p>
             </div>
           </div>
           <button
             onClick={handleClearChat}
-            className="text-white hover:text-primary-100 p-1 rounded"
+            className="text-white hover:text-sky-100 p-1 rounded"
             title="Clear chat"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -205,7 +205,7 @@ const KnowledgeCenter: React.FC = () => {
         
         {/* Error message */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-4 my-2">
+          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 mx-4 my-2">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -213,7 +213,7 @@ const KnowledgeCenter: React.FC = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
               </div>
             </div>
           </div>
@@ -222,15 +222,15 @@ const KnowledgeCenter: React.FC = () => {
         {/* Chat messages or prompt cards */}
         <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto px-4 py-2 bg-neutral-50"
+          className="flex-1 overflow-y-auto px-4 py-2 bg-neutral-50 dark:bg-night-800"
         >
           {/* Show prompt cards if no messages and showPrompts is true */}
           {messages.length === 0 && showPrompts ? (
             <div className="py-4">
               {/* Welcome message */}
               <div className="mb-6 text-center">
-                <h3 className="text-xl font-semibold text-secondary-800 mb-2">Welcome to the Kyndly Assistant</h3>
-                <p className="text-secondary-600">
+                <h3 className="text-xl font-semibold text-night dark:text-white mb-2">Welcome to the Kyndly Assistant</h3>
+                <p className="text-night-600 dark:text-night-100">
                   I'm your ICHRA expert. Ask me anything about Individual Coverage Health Reimbursement Arrangements.
                 </p>
               </div>
@@ -239,15 +239,15 @@ const KnowledgeCenter: React.FC = () => {
                 {PROMPT_CARDS.map((cardGroup, groupIndex) => (
                   <div 
                     key={groupIndex} 
-                    className="bg-white p-4 rounded-lg border border-neutral-200 shadow-sm"
+                    className="bg-white dark:bg-night-700 p-4 rounded-brand border border-neutral-200 dark:border-night-600 shadow-sm dark:shadow-dark"
                   >
-                    <h3 className="font-medium text-primary-700 mb-1">{cardGroup.category}</h3>
-                    <p className="text-xs text-neutral-500 mb-3">{cardGroup.description}</p>
+                    <h3 className="font-medium text-seafoam dark:text-sky mb-1">{cardGroup.category}</h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-3">{cardGroup.description}</p>
                     <div className="space-y-2">
                       {cardGroup.prompts.map((prompt, promptIndex) => (
                         <button
                           key={`${groupIndex}-${promptIndex}`}
-                          className="w-full text-left p-2 rounded-md bg-primary-50 hover:bg-primary-100 text-sm text-secondary-700 transition-colors"
+                          className="w-full text-left p-2 rounded-md bg-sky-50 dark:bg-night-600 hover:bg-sky-100 dark:hover:bg-night-500 text-sm text-night dark:text-white transition-colors"
                           onClick={() => handlePromptClick(prompt)}
                         >
                           {prompt}
@@ -259,7 +259,7 @@ const KnowledgeCenter: React.FC = () => {
               </div>
               
               {!USE_ACTUAL_API && (
-                <div className="mt-4 text-center text-xs text-neutral-400 italic">
+                <div className="mt-4 text-center text-xs text-neutral-400 dark:text-neutral-500 italic">
                   Note: This is a preview with simulated responses. Full AI functionality coming soon.
                 </div>
               )}
@@ -270,20 +270,20 @@ const KnowledgeCenter: React.FC = () => {
                 <ChatMessageComponent key={index} message={message} />
               ))}
               {messages.length > 0 && !USE_ACTUAL_API && (
-                <div className="text-center text-xs text-neutral-400 italic py-1">
+                <div className="text-center text-xs text-neutral-400 dark:text-neutral-500 italic py-1">
                   Using simulated responses. Full AI integration coming soon.
                 </div>
               )}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-white rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
+                  <div className="bg-white dark:bg-night-700 rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
                     <div className="flex items-center space-x-2">
-                      <div className="rounded-full bg-primary-600 w-6 h-6 flex items-center justify-center">
+                      <div className="rounded-full bg-seafoam w-6 h-6 flex items-center justify-center">
                         <span className="text-white text-xs font-bold">K</span>
                       </div>
-                      <div className="h-2 w-6 bg-primary-200 rounded-full animate-pulse"></div>
-                      <div className="h-2 w-6 bg-primary-200 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="h-2 w-6 bg-primary-200 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                      <div className="h-2 w-6 bg-sky-200 dark:bg-sky-900 rounded-full animate-pulse"></div>
+                      <div className="h-2 w-6 bg-sky-200 dark:bg-sky-900 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="h-2 w-6 bg-sky-200 dark:bg-sky-900 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                     </div>
                   </div>
                 </div>
@@ -294,10 +294,10 @@ const KnowledgeCenter: React.FC = () => {
         </div>
         
         {/* Chat input */}
-        <div className="border-t border-neutral-200 p-3">
-          <div className="flex items-center bg-neutral-50 rounded-lg border border-neutral-300 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500">
+        <div className="border-t border-neutral-200 dark:border-night-700 p-3 bg-white dark:bg-night-900">
+          <div className="flex items-center bg-neutral-50 dark:bg-night-800 rounded-brand border border-neutral-300 dark:border-night-600 focus-within:border-seafoam dark:focus-within:border-sky focus-within:ring-1 focus-within:ring-seafoam dark:focus-within:ring-sky">
             <textarea
-              className="flex-1 resize-none bg-transparent border-0 focus:ring-0 p-3 h-12 max-h-32 text-neutral-900 placeholder-neutral-400"
+              className="flex-1 resize-none bg-transparent border-0 focus:ring-0 p-3 h-12 max-h-32 text-night dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500"
               placeholder="Ask about ICHRA..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -308,8 +308,8 @@ const KnowledgeCenter: React.FC = () => {
             <button
               className={`mx-2 rounded-md p-2 ${
                 isLoading || !inputMessage.trim()
-                  ? 'text-neutral-400 cursor-not-allowed'
-                  : 'text-primary-600 hover:bg-primary-50'
+                  ? 'text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
+                  : 'text-seafoam dark:text-sky hover:bg-seafoam-50 dark:hover:bg-night-700'
               }`}
               onClick={() => handleSendMessage(inputMessage)}
               disabled={isLoading || !inputMessage.trim()}
@@ -320,7 +320,7 @@ const KnowledgeCenter: React.FC = () => {
               </svg>
             </button>
           </div>
-          <div className="mt-1 text-xs text-center text-neutral-500">
+          <div className="mt-1 text-xs text-center text-neutral-500 dark:text-neutral-400">
             Press Enter to send, Shift+Enter for new line
           </div>
         </div>

@@ -66,23 +66,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, index = 0 }) => {
     >
       <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
         <div
-          className={`rounded-lg px-4 py-3 max-w-[85%] shadow-sm ${
+          className={`rounded-brand px-4 py-3 max-w-[85%] shadow-sm ${
             isUser
-              ? 'bg-primary-600 text-white'
-              : 'bg-white text-secondary-800'
+              ? 'bg-gradient-to-r from-moss to-night text-white dark:bg-dark-gradient dark:text-white'
+              : 'bg-white text-night dark:bg-night-800 dark:text-white'
           }`}
         >
           {/* Show avatar or icon for assistant messages */}
           {!isUser && (
             <div className="flex items-center mb-2">
-              <div className="rounded-full bg-primary-600 w-6 h-6 flex items-center justify-center mr-2">
+              <div className="rounded-full bg-seafoam w-6 h-6 flex items-center justify-center mr-2">
                 <span className="text-white text-xs font-bold">K</span>
               </div>
-              <span className="font-semibold text-secondary-800">Kyndly Assistant</span>
+              <span className="font-semibold text-night dark:text-white">Kyndly Assistant</span>
             </div>
           )}
           
-          <div className={`${isUser ? 'text-white' : 'text-secondary-800'} text-sm`}>
+          <div className={`${isUser ? 'text-white' : 'text-night dark:text-white'} text-sm`}>
             {isUser ? (
               // Render user messages normally
               renderUserContent(message.content)
@@ -90,7 +90,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, index = 0 }) => {
               // Render assistant messages as HTML
               <div
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.content) }}
-                className="ai-response"
+                className="ai-response dark:ai-response-dark"
               />
             )}
           </div>
