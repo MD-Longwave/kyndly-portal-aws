@@ -110,6 +110,7 @@ const NewQuote: React.FC = () => {
   const [loadingTpaData, setLoadingTpaData] = useState(false);
   const [brokers, setBrokers] = useState<BrokerOption[]>([]);
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
+  const [dataError, setDataError] = useState<string | null>(null);
   
   // Check API connection when component mounts
   useEffect(() => {
@@ -135,12 +136,15 @@ const NewQuote: React.FC = () => {
     const fetchTpaData = async () => {
       try {
         setLoadingTpaData(true);
+        setDataError(null);
         
         // Get the authentication token
         const token = await getIdToken();
         if (!token) {
           throw new Error("Authentication token not available");
         }
+        
+        console.log('NewQuote: Fetching TPA data from API');
         
         // Fetch TPA data from the configuration API
         const response = await fetch(`${API_URL}/api/tpa`, {
@@ -154,21 +158,27 @@ const NewQuote: React.FC = () => {
         }
         
         const data = await response.json();
+        console.log('NewQuote: TPA data received:', data);
         setTpaData(data);
         
         // Set available brokers
-        if (data && data.brokers) {
+        if (data && data.brokers && Array.isArray(data.brokers)) {
+          console.log(`NewQuote: Found ${data.brokers.length} brokers in TPA data`);
+          
           const brokerOptions = data.brokers.map((broker: any) => ({
             id: broker.id,
             name: broker.name
           }));
           
+          console.log('NewQuote: Broker options:', brokerOptions);
           setBrokers(brokerOptions);
           
           // If user is a broker, pre-select their broker
           if (user?.brokerId) {
+            console.log(`NewQuote: User is a broker with ID ${user.brokerId}, pre-selecting`);
             const userBroker = brokerOptions.find((broker: BrokerOption) => broker.id === user.brokerId);
             if (userBroker) {
+              console.log('NewQuote: Found matching broker for user, setting form data');
               setFormData(prev => ({
                 ...prev,
                 brokerId: user.brokerId || ''
@@ -176,27 +186,45 @@ const NewQuote: React.FC = () => {
               
               // Load employers for this broker
               const selectedBroker = data.brokers.find((b: any) => b.id === user.brokerId);
-              if (selectedBroker && selectedBroker.employers) {
-                setEmployers(selectedBroker.employers.map((emp: any) => ({
+              if (selectedBroker && selectedBroker.employers && Array.isArray(selectedBroker.employers)) {
+                console.log(`NewQuote: Found ${selectedBroker.employers.length} employers for broker ${user.brokerId}`);
+                
+                const employerOptions = selectedBroker.employers.map((emp: any) => ({
                   id: emp.id,
                   name: emp.name
-                })));
+                }));
+                
+                console.log('NewQuote: Employer options:', employerOptions);
+                setEmployers(employerOptions);
                 
                 // If user is an employer, pre-select their employer
                 if (user?.employerId) {
+                  console.log(`NewQuote: User is an employer with ID ${user.employerId}, pre-selecting`);
                   setFormData(prev => ({
                     ...prev,
                     employerId: user.employerId || ''
                   }));
                 }
+              } else {
+                console.log('NewQuote: No employers found for broker or invalid data structure');
+                setEmployers([]);
               }
+            } else {
+              console.log(`NewQuote: Broker ID ${user.brokerId} not found in available brokers`);
             }
+          } else {
+            console.log('NewQuote: User is not a broker, no pre-selection needed');
           }
+        } else {
+          console.warn('NewQuote: No brokers found in TPA data or invalid data structure');
+          setBrokers([]);
+          setEmployers([]);
         }
-        
-        console.log('Successfully fetched TPA data:', data);
       } catch (error) {
         console.error('Error fetching TPA data:', error);
+        setDataError(`Failed to load broker/employer data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setBrokers([]);
+        setEmployers([]);
       } finally {
         setLoadingTpaData(false);
       }
@@ -236,22 +264,35 @@ const NewQuote: React.FC = () => {
     
     // If broker changes, update employer options and reset employerId
     if (name === 'brokerId') {
-      const selectedBroker = tpaData?.brokers.find(broker => broker.id === value);
+      console.log(`NewQuote: Broker changed to ${value}, updating employers`);
       
-      if (selectedBroker && selectedBroker.employers) {
-        setEmployers(selectedBroker.employers.map(employer => ({
-          id: employer.id,
-          name: employer.name
-        })));
-      } else {
-        setEmployers([]);
-      }
-      
-      // Reset employer selection
       setFormData(prev => ({
         ...prev,
-        employerId: ''
+        employerId: '' // Reset employer selection when broker changes
       }));
+      
+      if (!value) {
+        console.log('NewQuote: No broker selected, clearing employers');
+        setEmployers([]);
+        return;
+      }
+      
+      const selectedBroker = tpaData?.brokers?.find(broker => broker.id === value);
+      
+      if (selectedBroker && selectedBroker.employers && Array.isArray(selectedBroker.employers)) {
+        console.log(`NewQuote: Found ${selectedBroker.employers.length} employers for broker ${value}`);
+        
+        const employerOptions = selectedBroker.employers.map(employer => ({
+          id: employer.id,
+          name: employer.name
+        }));
+        
+        console.log('NewQuote: Setting employer options:', employerOptions);
+        setEmployers(employerOptions);
+      } else {
+        console.log(`NewQuote: No employers found for broker ${value} or invalid data structure`);
+        setEmployers([]);
+      }
     }
   };
 
@@ -450,24 +491,10 @@ const NewQuote: React.FC = () => {
   // Update employers when broker changes
   const handleBrokerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const brokerId = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      brokerId,
-      employerId: '' // Reset employer when broker changes
-    }));
+    console.log(`NewQuote: handleBrokerChange called with brokerId ${brokerId}`);
     
-    // Find the selected broker and update employers list
-    if (tpaData && tpaData.brokers) {
-      const selectedBroker = tpaData.brokers.find(broker => broker.id === brokerId);
-      if (selectedBroker && selectedBroker.employers) {
-        setEmployers(selectedBroker.employers.map(emp => ({
-          id: emp.id,
-          name: emp.name
-        })));
-      } else {
-        setEmployers([]);
-      }
-    }
+    // Call the existing handleChange function to maintain consistency
+    handleChange(e);
   };
 
   return (
@@ -481,6 +508,13 @@ const NewQuote: React.FC = () => {
         <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-brand relative mb-6" role="alert">
           <strong className="font-bold">Connection Error! </strong>
           <span className="block sm:inline">Cannot connect to the backend server. Your form submission may fail.</span>
+        </div>
+      )}
+      
+      {dataError && (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-6 py-4 rounded-brand relative mb-6" role="alert">
+          <strong className="font-bold">Data Loading Error! </strong>
+          <span className="block sm:inline">{dataError}</span>
         </div>
       )}
       
@@ -548,10 +582,13 @@ const NewQuote: React.FC = () => {
                 required
                 disabled={loadingTpaData}
                 options={[
-                  { value: "", label: "Select Broker" },
+                  { value: "", label: loadingTpaData ? "Loading brokers..." : "Select Broker" },
                   ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
                 ]}
               />
+              {brokers.length === 0 && !loadingTpaData && (
+                <p className="text-sm text-red-500 mt-1">No brokers available. Please contact an administrator.</p>
+              )}
             </div>
             
             {/* Employer Selection - Only enabled if broker is selected */}
@@ -567,12 +604,12 @@ const NewQuote: React.FC = () => {
                 required
                 disabled={loadingTpaData || !formData.brokerId}
                 options={[
-                  { value: "", label: "Select Employer" },
+                  { value: "", label: loadingTpaData ? "Loading employers..." : "Select Employer" },
                   ...employers.map(employer => ({ value: employer.id, label: employer.name }))
                 ]}
               />
-              {formData.brokerId && employers.length === 0 && (
-                <p className="text-sm text-gray-500">No employers found for this broker</p>
+              {formData.brokerId && employers.length === 0 && !loadingTpaData && (
+                <p className="text-sm text-red-500 mt-1">No employers found for this broker. Please add an employer first.</p>
               )}
             </div>
             
@@ -723,10 +760,13 @@ const NewQuote: React.FC = () => {
                   required
                   disabled={loadingTpaData}
                   options={[
-                    { value: "", label: "Select Broker" },
+                    { value: "", label: loadingTpaData ? "Loading brokers..." : "Select Broker" },
                     ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
                   ]}
                 />
+                {brokers.length === 0 && !loadingTpaData && (
+                  <p className="text-sm text-red-500 mt-1">No brokers available. Please contact an administrator.</p>
+                )}
               </div>
             )}
             
@@ -741,10 +781,13 @@ const NewQuote: React.FC = () => {
                   required
                   disabled={loadingTpaData || !formData.brokerId}
                   options={[
-                    { value: "", label: "Select Employer" },
+                    { value: "", label: loadingTpaData ? "Loading employers..." : "Select Employer" },
                     ...employers.map(employer => ({ value: employer.id, label: employer.name }))
                   ]}
                 />
+                {formData.brokerId && employers.length === 0 && !loadingTpaData && (
+                  <p className="text-sm text-red-500 mt-1">No employers found for this broker. Please add an employer first.</p>
+                )}
               </div>
             )}
           </div>
@@ -789,7 +832,7 @@ const NewQuote: React.FC = () => {
           <Button 
             variant="primary" 
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (!formData.brokerId || !formData.employerId)}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Quote'}
           </Button>

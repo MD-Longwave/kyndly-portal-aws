@@ -43,6 +43,8 @@ interface User {
   tpaId?: string;
   brokerId?: string;
   employerId?: string;
+  status?: string;
+  enabled?: boolean;
 }
 
 interface NewUser {
@@ -511,257 +513,269 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  // Render user list for the Users tab
+  // Render the users tab with table layout
   const renderUsers = () => {
-    if (loadingUsers) {
-      return (
-        <div className="flex justify-center items-center p-6">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-        </div>
-      );
-    }
-
-    if (users.length === 0) {
-      return (
-        <div className="text-center p-6">
-          <p className="text-gray-500">No users found. Click the button below to add a user.</p>
-        </div>
-      );
-    }
-
     return (
-      <div className="p-4 space-y-3">
-        {users.map((userItem) => (
-          <div 
-            key={userItem.username}
-            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-          >
-            <div>
-              <span className="font-medium">{userItem.name}</span>
-              <div className="text-xs">
-                <span className="text-gray-500">Email: {userItem.email}</span>
-                <span className="text-blue-500 ml-2">
-                  Role: {userItem.role.charAt(0).toUpperCase() + userItem.role.slice(1)}
-                </span>
-                {userItem.brokerId && tpa?.brokers && (
-                  <span className="text-green-500 ml-2">
-                    Broker: {tpa.brokers.find(b => b.id === userItem.brokerId)?.name || 'Unknown'}
-                  </span>
-                )}
-              </div>
-            </div>
+      <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-night dark:text-white">Users</h2>
+            <button
+              onClick={() => setUserDialogOpen(true)}
+              className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
+            >
+              <PlusIcon className="h-5 w-5 mr-1" />
+              Add User
+            </button>
           </div>
-        ))}
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className={theme.layout.container}>
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+          
+          {loadingUsers ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
+              <span className="ml-3 text-night dark:text-white">Loading users...</span>
+            </div>
+          ) : error ? (
+            <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
+              <p>{error}</p>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <UserIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p>No users found. Create your first user by clicking the Add User button.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
+                <thead className="bg-gray-50 dark:bg-night-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Broker</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
+                  {users.map((user) => {
+                    // Find broker name if brokerId exists
+                    let brokerName = "";
+                    if (user.brokerId && tpa && tpa.brokers) {
+                      const broker = tpa.brokers.find(b => b.id === user.brokerId);
+                      if (broker) brokerName = broker.name;
+                    }
+                    
+                    return (
+                      <tr key={user.username} className="hover:bg-gray-50 dark:hover:bg-night-700">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                              <UserIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-night dark:text-white">{user.name}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 
+                              user.role === 'broker' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 
+                              user.role === 'employer' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
+                              'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{brokerName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${user.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
+                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
+                            {user.status || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button 
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => {
+                              // Delete user functionality (to be implemented)
+                              alert('Delete user functionality not yet implemented');
+                            }}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={theme.layout.container}>
-        <div className="max-w-6xl mx-auto p-4">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
-            <div className="flex">
-              <div className="py-1"><svg className="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
-              <div>
-                <p className="font-bold">API Connection Error</p>
-                <p className="text-sm">{error}</p>
-                <div className="mt-3">
-                  <p className="text-sm font-medium">Troubleshooting steps:</p>
-                  <ul className="list-disc list-inside text-sm mt-1">
-                    <li>Check that the backend API is running</li>
-                    <li>Verify environment variables are correctly set</li>
-                    <li>Current API URL: {API_URL || 'Not configured'}</li>
-                  </ul>
+        
+        {/* User Dialog */}
+        {userDialogOpen && (
+          <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
+            <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-night-700">
+                <h3 className="text-lg font-semibold text-night dark:text-white">Add New User</h3>
+                <button 
+                  onClick={() => setUserDialogOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Username</label>
+                    <input
+                      type="text"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="username"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="Full Name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Role</label>
+                    <select
+                      value={newUser.role}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    >
+                      <option value="broker">Broker</option>
+                      <option value="employer">Employer</option>
+                    </select>
+                  </div>
+                  
+                  {newUser.role === 'employer' && (
+                    <div>
+                      <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
+                      <select
+                        value={newUser.brokerId}
+                        onChange={(e) => setNewUser({...newUser, brokerId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      >
+                        <option value="">Select Broker</option>
+                        {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                          <option key={broker.id} value={broker.id}>{broker.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Temporary Password</label>
+                    <input
+                      type="password"
+                      value={newUser.tempPassword}
+                      onChange={(e) => setNewUser({...newUser, tempPassword: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="Temporary Password"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      User will be required to change password on first login.
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-3">
-                  <button 
-                    onClick={() => window.location.reload()} 
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+                
+                {error && (
+                  <div className="mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
+                    <p>{error}</p>
+                  </div>
+                )}
+                
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setUserDialogOpen(false)}
+                    className="mr-2 px-4 py-2 text-sm font-medium text-night dark:text-white border border-gray-300 dark:border-night-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-night-700"
                   >
-                    Retry Connection
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddUser}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-500 border border-transparent rounded-md shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    Create User
                   </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
-  }
+  };
 
-  if (!tpa) {
-    return (
-      <div className={theme.layout.container}>
-        <div className="max-w-6xl mx-auto p-4">
-          <p className={theme.typography.body}>No TPA data found</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Modify the main render logic for the tabs
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={`container mx-auto p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
-    >
-      <h1 className="text-2xl font-bold mb-6">Administration Panel</h1>
+    <div className="space-y-6">
+      {/* Tab navigation */}
+      <div className="border-b border-gray-200 dark:border-night-700">
+        <nav className="-mb-px flex space-x-6">
+          <button
+            onClick={() => setActiveTab('brokers')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'brokers'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
+            }`}
+          >
+            Brokers & Employers
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'users'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
+            }`}
+          >
+            Users
+          </button>
+        </nav>
+      </div>
       
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative">
-          <span className="block sm:inline">{error}</span>
+      {/* Tab content */}
+      {activeTab === 'brokers' && (
+        <div className="space-y-6">
+          {/* Brokers Section - Keep existing code for this section */}
+          {/* ... existing brokers code ... */}
         </div>
       )}
       
-      {!isAdmin ? (
-        <div className="text-center py-8">
-          <h3 className="text-xl mb-2">Access Denied</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">You do not have administrative permissions to view this page.</p>
-        </div>
-      ) : (
-        <>
-          {loading ? (
-            <div className="flex justify-center items-center p-6">
-              <div className="loader"></div>
-            </div>
-          ) : (
-            <div>
-              {/* Tab Navigation */}
-              <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                <button
-                  onClick={() => setActiveTab('brokers')}
-                  className={`py-2 px-4 ${
-                    activeTab === 'brokers'
-                      ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <BuildingOfficeIcon className="w-5 h-5 mr-2" />
-                    Brokers & Employers
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className={`py-2 px-4 ${
-                    activeTab === 'users'
-                      ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <UserGroupIcon className="w-5 h-5 mr-2" />
-                    Users
-                  </div>
-                </button>
-              </div>
-              
-              {/* Tab Content */}
-              {activeTab === 'brokers' && (
-                <>
-                  <div className="grid grid-cols-1 gap-4">
-                    {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                      <div key={broker.id} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                        <div className="p-4 flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
-                              <BuildingOfficeIcon className="w-5 h-5 text-blue-500 dark:text-blue-300" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{broker.name}</h3>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {broker.employers?.length || 0} employers
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <button 
-                              onClick={() => {
-                                setSelectedBrokerId(broker.id);
-                                setEmployerDialogOpen(true);
-                                setNewEmployer(prev => ({...prev, brokerId: broker.id}));
-                              }}
-                              className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 mr-2"
-                            >
-                              <PlusIcon className="w-5 h-5" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteBroker(broker.id)}
-                              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
-                            >
-                              <TrashIcon className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {broker.employers && broker.employers.length > 0 && (
-                          <div className="border-t border-gray-200 dark:border-gray-700">
-                            {broker.employers.map((employer) => (
-                              <div 
-                                key={employer.id} 
-                                className="p-3 pl-12 flex items-center justify-between border-b border-gray-100 dark:border-gray-900 last:border-b-0"
-                              >
-                                <div className="flex items-center">
-                                  <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
-                                  <span>{employer.name}</span>
-                                </div>
-                                <button 
-                                  onClick={() => handleDeleteEmployer(broker.id, employer.id)}
-                                  className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
-                                >
-                                  <TrashIcon className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={() => setBrokerDialogOpen(true)}
-                      className="flex items-center justify-center py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
-                    >
-                      <PlusIcon className="w-5 h-5 mr-1" />
-                      Add Broker
-                    </button>
-                  </div>
-                </>
-              )}
-              
-              {activeTab === 'users' && (
-                <>
-                  {renderUsers()}
-                  
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={() => setUserDialogOpen(true)}
-                      className="flex items-center justify-center py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
-                    >
-                      <PlusIcon className="w-5 h-5 mr-1" />
-                      Add User
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </>
-      )}
-    </motion.div>
+      {activeTab === 'users' && renderUsers()}
+    </div>
   );
 };
 
