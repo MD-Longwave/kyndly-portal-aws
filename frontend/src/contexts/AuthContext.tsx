@@ -165,7 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Get the payload for debugging
       const payload = session.getIdToken().decodePayload();
-      console.log('AuthContext: Token payload:', payload);
+      console.log('AuthContext: Token payload:', JSON.stringify(payload));
       
       // Specifically log TPA and employer IDs if present
       if (payload['custom:tpa_id']) {
@@ -178,6 +178,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log(`AuthContext: Found custom:employer_id = ${payload['custom:employer_id']}`);
       } else {
         console.warn('AuthContext: No custom:employer_id found in token');
+      }
+      
+      // Make sure the token isn't malformed
+      if (!token.startsWith('ey')) {
+        console.error('AuthContext: Token does not start with expected JWT format');
       }
       
       return token;

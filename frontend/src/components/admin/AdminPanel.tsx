@@ -157,11 +157,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           console.log(`AdminPanel: Fetching TPA data from ${tpaEndpoint}`);
           const response = await fetch(tpaEndpoint, {
             method: 'GET',
-            mode: 'cors',
-            credentials: 'include',
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Authorization': `Bearer ${token}`
             }
           });
           
@@ -244,11 +241,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         
         const response = await fetch(endpoint, {
           method: 'GET',
-          mode: 'cors',
-          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
           }
         });
         
