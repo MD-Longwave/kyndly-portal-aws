@@ -5,14 +5,59 @@ import {
   DocumentTextIcon, 
   DocumentChartBarIcon, 
   Cog6ToothIcon,
-  UserIcon
+  UserIcon,
+  ClipboardDocumentCheckIcon,
+  UserGroupIcon,
+  AdjustmentsHorizontalIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
+import { featureAccess } from '../../config/accessConfig';
+import { UserRole } from '../../contexts/AuthContext';
 
 const navItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: HomeIcon },
-  { name: 'Quotes', path: '/quotes', icon: DocumentChartBarIcon },
-  { name: 'Documents', path: '/documents', icon: DocumentTextIcon },
+  { 
+    name: 'Dashboard', 
+    path: '/dashboard', 
+    icon: HomeIcon, 
+    roles: featureAccess.dashboard 
+  },
+  { 
+    name: 'Quotes', 
+    path: '/quotes', 
+    icon: DocumentChartBarIcon, 
+    roles: featureAccess.quotes 
+  },
+  { 
+    name: 'Sold Cases', 
+    path: '/sold-cases', 
+    icon: ClipboardDocumentCheckIcon, 
+    roles: featureAccess.soldcases 
+  },
+  { 
+    name: 'Enrollments', 
+    path: '/enrollments', 
+    icon: UserGroupIcon, 
+    roles: featureAccess.enrollments 
+  },
+  { 
+    name: 'Kynd Choice', 
+    path: '/kynd-choice', 
+    icon: AdjustmentsHorizontalIcon, 
+    roles: featureAccess.kyndchoice 
+  },
+  { 
+    name: 'Knowledge Center', 
+    path: '/knowledge-center', 
+    icon: BookOpenIcon, 
+    roles: featureAccess.knowledgecenter 
+  },
+  { 
+    name: 'Documents', 
+    path: '/documents', 
+    icon: DocumentTextIcon, 
+    roles: featureAccess.documents 
+  },
 ];
 
 const userItems = [
@@ -20,12 +65,27 @@ const userItems = [
 ];
 
 const adminItems = [
-  { name: 'Admin Panel', path: '/admin-panel', icon: Cog6ToothIcon },
+  { 
+    name: 'Admin Panel', 
+    path: '/admin-panel', 
+    icon: Cog6ToothIcon, 
+    roles: featureAccess.adminpanel 
+  },
 ];
 
 const Sidebar: React.FC = () => {
   const { hasRole, user } = useAuth();
-  const isAdmin = user && (user.role === 'admin' || user.role === 'tpa_admin' || user.role === 'tpa_user');
+  
+  // Function to check if user has access to a nav item
+  const hasAccess = (roles: string[]): boolean => {
+    if (!roles || roles.length === 0) return true;
+    return roles.some(role => hasRole(role as UserRole));
+  };
+
+  // Filter nav items based on user role
+  const filteredNavItems = navItems.filter(item => hasAccess(item.roles as string[]));
+  const filteredAdminItems = adminItems.filter(item => hasAccess(item.roles as string[]));
+  const hasAdminAccess = filteredAdminItems.length > 0;
 
   return (
     <div className="hidden w-64 flex-shrink-0 bg-primary-800 text-white md:block">
@@ -34,7 +94,7 @@ const Sidebar: React.FC = () => {
       </div>
       <nav className="mt-6 px-3">
         <div className="space-y-1">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
@@ -76,13 +136,13 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
         
-        {isAdmin && (
+        {hasAdminAccess && (
           <div className="mt-8 border-t border-primary-700 pt-4">
             <p className="px-3 text-xs font-semibold uppercase tracking-wider text-primary-300">
               Administration
             </p>
             <div className="mt-2 space-y-1">
-              {adminItems.map((item) => (
+              {filteredAdminItems.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.path}

@@ -73,11 +73,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const tpaId = payload['custom:tpa_id'] || undefined;
     const brokerId = payload['custom:broker_id'] || undefined;
     const employerId = payload['custom:employer_id'] || undefined;
-    let role: UserRole = 'admin';
-    if (tpaId && brokerId && employerId) role = 'employer';
-    else if (tpaId && brokerId) role = 'broker';
-    else if (tpaId) role = 'tpa_admin'; // Default TPA users to tpa_admin
-    // else default to 'admin' (or you can add more logic)
+    
+    // Check for the role from the custom attribute first
+    const customRole = payload['custom:role'];
+    let role: UserRole;
+    
+    if (customRole) {
+      // If custom:role attribute exists, use it as the primary role
+      console.log('Found custom:role in token:', customRole);
+      
+      // Validate that it's a valid UserRole type
+      if (['admin', 'kyndly_staff', 'tpa_admin', 'tpa_user', 'tpa', 'broker', 'employer'].includes(customRole)) {
+        role = customRole as UserRole;
+      } else {
+        console.warn(`Invalid custom:role value: ${customRole}, falling back to ID-based role detection`);
+        // Fall back to the ID-based detection below
+        if (tpaId && brokerId && employerId) role = 'employer';
+        else if (tpaId && brokerId) role = 'broker';
+        else if (tpaId) role = 'tpa_admin';
+        else role = 'admin';
+      }
+    } else {
+      // If no custom:role attribute, determine role based on IDs
+      console.log('No custom:role found, determining role based on IDs');
+      if (tpaId && brokerId && employerId) role = 'employer';
+      else if (tpaId && brokerId) role = 'broker';
+      else if (tpaId) role = 'tpa_admin';
+      else role = 'admin';
+    }
+    
+    // Log the determined role for debugging
+    console.log(`Role determined for user ${username}: ${role}`);
+    
     const roles = payload['custom:roles'] ? JSON.parse(payload['custom:roles']) : [];
     const permissions = payload['custom:permissions'] ? JSON.parse(payload['custom:permissions']) : [];
     const orgId = payload['custom:organization_id'] || '';

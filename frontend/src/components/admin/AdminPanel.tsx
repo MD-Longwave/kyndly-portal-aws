@@ -81,6 +81,9 @@ const AdminPanel: React.FC = () => {
     brokerId: '',
     tempPassword: ''
   });
+  // Add state for the list of users
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   // Check if user is in admin group
   useEffect(() => {
@@ -146,6 +149,50 @@ const AdminPanel: React.FC = () => {
     };
     
     fetchTpa();
+  }, [user, getIdToken]);
+
+  // Fetch users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!user) return;
+      
+      try {
+        setLoadingUsers(true);
+        
+        if (!API_URL) {
+          setError("API URL not configured. Please check your environment variables.");
+          setLoadingUsers(false);
+          return;
+        }
+        
+        const token = await getIdToken();
+        if (!token) {
+          throw new Error("Authentication token not available");
+        }
+        
+        const response = await fetch(`${API_URL}/api/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("Users data:", data);
+        setUsers(data.users || []);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching users:', err);
+        setError(err.message || "Failed to fetch users");
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    
+    fetchUsers();
   }, [user, getIdToken]);
 
   // Handle adding a new broker
@@ -347,6 +394,18 @@ const AdminPanel: React.FC = () => {
       
       setUserDialogOpen(false);
       setError(null);
+
+      // Refresh users list
+      const usersResponse = await fetch(`${API_URL}/api/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        setUsers(usersData.users || []);
+      }
       
       // Show success message
       alert(`User ${result.user.username} created successfully`);
@@ -452,6 +511,51 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Render user list for the Users tab
+  const renderUsers = () => {
+    if (loadingUsers) {
+      return (
+        <div className="flex justify-center items-center p-6">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
+
+    if (users.length === 0) {
+      return (
+        <div className="text-center p-6">
+          <p className="text-gray-500">No users found. Click the button below to add a user.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 space-y-3">
+        {users.map((userItem) => (
+          <div 
+            key={userItem.username}
+            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+          >
+            <div>
+              <span className="font-medium">{userItem.name}</span>
+              <div className="text-xs">
+                <span className="text-gray-500">Email: {userItem.email}</span>
+                <span className="text-blue-500 ml-2">
+                  Role: {userItem.role.charAt(0).toUpperCase() + userItem.role.slice(1)}
+                </span>
+                {userItem.brokerId && tpa?.brokers && (
+                  <span className="text-green-500 ml-2">
+                    Broker: {tpa.brokers.find(b => b.id === userItem.brokerId)?.name || 'Unknown'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className={theme.layout.container}>
@@ -507,433 +611,157 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className={theme.layout.container}>
-      <div className="max-w-6xl mx-auto space-y-8 p-4">
-        {/* Tab Navigation */}
-        <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700">
-          <button
-            className={`py-2 px-4 ${activeTab === 'brokers' ? 'text-blue-600 border-b-2 border-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setActiveTab('brokers')}
-          >
-            <div className="flex items-center space-x-2">
-              <BuildingOfficeIcon className="h-5 w-5" />
-              <span>Brokers</span>
-            </div>
-          </button>
-          
-          <button
-            className={`py-2 px-4 ${activeTab === 'employers' ? 'text-blue-600 border-b-2 border-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setActiveTab('employers')}
-          >
-            <div className="flex items-center space-x-2">
-              <UserGroupIcon className="h-5 w-5" />
-              <span>Employers</span>
-            </div>
-          </button>
-          
-          <button
-            className={`py-2 px-4 ${activeTab === 'users' ? 'text-blue-600 border-b-2 border-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setActiveTab('users')}
-          >
-            <div className="flex items-center space-x-2">
-              <UserIcon className="h-5 w-5" />
-              <span>Users</span>
-            </div>
-          </button>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`container mx-auto p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
+    >
+      <h1 className="text-2xl font-bold mb-6">Administration Panel</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative">
+          <span className="block sm:inline">{error}</span>
         </div>
-        
-        {/* Main content based on active tab */}
-        {activeTab === 'brokers' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Brokers Section */}
-            <div id="brokers" className={theme.card}>
-              <div className="flex items-center justify-between mb-6 p-4">
-                <div className="flex items-center space-x-3">
-                  <BuildingOfficeIcon className="h-6 w-6 text-blue-500" />
-                  <h2 className={theme.typography.h2}>Brokers</h2>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setBrokerDialogOpen(true)}
-                  className={`${theme.button.primary} flex items-center space-x-2 px-3 py-1`}
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  <span>Add Broker</span>
-                </motion.button>
-              </div>
-              
-              <div className="border-t border-gray-200 dark:border-gray-700"></div>
-              
-              <div className="p-4 space-y-3">
-                {tpa.brokers && tpa.brokers.length > 0 ? (
-                  tpa.brokers.map((broker) => (
-                    <div key={broker.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div>
-                        <span className="font-medium">{broker.name}</span>
-                        <span className="text-xs text-gray-500 ml-2">ID: {broker.id}</span>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteBroker(broker.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-gray-500 italic">No brokers found</div>
-                )}
-              </div>
+      )}
+      
+      {!isAdmin ? (
+        <div className="text-center py-8">
+          <h3 className="text-xl mb-2">Access Denied</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">You do not have administrative permissions to view this page.</p>
+        </div>
+      ) : (
+        <>
+          {loading ? (
+            <div className="flex justify-center items-center p-6">
+              <div className="loader"></div>
             </div>
-          </div>
-        )}
-        
-        {activeTab === 'employers' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Employers Section */}
-            <div id="employers" className={theme.card}>
-              <div className="flex items-center justify-between mb-6 p-4">
-                <div className="flex items-center space-x-3">
-                  <UserGroupIcon className="h-6 w-6 text-blue-500" />
-                  <h2 className={theme.typography.h2}>Employers</h2>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setEmployerDialogOpen(true)}
-                  className={`${theme.button.primary} flex items-center space-x-2 px-3 py-1`}
-                  disabled={!tpa.brokers || tpa.brokers.length === 0}
+          ) : (
+            <div>
+              {/* Tab Navigation */}
+              <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                <button
+                  onClick={() => setActiveTab('brokers')}
+                  className={`py-2 px-4 ${
+                    activeTab === 'brokers'
+                      ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
                 >
-                  <PlusIcon className="h-5 w-5" />
-                  <span>Add Employer</span>
-                </motion.button>
+                  <div className="flex items-center">
+                    <BuildingOfficeIcon className="w-5 h-5 mr-2" />
+                    Brokers & Employers
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`py-2 px-4 ${
+                    activeTab === 'users'
+                      ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <UserGroupIcon className="w-5 h-5 mr-2" />
+                    Users
+                  </div>
+                </button>
               </div>
               
-              <div className="border-t border-gray-200 dark:border-gray-700"></div>
-              
-              <div className="p-4">
-                <div className="mb-4">
-                  <label className={`${theme.typography.label} block mb-2`}>Filter by Broker</label>
-                  <select
-                    value={selectedBrokerId}
-                    onChange={(e) => setSelectedBrokerId(e.target.value)}
-                    className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  >
-                    <option value="">All Brokers</option>
-                    {tpa.brokers && tpa.brokers.map((broker) => (
-                      <option key={broker.id} value={broker.id}>
-                        {broker.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="space-y-3">
-                  {tpa.brokers && tpa.brokers
-                    .filter(broker => !selectedBrokerId || broker.id === selectedBrokerId)
-                    .flatMap(broker => 
-                      (broker.employers || []).map(employer => ({
-                        ...employer,
-                        brokerName: broker.name,
-                        brokerId: broker.id
-                      }))
-                    )
-                    .map((employer) => (
-                      <div key={employer.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div>
-                          <span className="font-medium">{employer.name}</span>
-                          <div className="text-xs">
-                            <span className="text-gray-500">ID: {employer.id}</span>
-                            <span className="text-blue-500 ml-2">Broker: {employer.brokerName}</span>
+              {/* Tab Content */}
+              {activeTab === 'brokers' && (
+                <>
+                  <div className="grid grid-cols-1 gap-4">
+                    {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                      <div key={broker.id} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                        <div className="p-4 flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
+                              <BuildingOfficeIcon className="w-5 h-5 text-blue-500 dark:text-blue-300" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{broker.name}</h3>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {broker.employers?.length || 0} employers
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <button 
+                              onClick={() => {
+                                setSelectedBrokerId(broker.id);
+                                setEmployerDialogOpen(true);
+                                setNewEmployer(prev => ({...prev, brokerId: broker.id}));
+                              }}
+                              className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 mr-2"
+                            >
+                              <PlusIcon className="w-5 h-5" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteBroker(broker.id)}
+                              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteEmployer(employer.brokerId!, employer.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                        
+                        {broker.employers && broker.employers.length > 0 && (
+                          <div className="border-t border-gray-200 dark:border-gray-700">
+                            {broker.employers.map((employer) => (
+                              <div 
+                                key={employer.id} 
+                                className="p-3 pl-12 flex items-center justify-between border-b border-gray-100 dark:border-gray-900 last:border-b-0"
+                              >
+                                <div className="flex items-center">
+                                  <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
+                                  <span>{employer.name}</span>
+                                </div>
+                                <button 
+                                  onClick={() => handleDeleteEmployer(broker.id, employer.id)}
+                                  className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
                   
-                  {(!tpa.brokers || tpa.brokers.length === 0 || 
-                     !tpa.brokers.some(broker => broker.employers && broker.employers.length > 0) ||
-                     (selectedBrokerId && !tpa.brokers.find(b => b.id === selectedBrokerId)?.employers?.length)) && (
-                    <div className="text-gray-500 italic">No employers found</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'users' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Users Section */}
-            <div id="users" className={theme.card}>
-              <div className="flex items-center justify-between mb-6 p-4">
-                <div className="flex items-center space-x-3">
-                  <UserIcon className="h-6 w-6 text-blue-500" />
-                  <h2 className={theme.typography.h2}>Users</h2>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setUserDialogOpen(true)}
-                  className={`${theme.button.primary} flex items-center space-x-2 px-3 py-1`}
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  <span>Add User</span>
-                </motion.button>
-              </div>
-              
-              <div className="border-t border-gray-200 dark:border-gray-700"></div>
-              
-              <div className="p-4">
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
-                  <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">User Management</h3>
-                  <p className="text-sm text-blue-600 dark:text-blue-300">
-                    Create broker and employer users with appropriate access levels. Broker users can manage employer accounts,
-                    while employer users can submit quotes and view their specific data.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">
-                    Click "Add User" to create a new broker or employer user account.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Add Broker Dialog */}
-        {brokerDialogOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className={`${theme.card} max-w-md w-full p-6`}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className={theme.typography.h3}>Add New Broker</h3>
-                <button 
-                  onClick={() => setBrokerDialogOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Broker Name</label>
-                <input
-                  type="text"
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  placeholder="Enter broker name"
-                  value={newBroker.name}
-                  onChange={(e) => setNewBroker({ ...newBroker, name: e.target.value })}
-                />
-              </div>
-              
-              <div className="flex space-x-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setBrokerDialogOpen(false)}
-                  className={`${theme.button.secondary} flex-1 py-2`}
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleAddBroker}
-                  className={`${theme.button.primary} flex-1 py-2`}
-                >
-                  Add
-                </motion.button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Add Employer Dialog */}
-        {employerDialogOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className={`${theme.card} max-w-md w-full p-6`}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className={theme.typography.h3}>Add New Employer</h3>
-                <button 
-                  onClick={() => setEmployerDialogOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Employer Name</label>
-                <input
-                  type="text"
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  placeholder="Enter employer name"
-                  value={newEmployer.name}
-                  onChange={(e) => setNewEmployer({ ...newEmployer, name: e.target.value })}
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Select Broker</label>
-                <select
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  value={newEmployer.brokerId}
-                  onChange={(e) => setNewEmployer({ ...newEmployer, brokerId: e.target.value })}
-                >
-                  <option value="">Select a Broker</option>
-                  {tpa.brokers && tpa.brokers.map((broker) => (
-                    <option key={broker.id} value={broker.id}>
-                      {broker.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex space-x-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setEmployerDialogOpen(false)}
-                  className={`${theme.button.secondary} flex-1 py-2`}
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleAddEmployer}
-                  className={`${theme.button.primary} flex-1 py-2`}
-                >
-                  Add
-                </motion.button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Add User Dialog */}
-        {userDialogOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className={`${theme.card} max-w-md w-full p-6`}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className={theme.typography.h3}>Add New User</h3>
-                <button 
-                  onClick={() => setUserDialogOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Username</label>
-                <input
-                  type="text"
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  placeholder="Enter username"
-                  value={newUser.username}
-                  onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Email</label>
-                <input
-                  type="email"
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  placeholder="Enter email address"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Name</label>
-                <input
-                  type="text"
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  placeholder="Enter full name"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>User Role</label>
-                <select
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  value={newUser.role}
-                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                >
-                  <option value="broker">Broker</option>
-                  <option value="employer">Employer</option>
-                </select>
-              </div>
-              
-              {/* Show broker selection only for employer users */}
-              {newUser.role === 'employer' && (
-                <div className="mb-4">
-                  <label className={`${theme.typography.label} block mb-2`}>Select Broker</label>
-                  <select
-                    className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                    value={newUser.brokerId || ''}
-                    onChange={(e) => setNewUser({ ...newUser, brokerId: e.target.value })}
-                  >
-                    <option value="">Select a Broker</option>
-                    {tpa.brokers && tpa.brokers.map((broker) => (
-                      <option key={broker.id} value={broker.id}>
-                        {broker.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => setBrokerDialogOpen(true)}
+                      className="flex items-center justify-center py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                    >
+                      <PlusIcon className="w-5 h-5 mr-1" />
+                      Add Broker
+                    </button>
+                  </div>
+                </>
               )}
               
-              <div className="mb-4">
-                <label className={`${theme.typography.label} block mb-2`}>Temporary Password</label>
-                <input
-                  type="password"
-                  className={`w-full ${theme.input} py-2 px-3 rounded-lg`}
-                  placeholder="Temporary password"
-                  value={newUser.tempPassword}
-                  onChange={(e) => setNewUser({ ...newUser, tempPassword: e.target.value })}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Must be at least 8 characters with uppercase, lowercase, numbers, and special characters.
-                </p>
-              </div>
-              
-              <div className="flex space-x-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setUserDialogOpen(false)}
-                  className={`${theme.button.secondary} flex-1 py-2`}
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleAddUser}
-                  className={`${theme.button.primary} flex-1 py-2`}
-                >
-                  Add User
-                </motion.button>
-              </div>
+              {activeTab === 'users' && (
+                <>
+                  {renderUsers()}
+                  
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => setUserDialogOpen(true)}
+                      className="flex items-center justify-center py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                    >
+                      <PlusIcon className="w-5 h-5 mr-1" />
+                      Add User
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </>
+      )}
+    </motion.div>
   );
 };
 

@@ -19,6 +19,7 @@ import { AuthProvider, UserRole } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PageTransition } from './components/animations';
+import { featureAccess } from './config/accessConfig';
 
 // Check if the app is running in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -150,60 +151,134 @@ function AppContent() {
             }
           >
             <Route path="/dashboard" element={
-              <PageTransition>
-                <Dashboard />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <Dashboard />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.dashboard as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             
             {/* Quote routes */}
             <Route path="/quotes" element={
-              <PageTransition>
-                <QuotesList />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <QuotesList />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.quotes as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             <Route path="/quotes/:id" element={
-              <PageTransition>
-                <QuoteDetails />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <QuoteDetails />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.quotes as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             <Route path="/quotes/new" element={
-              <PageTransition>
-                <NewQuote />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <NewQuote />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.quotes as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             
             {/* Document routes */}
             <Route path="/documents" element={
-              <PageTransition>
-                <DocumentsList />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <DocumentsList />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.documents as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             
             {/* Other routes */}
             <Route path="/sold-cases" element={
-              <PageTransition>
-                <SoldCases />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <SoldCases />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.soldcases as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             <Route path="/enrollments" element={
-              <PageTransition>
-                <Enrollments />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <Enrollments />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.enrollments as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             <Route path="/kynd-choice" element={
-              <PageTransition>
-                <KyndChoice />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <KyndChoice />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.kyndchoice as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             <Route path="/knowledge-center" element={
-              <PageTransition>
-                <KnowledgeCenter />
-              </PageTransition>
+              <ProtectedRoute>
+                <RoleRoute 
+                  element={
+                    <PageTransition>
+                      <KnowledgeCenter />
+                    </PageTransition>
+                  }
+                  requiredRoles={featureAccess.knowledgecenter as UserRole[]}
+                  fallbackPath="/unauthorized"
+                />
+              </ProtectedRoute>
             } />
             <Route path="/profile" element={
-              <PageTransition>
-                <UserProfile />
-              </PageTransition>
+              <ProtectedRoute>
+                <PageTransition>
+                  <UserProfile />
+                </PageTransition>
+              </ProtectedRoute>
             } />
             <Route 
               path="/admin-panel" 
@@ -215,8 +290,8 @@ function AppContent() {
                         <AdminPanel />
                       </PageTransition>
                     }
-                    requiredRoles={['admin', 'tpa_admin', 'tpa_user', 'tpa']}
-                    fallbackPath="/dashboard"
+                    requiredRoles={featureAccess.adminpanel as UserRole[]}
+                    fallbackPath="/unauthorized"
                   />
                 </ProtectedRoute>
               } 
