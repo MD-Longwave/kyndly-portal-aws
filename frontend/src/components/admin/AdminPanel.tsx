@@ -965,15 +965,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-night dark:text-white">Brokers</h2>
-              {canAddBroker && (
-                <button
-                  onClick={() => setBrokerDialogOpen(true)}
-                  className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
-                >
-                  <PlusIcon className="h-5 w-5 mr-1" />
-                  Add Broker
-                </button>
-              )}
             </div>
             
             {loading ? (
@@ -992,7 +983,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                 ) : (
                   <>
                     <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                    <p>{canAddBroker ? 'Create your first broker by clicking the Add Broker button.' : 'Contact an administrator to create brokers.'}</p>
+                    <p>No brokers found.</p>
                   </>
                 )}
               </div>
@@ -1056,26 +1047,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {canAddEmployer && (
-                            <button
-                              onClick={() => {
-                                setSelectedBrokerId(broker.id);
-                                setNewEmployer({ name: '', brokerId: broker.id });
-                                setEmployerDialogOpen(true);
-                              }}
-                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
-                            >
-                              Add Employer
-                            </button>
-                          )}
-                          {canAddBroker && (
-                            <button 
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                              onClick={() => handleDeleteBroker(broker.id)}
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
-                          )}
+                          {/* Removed Add Employer button and delete button */}
                         </td>
                       </tr>
                     ))}
@@ -1154,14 +1126,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                             {employer.brokerName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {canAddEmployer && (
-                              <button 
-                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                onClick={() => handleDeleteEmployer(employer.brokerId, employer.id)}
-                              >
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            )}
+                            {/* Removed action buttons */}
                           </td>
                         </tr>
                       ))
@@ -1620,69 +1585,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
 
   // Modify the main render logic to restrict access for broker users
   return (
-    <div className="space-y-6">
-      {/* Determine what tabs to show based on user role */}
-      {(() => {
-        // Determine role-based permissions
-        const isAdmin = user?.role === 'admin';
-        const isTpaAdmin = user?.role === 'tpa_admin';
-        const isBroker = user?.role === 'broker';
-        const isEmployer = user?.role === 'employer';
-        
-        // Only admin and TPA admin should have access to the admin panel
-        const hasAccess = isAdmin || isTpaAdmin;
-        
-        // Render access denied message for unauthorized users
-        if (!hasAccess) {
-          return (
-            <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden p-6">
-              <div className="text-center py-8">
-                <XMarkIcon className="h-12 w-12 mx-auto mb-4 text-red-500 dark:text-red-400" />
-                <h3 className="text-lg font-medium text-night dark:text-white">Access Denied</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">
-                  You don't have permission to access the admin panel. Please contact your administrator for assistance.
-                </p>
-              </div>
-            </div>
-          );
-        }
-        
-        return (
-          <>
-            {/* Tab navigation */}
-            <div className="border-b border-gray-200 dark:border-night-700">
-              <nav className="-mb-px flex space-x-6">
-                <button
-                  onClick={() => setActiveTab('brokers')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'brokers'
-                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
-                  }`}
-                >
-                  Brokers & Employers
-                </button>
-                
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'users'
-                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
-                  }`}
-                >
-                  Users
-                </button>
-              </nav>
-            </div>
-            
-            {/* Tab content */}
-            {activeTab === 'brokers' && renderBrokers()}
-            
-            {activeTab === 'users' && renderUsers()}
-          </>
-        );
-      })()}
+    <div className="space-y-6 w-full px-4">
+      {/* Tab navigation */}
+      <div className="border-b border-gray-200 dark:border-night-700">
+        <nav className="-mb-px flex space-x-6">
+          <button
+            onClick={() => setActiveTab('brokers')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'brokers'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
+            }`}
+          >
+            Brokers & Employers
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'users'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
+            }`}
+          >
+            Users
+          </button>
+        </nav>
+      </div>
+      
+      {/* Tab content */}
+      {activeTab === 'brokers' && renderBrokers()}
+      
+      {activeTab === 'users' && renderUsers()}
     </div>
   );
 };
