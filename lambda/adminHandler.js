@@ -296,6 +296,145 @@ const deleteEmployer = async (event) => {
   }
 };
 
+// Get all users from S3 Config
+const getUsers = async (event) => {
+  try {
+    // First check if admin
+    const admin = await isAdmin(event);
+    
+    let tpaId;
+    if (admin && event.queryStringParameters?.tpaId) {
+      // Admin can specify which TPA to view
+      tpaId = event.queryStringParameters.tpaId;
+    } else {
+      // Regular user gets their own TPA
+      try {
+        tpaId = await getTpaIdFromToken(event);
+      } catch (e) {
+        console.error('Error getting TPA ID:', e);
+        return formatResponse(401, { error: "Unauthorized - Unable to get TPA ID" }, event);
+      }
+    }
+    
+    console.log(`Getting users for TPA ID: ${tpaId}`);
+    
+    // Get the TPA configuration from S3
+    const AWS = require('aws-sdk');
+    const s3 = new AWS.S3();
+    
+    // S3 bucket and key constants
+    const CONFIG_BUCKET = 'kyndly-ichra-config-dev';
+    const CONFIG_KEY = 'config.json';
+    
+    try {
+      console.log(`Fetching config from s3://${CONFIG_BUCKET}/${CONFIG_KEY}`);
+      
+      // Get the config file from S3
+      const configResponse = await s3.getObject({
+        Bucket: CONFIG_BUCKET,
+        Key: CONFIG_KEY
+      }).promise();
+      
+      if (!configResponse || !configResponse.Body) {
+        console.error('Empty response from S3');
+        return formatResponse(500, { error: "Failed to retrieve configuration" }, event);
+      }
+      
+      let configData;
+      try {
+        configData = JSON.parse(configResponse.Body.toString('utf-8'));
+        console.log(`Config data retrieved successfully, structure: ${Object.keys(configData).join(', ')}`);
+      } catch (parseError) {
+        console.error('Error parsing config JSON:', parseError);
+        return formatResponse(500, { error: "Invalid configuration format" }, event);
+      }
+      
+      // Find the TPA in the config
+      if (!configData.tpas || !Array.isArray(configData.tpas)) {
+        console.warn('No TPAs found in config data');
+        return formatResponse(200, { users: [] }, event);
+      }
+      
+      const tpa = configData.tpas.find(t => t.id === tpaId);
+      if (!tpa) {
+        console.warn(`TPA with ID ${tpaId} not found in config`);
+        return formatResponse(404, { error: `TPA with ID ${tpaId} not found` }, event);
+      }
+      
+      console.log(`Found TPA: ${tpa.id} (${tpa.name})`);
+      console.log(`TPA has ${tpa.brokers?.length || 0} brokers`);
+      
+      // Create a list of users based on the brokers and employers in the TPA
+      const users = [];
+      
+      // Add a default TPA admin user
+      users.push({
+        username: `admin_${tpa.id}`,
+        email: `admin@${tpa.id}.com`,
+        name: `${tpa.name} Admin`,
+        role: 'tpa_admin',
+        tpaId: tpa.id,
+        tpaName: tpa.name,
+        enabled: true,
+        status: 'CONFIRMED'
+      });
+      
+      // If there are brokers, create a user for each broker
+      if (tpa.brokers && Array.isArray(tpa.brokers)) {
+        for (const broker of tpa.brokers) {
+          console.log(`Processing broker: ${broker.id} (${broker.name})`);
+          console.log(`Broker has ${broker.employers?.length || 0} employers`);
+          
+          // Create a user for the broker
+          users.push({
+            username: `broker_${broker.id}`,
+            email: `${broker.id}@example.com`,
+            name: broker.name,
+            role: 'broker',
+            tpaId: tpa.id,
+            tpaName: tpa.name,
+            brokerId: broker.id,
+            brokerName: broker.name,
+            enabled: true,
+            status: 'CONFIRMED'
+          });
+          
+          // If the broker has employers, create a user for each employer
+          if (broker.employers && Array.isArray(broker.employers)) {
+            for (const employer of broker.employers) {
+              console.log(`Processing employer: ${employer.id} (${employer.name})`);
+              
+              users.push({
+                username: `employer_${employer.id}`,
+                email: `${employer.id}@example.com`,
+                name: employer.name,
+                role: 'employer',
+                tpaId: tpa.id,
+                tpaName: tpa.name,
+                brokerId: broker.id,
+                brokerName: broker.name,
+                employerId: employer.id,
+                employerName: employer.name,
+                enabled: true,
+                status: 'CONFIRMED'
+              });
+            }
+          }
+        }
+      }
+      
+      console.log(`Found ${users.length} users for TPA ${tpaId}`);
+      return formatResponse(200, { users }, event);
+    } catch (s3Error) {
+      console.error('Error accessing S3:', s3Error);
+      return formatResponse(500, { error: `Error accessing configuration: ${s3Error.message}` }, event);
+    }
+  } catch (error) {
+    console.error('Error in getUsers:', error);
+    return formatResponse(500, { error: `Error getting users: ${error.message}` }, event);
+  }
+};
+
 // Main handler function
 exports.handler = async (event) => {
   console.log('Event:', JSON.stringify(event));
@@ -323,6 +462,8 @@ exports.handler = async (event) => {
       event.queryStringParameters = event.queryStringParameters || {};
       event.queryStringParameters.tpaId = pathParts[2];
       return await getCurrentTpa(event);
+    } else if (path === '/api/users' && method === 'GET') {
+      return await getUsers(event);
     } else if (path === '/api/brokers' && method === 'POST') {
       return await updateBroker(event);
     } else if (path === '/api/employers' && method === 'POST') {
