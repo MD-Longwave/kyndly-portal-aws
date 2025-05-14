@@ -94,6 +94,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userCreated, setUserCreated] = useState(false);
 
+  // Add these new state variables after the existing useState declarations
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterBrokerId, setFilterBrokerId] = useState('');
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+
   // Add effect to update activeTab when initialActiveTab changes
   useEffect(() => {
     setActiveTab(initialActiveTab);
@@ -260,8 +266,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(newBroker)
       });
@@ -274,12 +279,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       const result = await response.json();
       console.log('AdminPanel: Broker created successfully:', result);
       
+      // Send welcome email
+      try {
+        const emailResponse = await fetch(`${API_URL}/api/email/welcome`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            recipientType: 'broker',
+            name: newBroker.name,
+            recipientId: result.brokerId,
+            email: result.email || '' // If email is available
+          })
+        });
+        
+        if (emailResponse.ok) {
+          console.log('AdminPanel: Welcome email sent to new broker');
+        } else {
+          console.warn('AdminPanel: Failed to send welcome email to broker');
+        }
+      } catch (emailError) {
+        console.error('AdminPanel: Error sending welcome email:', emailError);
+      }
+      
       // Refresh TPA data with cache-busting query parameter
       const timestamp = new Date().getTime();
       const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          Authorization: `Bearer ${token}`
         }
       });
       
@@ -342,8 +371,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(newEmployer)
       });
@@ -356,12 +384,45 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       const result = await response.json();
       console.log('AdminPanel: Employer created successfully:', result);
       
+      // Send welcome email to employer
+      try {
+        // Find broker name for the email
+        let brokerName = '';
+        if (tpa && tpa.brokers) {
+          const broker = tpa.brokers.find(b => b.id === newEmployer.brokerId);
+          if (broker) brokerName = broker.name;
+        }
+        
+        const emailResponse = await fetch(`${API_URL}/api/email/welcome`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            recipientType: 'employer',
+            name: newEmployer.name,
+            recipientId: result.employerId,
+            brokerName: brokerName,
+            brokerId: newEmployer.brokerId,
+            email: result.email || '' // If email is available
+          })
+        });
+        
+        if (emailResponse.ok) {
+          console.log('AdminPanel: Welcome email sent to new employer');
+        } else {
+          console.warn('AdminPanel: Failed to send welcome email to employer');
+        }
+      } catch (emailError) {
+        console.error('AdminPanel: Error sending welcome email:', emailError);
+      }
+      
       // Refresh TPA data with cache-busting query parameter
       const timestamp = new Date().getTime();
       const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          Authorization: `Bearer ${token}`
         }
       });
       
@@ -613,10 +674,186 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     }
   };
 
+  // Add this new function before the renderBrokers function
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if clicking the same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field and default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Create filtered and sorted data
+  const getFilteredBrokers = () => {
+    if (!tpa || !tpa.brokers) return [];
+    
+    let filtered = [...tpa.brokers];
+    
+    // Apply search term filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(broker => 
+        broker.name.toLowerCase().includes(term) || 
+        broker.id.toLowerCase().includes(term)
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let compareA, compareB;
+      
+      // Determine values to compare based on sort field
+      if (sortField === 'name') {
+        compareA = a.name.toLowerCase();
+        compareB = b.name.toLowerCase();
+      } else if (sortField === 'id') {
+        compareA = a.id.toLowerCase();
+        compareB = b.id.toLowerCase();
+      } else if (sortField === 'employers') {
+        compareA = (a.employers || []).length;
+        compareB = (b.employers || []).length;
+      } else {
+        // Default to name
+        compareA = a.name.toLowerCase();
+        compareB = b.name.toLowerCase();
+      }
+      
+      // Determine sort order
+      if (typeof compareA === 'string' && typeof compareB === 'string') {
+        const result = compareA.localeCompare(compareB);
+        return sortDirection === 'asc' ? result : -result;
+      } else {
+        // For numeric comparisons
+        const result = Number(compareA) - Number(compareB);
+        return sortDirection === 'asc' ? result : -result;
+      }
+    });
+    
+    return filtered;
+  };
+  
+  const getFilteredEmployers = () => {
+    if (!tpa || !tpa.brokers) return [];
+    
+    // Collect all employers from all brokers
+    let allEmployers = tpa.brokers.flatMap(broker => 
+      (broker.employers || []).map(employer => ({
+        ...employer,
+        brokerName: broker.name,
+        brokerId: broker.id
+      }))
+    );
+    
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      allEmployers = allEmployers.filter(employer => 
+        employer.name.toLowerCase().includes(term) || 
+        employer.id.toLowerCase().includes(term) ||
+        employer.brokerName.toLowerCase().includes(term)
+      );
+    }
+    
+    // Apply broker filter
+    if (filterBrokerId) {
+      allEmployers = allEmployers.filter(employer => 
+        employer.brokerId === filterBrokerId
+      );
+    }
+    
+    // Apply sorting
+    allEmployers.sort((a, b) => {
+      let compareA, compareB;
+      
+      // Determine values to compare based on sort field
+      if (sortField === 'name') {
+        compareA = a.name.toLowerCase();
+        compareB = b.name.toLowerCase();
+      } else if (sortField === 'id') {
+        compareA = a.id.toLowerCase();
+        compareB = b.id.toLowerCase();
+      } else if (sortField === 'broker') {
+        compareA = a.brokerName.toLowerCase();
+        compareB = b.brokerName.toLowerCase();
+      } else {
+        // Default to name
+        compareA = a.name.toLowerCase();
+        compareB = b.name.toLowerCase();
+      }
+      
+      // Determine sort order
+      const result = compareA.localeCompare(compareB);
+      return sortDirection === 'asc' ? result : -result;
+    });
+    
+    return allEmployers;
+  };
+
   // Render the brokers tab with table layout
   const renderBrokers = () => {
+    const filteredBrokers = getFilteredBrokers();
+    const filteredEmployers = getFilteredEmployers();
+    
     return (
       <div className="space-y-6">
+        {/* Search and Filter Controls */}
+        <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
+          <div className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search input */}
+              <div className="flex-grow">
+                <label htmlFor="search" className="block text-sm font-medium text-night dark:text-white mb-1">
+                  Search
+                </label>
+                <input
+                  type="text"
+                  id="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by name or ID..."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                />
+              </div>
+              
+              {/* Broker filter dropdown (for employers table) */}
+              <div className="w-full md:w-1/3">
+                <label htmlFor="brokerFilter" className="block text-sm font-medium text-night dark:text-white mb-1">
+                  Filter by Broker
+                </label>
+                <select
+                  id="brokerFilter"
+                  value={filterBrokerId}
+                  onChange={(e) => setFilterBrokerId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                >
+                  <option value="">All Brokers</option>
+                  {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                    <option key={broker.id} value={broker.id}>{broker.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Reset filters button */}
+              <div className="flex items-end">
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterBrokerId('');
+                    setSortField('name');
+                    setSortDirection('asc');
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         {/* Brokers Section */}
         <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
           <div className="p-6">
@@ -640,23 +877,55 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
               <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
                 <p>{error}</p>
               </div>
-            ) : !tpa || !tpa.brokers || tpa.brokers.length === 0 ? (
+            ) : !filteredBrokers.length ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                <p>No brokers found. Create your first broker by clicking the Add Broker button.</p>
+                {tpa && tpa.brokers && tpa.brokers.length > 0 ? (
+                  <p>No brokers match your search criteria.</p>
+                ) : (
+                  <>
+                    <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                    <p>No brokers found. Create your first broker by clicking the Add Broker button.</p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
                   <thead className="bg-gray-50 dark:bg-night-700">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employers</th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                        onClick={() => handleSort('name')}
+                      >
+                        <div className="flex items-center">
+                          Name
+                          {sortField === 'name' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                        onClick={() => handleSort('employers')}
+                      >
+                        <div className="flex items-center">
+                          Employers
+                          {sortField === 'employers' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                    {tpa.brokers.map((broker) => (
+                    {filteredBrokers.map((broker) => (
                       <tr key={broker.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -714,40 +983,64 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
                   <thead className="bg-gray-50 dark:bg-night-700">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Broker</th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                        onClick={() => handleSort('name')}
+                      >
+                        <div className="flex items-center">
+                          Name
+                          {sortField === 'name' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                        onClick={() => handleSort('broker')}
+                      >
+                        <div className="flex items-center">
+                          Broker
+                          {sortField === 'broker' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                    {tpa.brokers.flatMap(broker => 
-                      (broker.employers || []).map(employer => (
-                        <tr key={employer.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <UserGroupIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-night dark:text-white">{employer.name}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">ID: {employer.id}</div>
-                              </div>
+                    {filteredEmployers.map((employer) => (
+                      <tr key={employer.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                              <UserGroupIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
-                            {broker.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button 
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                              onClick={() => handleDeleteEmployer(broker.id, employer.id)}
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-night dark:text-white">{employer.name}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">ID: {employer.id}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
+                          {employer.brokerName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button 
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => handleDeleteEmployer(employer.brokerId, employer.id)}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -913,7 +1206,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
               <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
                 <thead className="bg-gray-50 dark:bg-night-700">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Username</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Broker</th>
@@ -939,10 +1233,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-night dark:text-white">{user.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.username}</div>
                             </div>
                           </div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.username}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.email}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

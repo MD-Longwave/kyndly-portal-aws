@@ -152,8 +152,7 @@ const NewQuote: React.FC = () => {
         // Fetch TPA data from the configuration API
         const response = await fetch(`${API_URL}/api/tpa?t=${timestamp}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
+            Authorization: `Bearer ${token}`
           }
         });
         
@@ -226,7 +225,25 @@ const NewQuote: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching TPA data:', error);
-        setDataError(`Failed to load broker/employer data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        let errorMessage = 'Failed to load broker/employer data';
+        
+        if (error instanceof Error) {
+          errorMessage += `: ${error.message}`;
+          // Add more detail for fetch errors
+          if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            errorMessage += ' (Network error - please check your connection)';
+          } else if (error.message.includes('401')) {
+            errorMessage += ' (Authentication error - please try logging in again)';
+          } else if (error.message.includes('403')) {
+            errorMessage += ' (Permission denied - you may not have access to this data)';
+          } else if (error.message.includes('404')) {
+            errorMessage += ' (API endpoint not found - please contact support)';
+          } else if (error.message.includes('500')) {
+            errorMessage += ' (Server error - please try again later)';
+          }
+        }
+        
+        setDataError(errorMessage);
         setBrokers([]);
         setEmployers([]);
       } finally {
