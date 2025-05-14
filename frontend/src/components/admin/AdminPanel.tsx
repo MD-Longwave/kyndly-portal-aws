@@ -144,9 +144,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         try {
           // For TPA admins, we only want to fetch their specific TPA data
           // For global admins, we fetch all TPA data
-          const tpaEndpoint = user.role === 'admin' ? 
-            `${API_URL}/api/tpa` : 
-            `${API_URL}/api/tpa/${user.tpaId}`;
+          let tpaEndpoint = `${API_URL}/api/tpa`;
+          
+          // Only append the TPA ID if it exists and we're not an admin
+          if (user.role !== 'admin' && user.tpaId) {
+            console.log(`AdminPanel: User has tpaId: ${user.tpaId}`);
+            // Ensure we're not appending tpa_ prefix if it's already there
+            const tpaIdParam = user.tpaId.startsWith('tpa_') ? user.tpaId : `tpa_${user.tpaId}`;
+            tpaEndpoint = `${API_URL}/api/tpa/${tpaIdParam}`;
+          }
             
           console.log(`AdminPanel: Fetching TPA data from ${tpaEndpoint}`);
           const response = await fetch(tpaEndpoint, {
@@ -225,8 +231,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         
         // If not a global admin, only fetch users for current TPA
         if (user.role !== 'admin' && user.tpaId) {
-          endpoint = `${API_URL}/api/users?tpaId=${user.tpaId}`;
+          // Ensure we're not appending tpa_ prefix if it's already there
+          const tpaIdParam = user.tpaId.startsWith('tpa_') ? user.tpaId : `tpa_${user.tpaId}`;
+          endpoint = `${API_URL}/api/users?tpaId=${tpaIdParam}`;
         }
+        
+        console.log(`AdminPanel: Fetching users from ${endpoint}`);
         
         const response = await fetch(endpoint, {
           headers: {
