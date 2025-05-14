@@ -1047,7 +1047,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {/* Removed Add Employer button and delete button */}
+                          {/* Action buttons removed while preserving cell for layout consistency */}
                         </td>
                       </tr>
                     ))}
@@ -1126,7 +1126,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                             {employer.brokerName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {/* Removed action buttons */}
+                            {/* Action buttons removed while preserving cell for layout consistency */}
                           </td>
                         </tr>
                       ))
