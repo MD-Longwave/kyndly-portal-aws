@@ -41,10 +41,14 @@ interface User {
   name: string;
   role: string;
   tpaId?: string;
+  tpaName?: string;
   brokerId?: string;
+  brokerName?: string;
   employerId?: string;
+  employerName?: string;
   status?: string;
   enabled?: boolean;
+  phoneNumber?: string;
 }
 
 interface NewUser {
@@ -54,6 +58,7 @@ interface NewUser {
   role: string;
   brokerId?: string;
   tpaId?: string;
+  employerId?: string;
   tempPassword: string;
 }
 
@@ -137,8 +142,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         console.log(`AdminPanel: Connecting to API: ${API_URL}`);
         
         try {
-          console.log(`AdminPanel: Fetching TPA data from ${API_URL}/api/tpa`);
-          const response = await fetch(`${API_URL}/api/tpa`, {
+          // For TPA admins, we only want to fetch their specific TPA data
+          // For global admins, we fetch all TPA data
+          const tpaEndpoint = user.role === 'admin' ? 
+            `${API_URL}/api/tpa` : 
+            `${API_URL}/api/tpa/${user.tpaId}`;
+            
+          console.log(`AdminPanel: Fetching TPA data from ${tpaEndpoint}`);
+          const response = await fetch(tpaEndpoint, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -188,7 +199,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     fetchTpa();
   }, [user, getIdToken]);
 
-  // Fetch users
+  // Fetch users with TPA-based filtering
   useEffect(() => {
     const fetchUsers = async () => {
       if (!user) return;
@@ -208,7 +219,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         }
         
         console.log('AdminPanel: Fetching users...');
-        const response = await fetch(`${API_URL}/api/users`, {
+        
+        // Endpoint selection based on user role
+        let endpoint = `${API_URL}/api/users`;
+        
+        // If not a global admin, only fetch users for current TPA
+        if (user.role !== 'admin' && user.tpaId) {
+          endpoint = `${API_URL}/api/users?tpaId=${user.tpaId}`;
+        }
+        
+        const response = await fetch(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -221,7 +241,51 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         const data = await response.json();
         console.log("Users data:", data);
         console.log(`AdminPanel: Fetched ${data.users?.length || 0} users`);
-        setUsers(data.users || []);
+        
+        // Filter users if needed based on role
+        let filteredUsers = data.users || [];
+        
+        // For TPA admin, only show users under their TPA
+        if (user.role === 'tpa_admin' && user.tpaId) {
+          filteredUsers = filteredUsers.filter((u: User) => u.tpaId === user.tpaId);
+        }
+        
+        // For broker user, only show users associated with their broker ID
+        else if (user.role === 'broker' && user.brokerId) {
+          filteredUsers = filteredUsers.filter((u: User) => u.brokerId === user.brokerId);
+        }
+        
+        // Enrich users with organization data
+        const enrichedUsers = filteredUsers.map((user: User) => {
+          // Find broker name if brokerId exists
+          let brokerName = "";
+          if (user.brokerId && tpa && tpa.brokers) {
+            const broker = tpa.brokers.find(b => b.id === user.brokerId);
+            if (broker) {
+              brokerName = broker.name;
+              
+              // Find employer name if employerId exists
+              if (user.employerId && broker.employers) {
+                const employer = broker.employers.find(e => e.id === user.employerId);
+                if (employer) {
+                  user.employerName = employer.name;
+                }
+              }
+            }
+            
+            // Add broker name to user
+            user.brokerName = brokerName;
+          }
+          
+          // TPA name would be the current TPA's name
+          if (tpa && user.tpaId === tpa.id) {
+            user.tpaName = tpa.name;
+          }
+          
+          return user;
+        });
+        
+        setUsers(enrichedUsers);
         setError(null);
 
         // Reset the userCreated flag
@@ -237,7 +301,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     };
     
     fetchUsers();
-  }, [user, getIdToken, userCreated]); // Add userCreated as a dependency
+  }, [user, getIdToken, userCreated, tpa]);
 
   // Handle adding a new broker
   const handleAddBroker = async () => {
@@ -457,7 +521,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     }
   };
 
-  // Handle adding a new user - modified to ensure refresh on creation
+  // Handle adding a new user - modified to ensure role-based restrictions
   const handleAddUser = async () => {
     try {
       // Validate form fields
@@ -481,7 +545,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         return;
       }
       
-      // Employer users require a broker ID
+      // Role-specific validations and RBAC restrictions
+      if (user?.role !== 'admin') {
+        // TPA admins can only create broker and employer users under their TPA
+        if (user?.role === 'tpa_admin') {
+          if (!['broker', 'employer'].includes(newUser.role)) {
+            setError('TPA admins can only create broker and employer users');
+            return;
+          }
+          
+          // Enforce tpaId for users created by TPA admin
+          newUser.tpaId = user.tpaId;
+        }
+        
+        // Employer users cannot create users
+        if (user?.role === 'employer') {
+          setError('Employers do not have permission to create users');
+          return;
+        }
+      }
+      
+      // Additional role-specific validations
+      if (newUser.role === 'broker' && !newUser.tpaId) {
+        setError('Please select a TPA for broker users');
+        return;
+      }
+      
       if (newUser.role === 'employer' && !newUser.brokerId) {
         setError('Please select a broker for employer users');
         return;
@@ -497,7 +586,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         throw new Error("Authentication token not available");
       }
       
-      // Create user request
+      // Create user request with proper hierarchy
       const userData = {
         username: newUser.username,
         email: newUser.email,
@@ -506,14 +595,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         tempPassword: newUser.tempPassword
       };
       
-      // Add broker ID for employer users
-      if (newUser.role === 'employer' && newUser.brokerId) {
-        (userData as any).brokerId = newUser.brokerId;
+      // Add organization IDs based on role and permissions
+      if (newUser.tpaId) {
+        (userData as any).tpaId = newUser.tpaId;
       }
       
-      // For admin users, allow specifying a TPA ID
-      if (user?.role === 'admin' && newUser.tpaId) {
-        (userData as any).tpaId = newUser.tpaId;
+      if (newUser.role === 'broker' || newUser.role === 'employer') {
+        if (newUser.brokerId) {
+          (userData as any).brokerId = newUser.brokerId;
+        }
+      }
+      
+      if (newUser.role === 'employer' && newUser.employerId) {
+        (userData as any).employerId = newUser.employerId;
       }
       
       console.log('AdminPanel: Creating user with data:', userData);
@@ -542,6 +636,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         name: '',
         role: 'broker',
         brokerId: '',
+        tpaId: '',
+        employerId: '',
         tempPassword: ''
       });
       
@@ -797,6 +893,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     const filteredBrokers = getFilteredBrokers();
     const filteredEmployers = getFilteredEmployers();
     
+    // Determine permissions based on user role
+    const isAdmin = user?.role === 'admin';
+    const isTpaAdmin = user?.role === 'tpa_admin'; 
+    
+    // Only admin and TPA admin can add brokers
+    const canAddBroker = isAdmin || isTpaAdmin;
+    
+    // Admin and TPA admin can add employers
+    const canAddEmployer = isAdmin || isTpaAdmin;
+
     return (
       <div className="space-y-6">
         {/* Search and Filter Controls */}
@@ -859,13 +965,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-night dark:text-white">Brokers</h2>
-              <button
-                onClick={() => setBrokerDialogOpen(true)}
-                className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
-              >
-                <PlusIcon className="h-5 w-5 mr-1" />
-                Add Broker
-              </button>
+              {canAddBroker && (
+                <button
+                  onClick={() => setBrokerDialogOpen(true)}
+                  className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
+                >
+                  <PlusIcon className="h-5 w-5 mr-1" />
+                  Add Broker
+                </button>
+              )}
             </div>
             
             {loading ? (
@@ -884,7 +992,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                 ) : (
                   <>
                     <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                    <p>No brokers found. Create your first broker by clicking the Add Broker button.</p>
+                    <p>{canAddBroker ? 'Create your first broker by clicking the Add Broker button.' : 'Contact an administrator to create brokers.'}</p>
                   </>
                 )}
               </div>
@@ -948,22 +1056,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => {
-                              setSelectedBrokerId(broker.id);
-                              setNewEmployer({ name: '', brokerId: broker.id });
-                              setEmployerDialogOpen(true);
-                            }}
-                            className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
-                          >
-                            Add Employer
-                          </button>
-                          <button 
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => handleDeleteBroker(broker.id)}
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
+                          {canAddEmployer && (
+                            <button
+                              onClick={() => {
+                                setSelectedBrokerId(broker.id);
+                                setNewEmployer({ name: '', brokerId: broker.id });
+                                setEmployerDialogOpen(true);
+                              }}
+                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
+                            >
+                              Add Employer
+                            </button>
+                          )}
+                          {canAddBroker && (
+                            <button 
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              onClick={() => handleDeleteBroker(broker.id)}
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -975,10 +1087,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         </div>
         
         {/* Employers Section */}
-        {tpa && tpa.brokers && tpa.brokers.some(broker => broker.employers && broker.employers.length > 0) && (
+        {(tpa && tpa.brokers && tpa.brokers.some(broker => broker.employers && broker.employers.length > 0)) && (
           <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-night dark:text-white mb-6">Employers</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-night dark:text-white">Employers</h2>
+              </div>
+              
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
                   <thead className="bg-gray-50 dark:bg-night-700">
@@ -1015,32 +1130,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                    {filteredEmployers.map((employer) => (
-                      <tr key={employer.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                              <UserGroupIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-night dark:text-white">{employer.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">ID: {employer.id}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
-                          {employer.brokerName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button 
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => handleDeleteEmployer(employer.brokerId, employer.id)}
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
+                    {filteredEmployers.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                          No employers found
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredEmployers.map((employer) => (
+                        <tr key={employer.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                <UserGroupIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-night dark:text-white">{employer.name}</div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">ID: {employer.id}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
+                            {employer.brokerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {canAddEmployer && (
+                              <button 
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                onClick={() => handleDeleteEmployer(employer.brokerId, employer.id)}
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1173,18 +1298,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
 
   // Render the users tab with table layout
   const renderUsers = () => {
+    const isAdmin = user?.role === 'admin';
+    const isTpaAdmin = user?.role === 'tpa_admin';
+    
     return (
       <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-night dark:text-white">Users</h2>
-            <button
-              onClick={() => setUserDialogOpen(true)}
-              className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
-            >
-              <PlusIcon className="h-5 w-5 mr-1" />
-              Add User
-            </button>
+            <h2 className="text-xl font-semibold text-night dark:text-white">User management</h2>
+            
+            {/* Only show Add User button for admin and tpa_admin roles */}
+            {(isAdmin || isTpaAdmin) && (
+              <button
+                onClick={() => setUserDialogOpen(true)}
+                className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
+              >
+                <PlusIcon className="h-5 w-5 mr-1" />
+                New
+              </button>
+            )}
           </div>
           
           {loadingUsers ? (
@@ -1196,86 +1328,127 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
             <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
               <p>{error}</p>
             </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <UserIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
-              <p>No users found. Create your first user by clicking the Add User button.</p>
-            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
-                <thead className="bg-gray-50 dark:bg-night-700">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Username</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Broker</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                  {users.map((user) => {
-                    // Find broker name if brokerId exists
-                    let brokerName = "";
-                    if (user.brokerId && tpa && tpa.brokers) {
-                      const broker = tpa.brokers.find(b => b.id === user.brokerId);
-                      if (broker) brokerName = broker.name;
-                    }
-                    
-                    return (
-                      <tr key={user.username} className="hover:bg-gray-50 dark:hover:bg-night-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                              <UserIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-night dark:text-white">{user.name}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.username}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 
-                              user.role === 'broker' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 
-                              user.role === 'employer' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                              'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'}`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{brokerName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${user.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
-                            {user.status || 'Unknown'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button 
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => {
-                              // Delete user functionality (to be implemented)
-                              alert('Delete user functionality not yet implemented');
-                            }}
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
+            <>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
+                  <thead className="bg-gray-50 dark:bg-night-700">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">AVATAR</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">FIRST NAME</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">LAST NAME</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PHONE NUMBER</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">E-MAIL</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ROLE</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">TPA</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">BROKER</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">EMPLOYER</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">DISABLED</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
+                    {users.length === 0 ? (
+                      <tr>
+                        <td colSpan={11} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                          No users found
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      users.map((user) => {
+                        // Split name into first and last name if available
+                        const nameParts = user.name ? user.name.split(' ') : ['', ''];
+                        const firstName = nameParts[0] || '';
+                        const lastName = nameParts.slice(1).join(' ') || '';
+                        
+                        return (
+                          <tr key={user.username} className="hover:bg-gray-50 dark:hover:bg-night-700">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex-shrink-0 h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                                <UserIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{firstName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{lastName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.phoneNumber || '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.email}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.role}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.tpaName || '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.brokerName || '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.employerName || '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
+                              {user.enabled === false ? 'Yes' : 'No'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <button 
+                                  className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+                                  onClick={() => {
+                                    // View user functionality
+                                    alert('View user functionality not yet implemented');
+                                  }}
+                                >
+                                  View
+                                </button>
+                                <button 
+                                  className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+                                  onClick={() => {
+                                    // Edit user functionality
+                                    alert('Edit user functionality not yet implemented');
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                  onClick={() => {
+                                    // Delete user functionality
+                                    alert('Delete user functionality not yet implemented');
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="mt-4 flex justify-between items-center">
+                <div>
+                  <select 
+                    className="px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    defaultValue="10"
+                  >
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  1
+                </div>
+              </div>
+            </>
           )}
         </div>
         
-        {/* User Dialog */}
+        {/* User Dialog - update the role selection and broker field */}
         {userDialogOpen && (
           <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
             <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
@@ -1331,12 +1504,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                       onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                     >
+                      {/* Only global admins can create admin users */}
+                      {user?.role === 'admin' && (
+                        <>
+                          <option value="admin">Admin</option>
+                          <option value="tpa_admin">TPA Admin</option>
+                        </>
+                      )}
+                      
+                      {/* Admin and TPA admin can create broker users */}
                       <option value="broker">Broker</option>
+                      
+                      {/* Admin and TPA admin can create employer users */}
                       <option value="employer">Employer</option>
                     </select>
                   </div>
                   
-                  {newUser.role === 'employer' && (
+                  {/* Organization selection based on role */}
+                  {/* Only show TPA selection for global admins */}
+                  {user?.role === 'admin' && (newUser.role === 'tpa_admin' || newUser.role === 'broker') && (
+                    <div>
+                      <label className="block text-sm font-medium text-night dark:text-white mb-1">TPA</label>
+                      <select
+                        value={newUser.tpaId}
+                        onChange={(e) => setNewUser({...newUser, tpaId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      >
+                        <option value="">Select TPA</option>
+                        {tpa && <option value={tpa.id}>{tpa.name || 'Current TPA'}</option>}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Broker selection for employer users */}
+                  {(newUser.role === 'employer') && (
                     <div>
                       <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
                       <select
@@ -1348,6 +1549,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                         {tpa && tpa.brokers && tpa.brokers.map((broker) => (
                           <option key={broker.id} value={broker.id}>{broker.name}</option>
                         ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Employer selection - only available when a broker is selected */}
+                  {newUser.role === 'employer' && newUser.brokerId && (
+                    <div>
+                      <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer</label>
+                      <select
+                        value={newUser.employerId}
+                        onChange={(e) => setNewUser({...newUser, employerId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      >
+                        <option value="">Select Employer</option>
+                        {tpa && tpa.brokers && tpa.brokers
+                          .filter(broker => broker.id === newUser.brokerId)
+                          .map(broker => 
+                            broker.employers && broker.employers.map(employer => (
+                              <option key={employer.id} value={employer.id}>{employer.name}</option>
+                            ))
+                          )
+                        }
                       </select>
                     </div>
                   )}
@@ -1395,40 +1618,71 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     );
   };
 
-  // Modify the main render logic for the tabs
+  // Modify the main render logic to restrict access for broker users
   return (
     <div className="space-y-6">
-      {/* Tab navigation */}
-      <div className="border-b border-gray-200 dark:border-night-700">
-        <nav className="-mb-px flex space-x-6">
-          <button
-            onClick={() => setActiveTab('brokers')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'brokers'
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
-            }`}
-          >
-            Brokers & Employers
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'users'
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
-            }`}
-          >
-            Users
-          </button>
-        </nav>
-      </div>
-      
-      {/* Tab content */}
-      {activeTab === 'brokers' && renderBrokers()}
-      
-      {activeTab === 'users' && renderUsers()}
+      {/* Determine what tabs to show based on user role */}
+      {(() => {
+        // Determine role-based permissions
+        const isAdmin = user?.role === 'admin';
+        const isTpaAdmin = user?.role === 'tpa_admin';
+        const isBroker = user?.role === 'broker';
+        const isEmployer = user?.role === 'employer';
+        
+        // Only admin and TPA admin should have access to the admin panel
+        const hasAccess = isAdmin || isTpaAdmin;
+        
+        // Render access denied message for unauthorized users
+        if (!hasAccess) {
+          return (
+            <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden p-6">
+              <div className="text-center py-8">
+                <XMarkIcon className="h-12 w-12 mx-auto mb-4 text-red-500 dark:text-red-400" />
+                <h3 className="text-lg font-medium text-night dark:text-white">Access Denied</h3>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">
+                  You don't have permission to access the admin panel. Please contact your administrator for assistance.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <>
+            {/* Tab navigation */}
+            <div className="border-b border-gray-200 dark:border-night-700">
+              <nav className="-mb-px flex space-x-6">
+                <button
+                  onClick={() => setActiveTab('brokers')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'brokers'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
+                  }`}
+                >
+                  Brokers & Employers
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'users'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
+                  }`}
+                >
+                  Users
+                </button>
+              </nav>
+            </div>
+            
+            {/* Tab content */}
+            {activeTab === 'brokers' && renderBrokers()}
+            
+            {activeTab === 'users' && renderUsers()}
+          </>
+        );
+      })()}
     </div>
   );
 };

@@ -144,24 +144,49 @@ const NewQuote: React.FC = () => {
           throw new Error("Authentication token not available");
         }
         
-        console.log('NewQuote: Fetching TPA data from API');
+        // Get TPA ID from user context
+        const userTpaId = user?.tpaId;
+        
+        if (!userTpaId) {
+          console.warn('NewQuote: User does not have a TPA ID in token');
+          setDataError('Your account is not properly associated with a TPA. Please contact your administrator.');
+          setLoadingTpaData(false);
+          return;
+        }
+        
+        console.log(`NewQuote: Fetching TPA data from API for TPA ID: ${userTpaId}`);
         
         // Add timestamp to prevent caching and always get fresh data
         const timestamp = new Date().getTime();
         
-        // Fetch TPA data from the configuration API
-        const response = await fetch(`${API_URL}/api/tpa?t=${timestamp}`, {
+        // Fetch TPA data from the configuration API - use specific TPA endpoint for tpaId
+        const response = await fetch(`${API_URL}/api/tpa/${userTpaId}?t=${timestamp}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
         
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          if (response.status === 404) {
+            throw new Error(`TPA with ID ${userTpaId} not found`);
+          } else if (response.status === 403) {
+            throw new Error(`Access denied to TPA data. You may not have permission to access this TPA.`);
+          } else {
+            throw new Error(`API error: ${response.status}`);
+          }
         }
         
         const data = await response.json();
         console.log('NewQuote: TPA data received:', data);
+        
+        // Verify the TPA ID matches the user's TPA ID
+        if (data.id !== userTpaId) {
+          console.warn(`NewQuote: TPA ID mismatch. Expected ${userTpaId}, got ${data.id}`);
+          setDataError(`Data integrity issue: The TPA ID in the response does not match your account. Please contact support.`);
+          setLoadingTpaData(false);
+          return;
+        }
+        
         setTpaData(data);
         
         // Set available brokers
@@ -203,17 +228,25 @@ const NewQuote: React.FC = () => {
                 // If user is an employer, pre-select their employer
                 if (user?.employerId) {
                   console.log(`NewQuote: User is an employer with ID ${user.employerId}, pre-selecting`);
-                  setFormData(prev => ({
-                    ...prev,
-                    employerId: user.employerId || ''
-                  }));
+                  const userEmployer = employerOptions.find((emp: EmployerOption) => emp.id === user.employerId);
+                  
+                  if (userEmployer) {
+                    setFormData(prev => ({
+                      ...prev,
+                      employerId: user.employerId || ''
+                    }));
+                  } else {
+                    console.warn(`NewQuote: User employer ID ${user.employerId} not found in available employers`);
+                    setDataError(`Your account is associated with an employer that doesn't exist or you don't have access to. Please contact your administrator.`);
+                  }
                 }
               } else {
                 console.log('NewQuote: No employers found for broker or invalid data structure');
                 setEmployers([]);
               }
             } else {
-              console.log(`NewQuote: Broker ID ${user.brokerId} not found in available brokers`);
+              console.warn(`NewQuote: Broker ID ${user.brokerId} not found in available brokers`);
+              setDataError(`Your account is associated with a broker that doesn't exist or you don't have access to. Please contact your administrator.`);
             }
           } else {
             console.log('NewQuote: User is not a broker, no pre-selection needed');
@@ -222,6 +255,9 @@ const NewQuote: React.FC = () => {
           console.warn('NewQuote: No brokers found in TPA data or invalid data structure');
           setBrokers([]);
           setEmployers([]);
+          if (user?.role === 'broker' || user?.role === 'employer') {
+            setDataError(`No brokers found for your TPA. This may indicate a configuration issue. Please contact your administrator.`);
+          }
         }
       } catch (error) {
         console.error('Error fetching TPA data:', error);
@@ -237,7 +273,7 @@ const NewQuote: React.FC = () => {
           } else if (error.message.includes('403')) {
             errorMessage += ' (Permission denied - you may not have access to this data)';
           } else if (error.message.includes('404')) {
-            errorMessage += ' (API endpoint not found - please contact support)';
+            errorMessage += ' (TPA not found - please contact support)';
           } else if (error.message.includes('500')) {
             errorMessage += ' (Server error - please try again later)';
           }
@@ -532,6 +568,16 @@ const NewQuote: React.FC = () => {
         </div>
       )}
       
+      {loadingTpaData && (
+        <div className="bg-blue-50 border border-blue-300 text-blue-700 px-6 py-4 rounded-brand relative mb-6 flex items-center" role="alert">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Loading TPA organization data...</span>
+        </div>
+      )}
+      
       {dataError && (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-6 py-4 rounded-brand relative mb-6" role="alert">
           <strong className="font-bold">Data Loading Error! </strong>
@@ -595,20 +641,33 @@ const NewQuote: React.FC = () => {
               <label className="block text-base font-medium text-night dark:text-white">
                 Broker
               </label>
-              <Select
-                label="Broker"
-                name="brokerId"
-                value={formData.brokerId}
-                onChange={handleBrokerChange}
-                required
-                disabled={loadingTpaData}
-                options={[
-                  { value: "", label: loadingTpaData ? "Loading brokers..." : "Select Broker" },
-                  ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
-                ]}
-              />
+              <div className="relative">
+                <Select
+                  label="Broker"
+                  name="brokerId"
+                  value={formData.brokerId}
+                  onChange={handleBrokerChange}
+                  required
+                  disabled={loadingTpaData || Boolean(user?.brokerId)} // Disable if loading or user is a broker
+                  options={[
+                    { value: "", label: loadingTpaData ? "Loading brokers..." : "Select Broker" },
+                    ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
+                  ]}
+                />
+                {loadingTpaData && (
+                  <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                    <svg className="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                )}
+              </div>
               {brokers.length === 0 && !loadingTpaData && (
                 <p className="text-sm text-red-500 mt-1">No brokers available. Please contact an administrator.</p>
+              )}
+              {user?.brokerId && (
+                <p className="text-xs text-gray-500 mt-1">Your account is associated with a specific broker, so this field is locked.</p>
               )}
             </div>
             
@@ -617,20 +676,33 @@ const NewQuote: React.FC = () => {
               <label className="block text-base font-medium text-night dark:text-white">
                 Employer
               </label>
-              <Select
-                label="Employer"
-                name="employerId"
-                value={formData.employerId}
-                onChange={handleChange}
-                required
-                disabled={loadingTpaData || !formData.brokerId}
-                options={[
-                  { value: "", label: loadingTpaData ? "Loading employers..." : "Select Employer" },
-                  ...employers.map(employer => ({ value: employer.id, label: employer.name }))
-                ]}
-              />
+              <div className="relative">
+                <Select
+                  label="Employer"
+                  name="employerId"
+                  value={formData.employerId}
+                  onChange={handleChange}
+                  required
+                  disabled={loadingTpaData || !formData.brokerId || Boolean(user?.employerId)} // Disable if loading, no broker selected, or user is employer
+                  options={[
+                    { value: "", label: loadingTpaData ? "Loading employers..." : formData.brokerId ? "Select Employer" : "First select a broker" },
+                    ...employers.map(employer => ({ value: employer.id, label: employer.name }))
+                  ]}
+                />
+                {loadingTpaData && (
+                  <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                    <svg className="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                )}
+              </div>
               {formData.brokerId && employers.length === 0 && !loadingTpaData && (
                 <p className="text-sm text-red-500 mt-1">No employers found for this broker. Please add an employer first.</p>
+              )}
+              {user?.employerId && (
+                <p className="text-xs text-gray-500 mt-1">Your account is associated with a specific employer, so this field is locked.</p>
               )}
             </div>
             
@@ -764,53 +836,6 @@ const NewQuote: React.FC = () => {
               onChange={handleChange}
               placeholder="Any additional information or special requirements"
             />
-          </div>
-        </FormSection>
-
-        {/* Broker and Employer Selection */}
-        <FormSection title="Account Information">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Only show broker selection if user is not a broker */}
-            {(!user?.brokerId || user?.role === 'admin' || user?.role === 'tpa_admin' || user?.role === 'tpa_user' || user?.role === 'tpa') && (
-              <div>
-                <Select
-                  label="Broker"
-                  name="brokerId"
-                  value={formData.brokerId}
-                  onChange={handleBrokerChange}
-                  required
-                  disabled={loadingTpaData}
-                  options={[
-                    { value: "", label: loadingTpaData ? "Loading brokers..." : "Select Broker" },
-                    ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
-                  ]}
-                />
-                {brokers.length === 0 && !loadingTpaData && (
-                  <p className="text-sm text-red-500 mt-1">No brokers available. Please contact an administrator.</p>
-                )}
-              </div>
-            )}
-            
-            {/* Only show employer selection if user is not an employer and a broker is selected */}
-            {formData.brokerId && (!user?.employerId || user?.role === 'admin' || user?.role === 'tpa_admin' || user?.role === 'tpa_user' || user?.role === 'tpa' || user?.role === 'broker') && (
-              <div>
-                <Select
-                  label="Employer"
-                  name="employerId"
-                  value={formData.employerId}
-                  onChange={handleChange}
-                  required
-                  disabled={loadingTpaData || !formData.brokerId}
-                  options={[
-                    { value: "", label: loadingTpaData ? "Loading employers..." : "Select Employer" },
-                    ...employers.map(employer => ({ value: employer.id, label: employer.name }))
-                  ]}
-                />
-                {formData.brokerId && employers.length === 0 && !loadingTpaData && (
-                  <p className="text-sm text-red-500 mt-1">No employers found for this broker. Please add an employer first.</p>
-                )}
-              </div>
-            )}
           </div>
         </FormSection>
 
