@@ -231,12 +231,13 @@ const parseMultipartForm = (event) => {
 // Extract TPA ID and Employer ID from Cognito token or form data
 const extractIdentifiers = (event, formData) => {
   let tpaId = 'unknown-tpa';
+  let brokerId = 'unknown-broker';
   let employerId = 'unknown-employer';
   
   console.log('Extracting identifiers from request...');
   console.log('Headers:', JSON.stringify(event.headers, null, 2));
   
-  // Try to extract from Authorization header if available
+  // Try to extract TPA ID from Authorization header if available
   try {
     const authHeader = event.headers.Authorization || event.headers.authorization;
     console.log('Auth header present:', !!authHeader);
@@ -253,35 +254,19 @@ const extractIdentifiers = (event, formData) => {
           const decodedToken = jwt_decode(token);
           console.log('Decoded token keys:', Object.keys(decodedToken));
           
-          // Check for custom attributes with complete path
+          // Check for custom attributes with complete path - ONLY FOR TPA ID
           if (decodedToken['custom:tpa_id']) {
             tpaId = decodedToken['custom:tpa_id'];
             console.log(`Found custom:tpa_id in token: ${tpaId}`);
           }
           
-          if (decodedToken['custom:employer_id']) {
-            employerId = decodedToken['custom:employer_id'];
-            console.log(`Found custom:employer_id in token: ${employerId}`);
-          }
-          
-          // Try other possible attribute names (sometimes they're mapped differently)
+          // Try other possible attribute names for TPA ID (sometimes they're mapped differently)
           if (tpaId === 'unknown-tpa') {
             const possibleTpaKeys = ['tpa_id', 'tpaId', 'TPAId', 'tpa-id'];
             for (const key of possibleTpaKeys) {
               if (decodedToken[key]) {
                 tpaId = decodedToken[key];
                 console.log(`Found ${key} in token: ${tpaId}`);
-                break;
-              }
-            }
-          }
-          
-          if (employerId === 'unknown-employer') {
-            const possibleEmployerKeys = ['employer_id', 'employerId', 'EmployerId', 'employer-id'];
-            for (const key of possibleEmployerKeys) {
-              if (decodedToken[key]) {
-                employerId = decodedToken[key];
-                console.log(`Found ${key} in token: ${employerId}`);
                 break;
               }
             }
@@ -307,21 +292,25 @@ const extractIdentifiers = (event, formData) => {
     console.warn('Error extracting identifiers from token:', error.message);
   }
   
-  // Check form data last (allows override for testing)
+  // Get broker and employer IDs from form data
   if (formData && formData.fields) {
     console.log('Form data fields:', JSON.stringify(formData.fields, null, 2));
-    if (formData.fields.tpa_id) {
-      tpaId = formData.fields.tpa_id;
-      console.log(`Found tpa_id in form data: ${tpaId}`);
+    
+    // Extract brokerId from form data
+    if (formData.fields.brokerId) {
+      brokerId = formData.fields.brokerId;
+      console.log(`Found brokerId in form data: ${brokerId}`);
     }
-    if (formData.fields.employer_id) {
-      employerId = formData.fields.employer_id;
-      console.log(`Found employer_id in form data: ${employerId}`);
+    
+    // Extract employerId from form data
+    if (formData.fields.employerId) {
+      employerId = formData.fields.employerId;
+      console.log(`Found employerId in form data: ${employerId}`);
     }
   }
   
-  console.log(`Final identifiers - TPA ID: ${tpaId}, Employer ID: ${employerId}`);
-  return { tpaId, employerId };
+  console.log(`Final identifiers - TPA ID: ${tpaId}, Broker ID: ${brokerId}, Employer ID: ${employerId}`);
+  return { tpaId, brokerId, employerId };
 };
 
 // Helper function to upload a file to S3 with the new partitioning strategy
@@ -331,13 +320,14 @@ const uploadToS3 = async (file, submissionData) => {
     return null;
   }
   
-  // Extract TPA ID and Employer ID from submission data
+  // Extract TPA ID, Broker ID, and Employer ID from submission data
   const tpaId = submissionData.tpaId;
+  const brokerId = submissionData.brokerId;
   const employerId = submissionData.employerId;
   const submissionId = submissionData.submissionId;
   
-  // Construct the S3 key with the proper partitioning strategy
-  const key = `submissions/${tpaId}/${employerId}/${submissionId}/${file.filename}`;
+  // Construct the S3 key with the proper partitioning strategy: tpa/broker/employer
+  const key = `submissions/${tpaId}/${brokerId}/${employerId}/${submissionId}/${file.filename}`;
   console.log(`Preparing to upload file to S3:`);
   console.log(`- Key: ${key}`);
   console.log(`- Content Type: ${file.mimeType}`);
@@ -402,9 +392,24 @@ exports.handler = async (event) => {
     // API Key for authentication
     const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
     
+    // Get the origin from the request
+    const origin = event.headers.origin || event.headers.Origin || '*';
+    
+    // Set of allowed origins
+    const allowedOrigins = [
+        'https://clean-main.dw8hkdzhqger0.amplifyapp.com',
+        'http://localhost:3000',
+        'https://main.d18ljut2zt91m5.amplifyapp.com',
+        'https://dev.kyndly.com',
+        'https://app.kyndly.com'
+    ];
+    
+    // Determine the appropriate origin to use
+    const validOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+    
     // CORS headers
     const headers = {
-        'Access-Control-Allow-Origin': 'https://clean-main.dw8hkdzhqger0.amplifyapp.com',
+        'Access-Control-Allow-Origin': validOrigin,
         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
         'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
         'Access-Control-Allow-Credentials': 'true'  // Added for handling credentials
@@ -464,8 +469,8 @@ exports.handler = async (event) => {
                 // Generate a unique ID for this submission
                 const submissionId = `submission-${Date.now()}`;
                 
-                // Extract TPA ID and Employer ID from Cognito token or form data
-                const { tpaId, employerId } = extractIdentifiers(event, formData);
+                // Extract identifiers from token and form data
+                const { tpaId, brokerId, employerId } = extractIdentifiers(event, formData);
                 
                 // Create a submission data object with the necessary IDs
                 const submissionData = {
@@ -473,6 +478,7 @@ exports.handler = async (event) => {
                     submissionId,
                     submissionDate: new Date().toISOString(),
                     tpaId,
+                    brokerId,
                     employerId
                 };
                 
@@ -531,6 +537,7 @@ exports.handler = async (event) => {
                         emailSent: !!emailResult,
                         identifiers: {
                             tpaId,
+                            brokerId,
                             employerId
                         }
                     })
@@ -555,8 +562,8 @@ exports.handler = async (event) => {
                     fields: parsedBody
                 };
                 
-                // Extract TPA ID and Employer ID
-                const { tpaId, employerId } = extractIdentifiers(event, formData);
+                // Extract identifiers from token and form data
+                const { tpaId, brokerId, employerId } = extractIdentifiers(event, formData);
                 
                 // Create submission data
                 const submissionData = {
@@ -564,6 +571,7 @@ exports.handler = async (event) => {
                     submissionId,
                     submissionDate: new Date().toISOString(),
                     tpaId,
+                    brokerId,
                     employerId
                 };
                 
@@ -587,6 +595,7 @@ exports.handler = async (event) => {
                         emailSent: !!emailResult,
                         identifiers: {
                             tpaId,
+                            brokerId,
                             employerId
                         }
                     })

@@ -128,9 +128,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           throw new Error("Authentication token not available");
         }
         
-        console.log(`Connecting to API: ${API_URL}`);
+        console.log(`AdminPanel: Connecting to API: ${API_URL}`);
         
         try {
+          console.log(`AdminPanel: Fetching TPA data from ${API_URL}/api/tpa`);
           const response = await fetch(`${API_URL}/api/tpa`, {
             headers: {
               Authorization: `Bearer ${token}`
@@ -142,15 +143,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           }
           
           const data = await response.json();
-          console.log("TPA data:", data);  // Log the data for debugging
+          console.log("AdminPanel: TPA data received:", data);
+          
+          // Debug log to check brokers
+          if (data && data.brokers) {
+            console.log(`AdminPanel: Found ${data.brokers.length} brokers in TPA data`);
+            data.brokers.forEach((broker: any, index: number) => {
+              console.log(`AdminPanel: Broker ${index + 1}:`, broker);
+              if (broker.employers) {
+                console.log(`AdminPanel: Broker ${index + 1} has ${broker.employers.length} employers`);
+              } else {
+                console.log(`AdminPanel: Broker ${index + 1} has no employers`);
+              }
+            });
+          } else {
+            console.warn("AdminPanel: No brokers found in TPA data:", data);
+          }
+          
           setTpa(data);
           setError(null);
         } catch (fetchError: any) {
           if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('Network request failed')) {
-            console.error('API connection error:', fetchError);
+            console.error('AdminPanel: API connection error:', fetchError);
             setError(`Could not connect to API at ${API_URL}. The API might not be running or might be deployed to a different endpoint.`);
           } else {
-            console.error('API error:', fetchError);
+            console.error('AdminPanel: API error:', fetchError);
             setError(fetchError.message || "Failed to fetch TPA data");
           }
         }
@@ -327,7 +344,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     }
   };
 
-  // Handle adding a new user - modified to set userCreated flag
+  // Handle adding a new user - modified to ensure refresh on creation
   const handleAddUser = async () => {
     try {
       // Validate form fields
@@ -418,11 +435,30 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       setUserDialogOpen(false);
       setError(null);
 
-      // Set flag to trigger users refresh
+      // Set flag to trigger users refresh and immediately fetch users
       setUserCreated(true);
       
       // Show success message
       alert(`User ${result.user.username} created successfully`);
+      
+      // Immediately fetch users to update the list
+      try {
+        setLoadingUsers(true);
+        const usersResponse = await fetch(`${API_URL}/api/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (usersResponse.ok) {
+          const data = await usersResponse.json();
+          setUsers(data.users || []);
+        }
+      } catch (fetchError) {
+        console.error('Error refreshing users after creation:', fetchError);
+      } finally {
+        setLoadingUsers(false);
+      }
     } catch (err: any) {
       console.error('Error creating user:', err);
       setError(err.message || "Failed to create user");
@@ -523,6 +559,271 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       console.error('Error deleting employer:', err);
       setError(err.message || "Failed to delete employer");
     }
+  };
+
+  // Render the brokers tab with table layout
+  const renderBrokers = () => {
+    return (
+      <div className="space-y-6">
+        {/* Brokers Section */}
+        <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-night dark:text-white">Brokers</h2>
+              <button
+                onClick={() => setBrokerDialogOpen(true)}
+                className="flex items-center text-sm px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
+              >
+                <PlusIcon className="h-5 w-5 mr-1" />
+                Add Broker
+              </button>
+            </div>
+            
+            {loading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
+                <span className="ml-3 text-night dark:text-white">Loading brokers...</span>
+              </div>
+            ) : error ? (
+              <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
+                <p>{error}</p>
+              </div>
+            ) : !tpa || !tpa.brokers || tpa.brokers.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>No brokers found. Create your first broker by clicking the Add Broker button.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
+                  <thead className="bg-gray-50 dark:bg-night-700">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employers</th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
+                    {tpa.brokers.map((broker) => (
+                      <tr key={broker.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                              <BuildingOfficeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-night dark:text-white">{broker.name}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">ID: {broker.id}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
+                          {broker.employers && broker.employers.length > 0 ? (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              {broker.employers.length} employers
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 dark:text-gray-400">No employers</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => {
+                              setSelectedBrokerId(broker.id);
+                              setNewEmployer({ name: '', brokerId: broker.id });
+                              setEmployerDialogOpen(true);
+                            }}
+                            className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
+                          >
+                            Add Employer
+                          </button>
+                          <button 
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => handleDeleteBroker(broker.id)}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Employers Section */}
+        {tpa && tpa.brokers && tpa.brokers.some(broker => broker.employers && broker.employers.length > 0) && (
+          <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-night dark:text-white mb-6">Employers</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
+                  <thead className="bg-gray-50 dark:bg-night-700">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Broker</th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
+                    {tpa.brokers.flatMap(broker => 
+                      (broker.employers || []).map(employer => (
+                        <tr key={employer.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                <UserGroupIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-night dark:text-white">{employer.name}</div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">ID: {employer.id}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
+                            {broker.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button 
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              onClick={() => handleDeleteEmployer(broker.id, employer.id)}
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Broker Dialog */}
+        {brokerDialogOpen && (
+          <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
+            <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-night-700">
+                <h3 className="text-lg font-semibold text-night dark:text-white">Add New Broker</h3>
+                <button 
+                  onClick={() => setBrokerDialogOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker Name</label>
+                    <input
+                      type="text"
+                      value={newBroker.name}
+                      onChange={(e) => setNewBroker({...newBroker, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="Enter broker name"
+                    />
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
+                    <p>{error}</p>
+                  </div>
+                )}
+                
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setBrokerDialogOpen(false)}
+                    className="mr-2 px-4 py-2 text-sm font-medium text-night dark:text-white border border-gray-300 dark:border-night-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-night-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddBroker}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-500 border border-transparent rounded-md shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    Create Broker
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Employer Dialog */}
+        {employerDialogOpen && (
+          <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
+            <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-night-700">
+                <h3 className="text-lg font-semibold text-night dark:text-white">Add New Employer</h3>
+                <button 
+                  onClick={() => setEmployerDialogOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer Name</label>
+                    <input
+                      type="text"
+                      value={newEmployer.name}
+                      onChange={(e) => setNewEmployer({...newEmployer, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="Enter employer name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
+                    <select
+                      value={newEmployer.brokerId}
+                      onChange={(e) => setNewEmployer({...newEmployer, brokerId: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    >
+                      <option value="">Select Broker</option>
+                      {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                        <option key={broker.id} value={broker.id}>{broker.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
+                    <p>{error}</p>
+                  </div>
+                )}
+                
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setEmployerDialogOpen(false)}
+                    className="mr-2 px-4 py-2 text-sm font-medium text-night dark:text-white border border-gray-300 dark:border-night-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-night-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddEmployer}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-500 border border-transparent rounded-md shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    Create Employer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Render the users tab with table layout
@@ -779,12 +1080,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       </div>
       
       {/* Tab content */}
-      {activeTab === 'brokers' && (
-        <div className="space-y-6">
-          {/* Brokers Section - Keep existing code for this section */}
-          {/* ... existing brokers code ... */}
-        </div>
-      )}
+      {activeTab === 'brokers' && renderBrokers()}
       
       {activeTab === 'users' && renderUsers()}
     </div>
