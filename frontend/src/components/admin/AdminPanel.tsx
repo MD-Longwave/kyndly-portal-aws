@@ -251,23 +251,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         throw new Error("Authentication token not available");
       }
       
+      console.log('AdminPanel: Creating new broker with name:', newBroker.name);
+      
+      // Add loading state
+      setError('Creating broker...');
+      
       const response = await fetch(`${API_URL}/api/brokers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         },
         body: JSON.stringify(newBroker)
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API error: ${response.status}`);
       }
       
-      // Refresh TPA data
-      const tpaResponse = await fetch(`${API_URL}/api/tpa`, {
+      const result = await response.json();
+      console.log('AdminPanel: Broker created successfully:', result);
+      
+      // Refresh TPA data with cache-busting query parameter
+      const timestamp = new Date().getTime();
+      const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       
@@ -276,12 +288,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       }
       
       const tpaData = await tpaResponse.json();
+      console.log('AdminPanel: Updated TPA data after broker creation:', tpaData);
+      
+      // Verify that the new broker exists in the updated data
+      const brokerExists = tpaData?.brokers?.some((b: Broker) => b.id === result.brokerId);
+      if (!brokerExists) {
+        console.warn('AdminPanel: Newly created broker not found in TPA data, might be a caching issue');
+      }
+      
       setTpa(tpaData);
       setNewBroker({ name: '' });
       setBrokerDialogOpen(false);
       setError(null);
+      
+      // Show success message
+      alert(`Broker "${newBroker.name}" created successfully!`);
+      
     } catch (err: any) {
-      console.error('Error adding broker:', err);
+      console.error('AdminPanel: Error adding broker:', err);
       setError(err.message || "Failed to add broker");
     }
   };
@@ -309,23 +333,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         throw new Error("Authentication token not available");
       }
       
+      console.log('AdminPanel: Creating new employer with name:', newEmployer.name);
+      
+      // Add loading state
+      setError('Creating employer...');
+      
       const response = await fetch(`${API_URL}/api/employers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         },
         body: JSON.stringify(newEmployer)
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API error: ${response.status}`);
       }
       
-      // Refresh TPA data
-      const tpaResponse = await fetch(`${API_URL}/api/tpa`, {
+      const result = await response.json();
+      console.log('AdminPanel: Employer created successfully:', result);
+      
+      // Refresh TPA data with cache-busting query parameter
+      const timestamp = new Date().getTime();
+      const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       
@@ -334,12 +370,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       }
       
       const tpaData = await tpaResponse.json();
+      console.log('AdminPanel: Updated TPA data after employer creation:', tpaData);
+      
+      // Verify employer was added
+      const employerAdded = tpaData?.brokers?.some((b: Broker) => 
+        b.id === newEmployer.brokerId && 
+        b.employers?.some((e: Employer) => e.id === result.employerId)
+      );
+      
+      if (!employerAdded) {
+        console.warn('AdminPanel: Newly created employer not found in TPA data, might be a caching issue');
+      }
+      
       setTpa(tpaData);
       setNewEmployer({ name: '', brokerId: '' });
       setEmployerDialogOpen(false);
       setError(null);
+      
+      // Show success message
+      alert(`Employer "${newEmployer.name}" created successfully!`);
+      
     } catch (err: any) {
-      console.error('Error adding employer:', err);
+      console.error('AdminPanel: Error adding employer:', err);
       setError(err.message || "Failed to add employer");
     }
   };

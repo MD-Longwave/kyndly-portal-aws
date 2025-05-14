@@ -146,10 +146,14 @@ const NewQuote: React.FC = () => {
         
         console.log('NewQuote: Fetching TPA data from API');
         
+        // Add timestamp to prevent caching and always get fresh data
+        const timestamp = new Date().getTime();
+        
         // Fetch TPA data from the configuration API
-        const response = await fetch(`${API_URL}/api/tpa`, {
+        const response = await fetch(`${API_URL}/api/tpa?t=${timestamp}`, {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
           }
         });
         
