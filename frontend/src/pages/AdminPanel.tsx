@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BuildingOfficeIcon, 
@@ -10,6 +10,8 @@ import AdminPanelComponent from '../components/admin/AdminPanel';
 import { PageTransition } from '../components/animations';
 
 const AdminPanelPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('brokers');
+  
   return (
     <PageTransition>
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -31,24 +33,33 @@ const AdminPanelPage: React.FC = () => {
             
             <div className="p-4">
               <nav className="space-y-1">
-                <a href="#brokers" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white bg-gray-100 dark:bg-night-700">
+                <button 
+                  onClick={() => setActiveTab('brokers')}
+                  className={`flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white ${activeTab === 'brokers' ? 'bg-gray-100 dark:bg-night-700' : 'hover:bg-gray-100 dark:hover:bg-night-700'}`}
+                >
                   <BuildingOfficeIcon className="mr-3 h-5 w-5 text-blue-500" />
                   Brokers
-                </a>
-                <a href="#employers" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white hover:bg-gray-100 dark:hover:bg-night-700">
+                </button>
+                <button
+                  onClick={() => setActiveTab('employers')}
+                  className={`flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white ${activeTab === 'employers' ? 'bg-gray-100 dark:bg-night-700' : 'hover:bg-gray-100 dark:hover:bg-night-700'}`}
+                >
                   <UserGroupIcon className="mr-3 h-5 w-5 text-blue-500" />
                   Employers
-                </a>
-                <a href="#users" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white hover:bg-gray-100 dark:hover:bg-night-700">
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-night dark:text-white ${activeTab === 'users' ? 'bg-gray-100 dark:bg-night-700' : 'hover:bg-gray-100 dark:hover:bg-night-700'}`}
+                >
                   <UserIcon className="mr-3 h-5 w-5 text-blue-500" />
                   Users
-                </a>
+                </button>
               </nav>
             </div>
           </div>
 
           <div className="xl:col-span-9">
-            <AdminPanelComponent />
+            <AdminPanelComponent initialActiveTab={activeTab} />
           </div>
         </div>
       </div>

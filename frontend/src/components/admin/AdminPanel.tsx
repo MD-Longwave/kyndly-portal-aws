@@ -57,7 +57,12 @@ interface NewUser {
   tempPassword: string;
 }
 
-const AdminPanel: React.FC = () => {
+// Add props interface
+interface AdminPanelProps {
+  initialActiveTab?: string;
+}
+
+const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' }) => {
   const { user, getIdToken } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getThemeStyles(isDarkMode);
@@ -74,7 +79,7 @@ const AdminPanel: React.FC = () => {
   const [selectedBrokerId, setSelectedBrokerId] = useState('');
   
   // New state for user management
-  const [activeTab, setActiveTab] = useState('brokers');
+  const [activeTab, setActiveTab] = useState(initialActiveTab);
   const [newUser, setNewUser] = useState<NewUser>({
     username: '',
     email: '',
@@ -83,9 +88,16 @@ const AdminPanel: React.FC = () => {
     brokerId: '',
     tempPassword: ''
   });
+  
   // Add state for the list of users
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userCreated, setUserCreated] = useState(false);
+
+  // Add effect to update activeTab when initialActiveTab changes
+  useEffect(() => {
+    setActiveTab(initialActiveTab);
+  }, [initialActiveTab]);
 
   // Check if user is in admin group
   useEffect(() => {
@@ -172,6 +184,7 @@ const AdminPanel: React.FC = () => {
           throw new Error("Authentication token not available");
         }
         
+        console.log('AdminPanel: Fetching users...');
         const response = await fetch(`${API_URL}/api/users`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -184,8 +197,14 @@ const AdminPanel: React.FC = () => {
         
         const data = await response.json();
         console.log("Users data:", data);
+        console.log(`AdminPanel: Fetched ${data.users?.length || 0} users`);
         setUsers(data.users || []);
         setError(null);
+
+        // Reset the userCreated flag
+        if (userCreated) {
+          setUserCreated(false);
+        }
       } catch (err: any) {
         console.error('Error fetching users:', err);
         setError(err.message || "Failed to fetch users");
@@ -195,7 +214,7 @@ const AdminPanel: React.FC = () => {
     };
     
     fetchUsers();
-  }, [user, getIdToken]);
+  }, [user, getIdToken, userCreated]); // Add userCreated as a dependency
 
   // Handle adding a new broker
   const handleAddBroker = async () => {
@@ -308,7 +327,7 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  // Handle adding a new user
+  // Handle adding a new user - modified to set userCreated flag
   const handleAddUser = async () => {
     try {
       // Validate form fields
@@ -367,6 +386,8 @@ const AdminPanel: React.FC = () => {
         (userData as any).tpaId = newUser.tpaId;
       }
       
+      console.log('AdminPanel: Creating user with data:', userData);
+      
       const response = await fetch(`${API_URL}/api/users`, {
         method: 'POST',
         headers: {
@@ -397,17 +418,8 @@ const AdminPanel: React.FC = () => {
       setUserDialogOpen(false);
       setError(null);
 
-      // Refresh users list
-      const usersResponse = await fetch(`${API_URL}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        setUsers(usersData.users || []);
-      }
+      // Set flag to trigger users refresh
+      setUserCreated(true);
       
       // Show success message
       alert(`User ${result.user.username} created successfully`);
