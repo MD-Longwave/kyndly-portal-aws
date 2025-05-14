@@ -14,6 +14,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 // API URL configuration - using specific API Gateway URL from AWS console
 const API_URL = process.env.REACT_APP_API_URL || 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+// Remove API key constant since it wasn't needed before
+// const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
 
 interface Employer {
   id: string;
@@ -150,8 +152,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           if (user.role !== 'admin' && user.tpaId) {
             console.log(`AdminPanel: User has tpaId: ${user.tpaId}`);
             // Ensure we're not appending tpa_ prefix if it's already there
-            const tpaIdParam = user.tpaId.startsWith('tpa_') ? user.tpaId : `tpa_${user.tpaId}`;
-            tpaEndpoint = `${API_URL}/api/tpa/${tpaIdParam}`;
+            // Use query parameter instead of path parameter
+            tpaEndpoint = `${API_URL}/api/tpa?id=${user.tpaId}`;
           }
             
           console.log(`AdminPanel: Fetching TPA data from ${tpaEndpoint}`);
@@ -163,6 +165,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           });
           
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`AdminPanel: API error (${response.status}): ${errorText}`);
             throw new Error(`API error: ${response.status} ${response.statusText}`);
           }
           
@@ -233,8 +237,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         // If not a global admin, only fetch users for current TPA
         if (user.role !== 'admin' && user.tpaId) {
           // Ensure we're not appending tpa_ prefix if it's already there
-          const tpaIdParam = user.tpaId.startsWith('tpa_') ? user.tpaId : `tpa_${user.tpaId}`;
-          endpoint = `${API_URL}/api/users?tpaId=${tpaIdParam}`;
+          // Use query parameter instead of path parameter
+          endpoint = `${API_URL}/api/users?tpaId=${user.tpaId}`;
         }
         
         console.log(`AdminPanel: Fetching users from ${endpoint}`);
