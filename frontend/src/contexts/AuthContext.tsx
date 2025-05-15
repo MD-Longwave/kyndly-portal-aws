@@ -175,18 +175,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Get the refreshed session
         const refreshedSession = await Auth.currentSession();
         const token = refreshedSession.getIdToken().getJwtToken();
-        console.log(`AuthContext: Token refreshed successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
+        
+        // Ensure token is properly formatted
+        const cleanToken = token.trim();
+        
+        console.log(`AuthContext: Token refreshed successfully (length: ${cleanToken.length}, first 15 chars: ${cleanToken.substring(0, 15)}...)`);
         
         // Get the payload for debugging
         const payload = refreshedSession.getIdToken().decodePayload();
         console.log('AuthContext: Refreshed token payload:', JSON.stringify(payload));
         
-        return token;
+        return cleanToken;
       }
       
       // Otherwise use the existing token
       const token = session.getIdToken().getJwtToken();
-      console.log(`AuthContext: Token retrieved successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
+      
+      // Ensure token is properly formatted
+      const cleanToken = token.trim();
+      
+      console.log(`AuthContext: Token retrieved successfully (length: ${cleanToken.length}, first 15 chars: ${cleanToken.substring(0, 15)}...)`);
       
       // Get the payload for debugging
       const payload = session.getIdToken().decodePayload();
@@ -206,11 +214,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       // Make sure the token isn't malformed
-      if (!token.startsWith('ey')) {
+      if (!cleanToken.startsWith('ey')) {
         console.error('AuthContext: Token does not start with expected JWT format');
       }
       
-      return token;
+      return cleanToken;
     } catch (error) {
       console.error('AuthContext: Error getting ID token:', error);
       return null;
