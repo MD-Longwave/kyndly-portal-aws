@@ -252,9 +252,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         
         // Add cache-busting timestamp parameter
         const timestamp = new Date().getTime();
-        endpoint = endpoint.includes('?') 
-          ? `${endpoint}&_t=${timestamp}` 
-          : `${endpoint}?_t=${timestamp}`;
+        
+        // Debug URL construction
+        console.log('Base endpoint before adding timestamp:', endpoint);
+        console.log('Contains ? :', endpoint.includes('?'));
+        
+        // More explicit URL construction to avoid issues
+        if (endpoint.includes('?')) {
+          // Already has query parameters - ensure the & is added
+          endpoint = `${endpoint}&_t=${timestamp}`;
+        } else {
+          // No query parameters yet - add the first one with ?
+          endpoint = `${endpoint}?_t=${timestamp}`;
+        }
         
         console.log(`AdminPanel: Fetching users from ${endpoint}`);
         
