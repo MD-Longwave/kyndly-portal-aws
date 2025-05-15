@@ -98,6 +98,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     phoneNumber: ''
   });
   
+  // Add state for editing users
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  
   // Add state for the list of users
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -908,32 +912,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                 <label htmlFor="search" className="block text-sm font-medium text-night dark:text-white mb-1">
                   Search
                 </label>
-                <input
-                  type="text"
-                  id="search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by name or ID..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                />
-              </div>
-              
-              {/* Broker filter dropdown (for employers table) */}
-              <div className="w-full md:w-1/3">
-                <label htmlFor="brokerFilter" className="block text-sm font-medium text-night dark:text-white mb-1">
-                  Filter by Broker
-                </label>
-                <select
-                  id="brokerFilter"
-                  value={filterBrokerId}
-                  onChange={(e) => setFilterBrokerId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                >
-                  <option value="">All Brokers</option>
-                  {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                    <option key={broker.id} value={broker.id}>{broker.name}</option>
-                  ))}
-                </select>
+                <div className="mb-4 flex flex-col md:flex-row gap-3">
+                  <input
+                    type="text"
+                    id="search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name or ID..."
+                    className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                  />
+                  
+                  {/* Add broker filter dropdown */}
+                  <select
+                    className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    value={filterBrokerId}
+                    onChange={(e) => setFilterBrokerId(e.target.value)}
+                  >
+                    <option value="">All Brokers</option>
+                    {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                      <option key={broker.id} value={broker.id}>{broker.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               
               {/* Reset filters button */}
@@ -1289,7 +1289,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
             </div>
           ) : (
             <>
-              <div className="mb-4">
+              <div className="mb-4 flex flex-col md:flex-row gap-3">
                 <input
                   type="text"
                   placeholder="Search"
@@ -1297,6 +1297,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                
+                {/* Add broker filter dropdown */}
+                <select
+                  className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                  value={filterBrokerId}
+                  onChange={(e) => setFilterBrokerId(e.target.value)}
+                >
+                  <option value="">All Brokers</option>
+                  {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                    <option key={broker.id} value={broker.id}>{broker.name}</option>
+                  ))}
+                </select>
               </div>
               
               <div className="overflow-x-auto">
@@ -1304,6 +1316,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                   <thead className="bg-gray-50 dark:bg-night-700">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">AVATAR</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">USERNAME</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">FIRST NAME</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">LAST NAME</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PHONE NUMBER</th>
@@ -1337,6 +1350,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                                 <UserIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                               </div>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.username}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{firstName}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{lastName}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.phoneNumber || '-'}</td>
@@ -1565,6 +1579,177 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
             </div>
           </div>
         )}
+
+        {/* Edit User Dialog */}
+        {editUserDialogOpen && editingUser && (
+          <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
+            <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-night-700">
+                <h3 className="text-lg font-semibold text-night dark:text-white">Edit User</h3>
+                <button 
+                  onClick={() => setEditUserDialogOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Username</label>
+                    <input
+                      type="text"
+                      value={editingUser.username}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm bg-gray-100 dark:bg-night-600 text-night dark:text-gray-400"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Username cannot be changed
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editingUser.email}
+                      onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={editingUser.name}
+                      onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={editingUser.phoneNumber || ''}
+                      onChange={(e) => setEditingUser({...editingUser, phoneNumber: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="Phone Number"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Role</label>
+                    <select
+                      value={editingUser.role}
+                      onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                    >
+                      {/* Only show broker and employer roles */}
+                      <option value="broker">Broker</option>
+                      <option value="employer">Employer</option>
+                    </select>
+                  </div>
+                  
+                  {/* Organization selection based on role */}
+                  {/* Only show TPA selection for global admins */}
+                  {user?.role === 'admin' && (editingUser.role === 'tpa_admin' || editingUser.role === 'broker') && (
+                    <div>
+                      <label className="block text-sm font-medium text-night dark:text-white mb-1">TPA</label>
+                      <select
+                        value={editingUser.tpaId || ''}
+                        onChange={(e) => setEditingUser({...editingUser, tpaId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      >
+                        <option value="">Select TPA</option>
+                        {tpa && <option value={tpa.id}>{tpa.name || 'Current TPA'}</option>}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Broker selection for employer users */}
+                  {(editingUser.role === 'employer') && (
+                    <div>
+                      <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
+                      <select
+                        value={editingUser.brokerId || ''}
+                        onChange={(e) => setEditingUser({...editingUser, brokerId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      >
+                        <option value="">Select Broker</option>
+                        {tpa && tpa.brokers && tpa.brokers.map((broker) => (
+                          <option key={broker.id} value={broker.id}>{broker.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Employer selection - only available when a broker is selected */}
+                  {editingUser.role === 'employer' && editingUser.brokerId && (
+                    <div>
+                      <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer</label>
+                      <select
+                        value={editingUser.employerId || ''}
+                        onChange={(e) => setEditingUser({...editingUser, employerId: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      >
+                        <option value="">Select Employer</option>
+                        {tpa && tpa.brokers && tpa.brokers
+                          .filter(broker => broker.id === editingUser.brokerId)
+                          .map(broker => 
+                            broker.employers && broker.employers.map(employer => (
+                              <option key={employer.id} value={employer.id}>{employer.name}</option>
+                            ))
+                          )
+                        }
+                      </select>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Password Management</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // In a real implementation, this would open a reset password dialog or call an API
+                        alert(`Password reset for ${editingUser.username} would be implemented here`);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-white bg-amber-500 border border-transparent rounded-md shadow-sm hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+                    >
+                      Reset User Password
+                    </button>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      This will send the user a password reset email
+                    </p>
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
+                    <p>{error}</p>
+                  </div>
+                )}
+                
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setEditUserDialogOpen(false)}
+                    className="mr-2 px-4 py-2 text-sm font-medium text-night dark:text-white border border-gray-300 dark:border-night-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-night-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateUser}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-500 border border-transparent rounded-md shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    Update User
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1577,8 +1762,80 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
 
   // Handle editing a user
   const handleEditUser = (user: User) => {
-    // This will be implemented in the next phase
-    alert('Edit user functionality will be implemented in the next phase');
+    setEditingUser(user);
+    setEditUserDialogOpen(true);
+  };
+
+  // Handle updating a user
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+    
+    try {
+      // Validate required fields
+      if (!editingUser.email?.trim()) {
+        setError('Email is required');
+        return;
+      }
+      
+      if (!editingUser.name?.trim()) {
+        setError('Name is required');
+        return;
+      }
+      
+      if (!API_URL) {
+        setError("API URL not configured");
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
+      
+      // Create update payload
+      const userData = {
+        email: editingUser.email,
+        name: editingUser.name,
+        role: editingUser.role,
+        phoneNumber: editingUser.phoneNumber || undefined,
+        tpaId: editingUser.tpaId || undefined,
+        brokerId: editingUser.brokerId || undefined,
+        employerId: editingUser.employerId || undefined
+      };
+      
+      console.log('AdminPanel: Updating user with data:', userData);
+      
+      const response = await fetch(`${API_URL}/api/users/${editingUser.username}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token.trim()}`
+        },
+        body: JSON.stringify(userData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('User updated:', result);
+      
+      // Reset form
+      setEditingUser(null);
+      setEditUserDialogOpen(false);
+      setError(null);
+
+      // Refresh user list
+      await fetchUsers();
+      
+      // Show success message
+      alert(`User ${editingUser.username} updated successfully`);
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      setError(err.message || "Failed to update user");
+    }
   };
 
   // Handle deleting a user
