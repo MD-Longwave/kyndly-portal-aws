@@ -327,6 +327,52 @@ export const QuoteService = {
   }
 };
 
+/**
+ * TPA Service for fetching TPA-related data
+ */
+export const TpaService = {
+  /**
+   * Fetch TPA data for the current user
+   * @returns Promise with TPA data
+   */
+  getTpaData: async () => {
+    try {
+      console.log('TpaService.getTpaData: Fetching TPA data');
+      
+      // Get auth headers with token
+      const headers = await getApiHeaders();
+      
+      // Use the /api/tpa endpoint that was just fixed in the Lambda
+      // This is the Admin API endpoint, not the health API
+      const adminApiUrl = process.env.REACT_APP_ADMIN_API_URL || 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+      
+      // Add a timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const url = `${adminApiUrl}/api/tpa?_t=${timestamp}`;
+      
+      console.log(`TpaService.getTpaData: Making request to ${url}`);
+      
+      const response = await fetch(url, {
+        headers,
+        credentials: 'omit', // Don't include credentials - fixes CORS issue
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('TpaService.getTpaData: Data received:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('TpaService.getTpaData: Error fetching TPA data:', error);
+      throw error;
+    }
+  },
+};
+
 export default {
   Quote: QuoteService,
+  Tpa: TpaService,
 }; 

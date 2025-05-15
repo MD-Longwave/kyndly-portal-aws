@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Storage } from 'aws-amplify';
-import { QuoteService, checkApiHealth } from '../services/api.service';
+import { QuoteService, TpaService, checkApiHealth } from '../services/api.service';
 import { Auth } from 'aws-amplify';
 import {
   FormSection,
@@ -138,12 +138,6 @@ const NewQuote: React.FC = () => {
         setLoadingTpaData(true);
         setDataError(null);
         
-        // Get the authentication token
-        const token = await getIdToken();
-        if (!token) {
-          throw new Error("Authentication token not available");
-        }
-        
         // Get TPA ID from user context
         const userTpaId = user?.tpaId;
         
@@ -154,29 +148,11 @@ const NewQuote: React.FC = () => {
           return;
         }
         
-        console.log(`NewQuote: Fetching TPA data from API for TPA ID: ${userTpaId}`);
+        console.log(`NewQuote: Fetching TPA data for TPA ID: ${userTpaId} using TpaService`);
         
-        // Add timestamp to prevent caching and always get fresh data
-        const timestamp = new Date().getTime();
+        // Use the new TpaService to fetch TPA data - handles auth token and all request details
+        const data = await TpaService.getTpaData();
         
-        // Fetch TPA data from the configuration API - use specific TPA endpoint for tpaId
-        const response = await fetch(`${API_URL}/api/tpa/${userTpaId}?t=${timestamp}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error(`TPA with ID ${userTpaId} not found`);
-          } else if (response.status === 403) {
-            throw new Error(`Access denied to TPA data. You may not have permission to access this TPA.`);
-          } else {
-            throw new Error(`API error: ${response.status}`);
-          }
-        }
-        
-        const data = await response.json();
         console.log('NewQuote: TPA data received:', data);
         
         // Verify the TPA ID matches the user's TPA ID
