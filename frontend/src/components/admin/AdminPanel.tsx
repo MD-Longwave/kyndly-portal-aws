@@ -161,7 +161,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           // Make sure there's no extra space in the Authorization header
           const headers = {
             'Content-Type': 'application/json',
-            'Authorization': token.trim()
+            'Authorization': `Bearer ${token.trim()}`
           };
           
           const response = await fetch(tpaEndpoint, {
@@ -234,10 +234,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           throw new Error("Authentication token not available");
         }
         
-        // Debug token format
+        // Debug logging for troubleshooting
+        console.log('===== AUTH DEBUGGING =====');
+        console.log('Token obtained from getIdToken():');
         console.log('Token length:', token.length);
-        console.log('Token first 20 chars:', token.substring(0, 20));
-        console.log('Token last 20 chars:', token.substring(token.length - 20));
+        console.log('Token first 15 chars:', token.substring(0, 15));
+        console.log('Token last 15 chars:', token.substring(token.length - 15));
+        console.log('===== END AUTH DEBUGGING =====');
         
         console.log('AdminPanel: Fetching users...');
         
@@ -271,7 +274,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         // Make sure there's no extra space in the Authorization header
         const headers = {
           'Content-Type': 'application/json',
-          'Authorization': token.trim()
+          'Authorization': `Bearer ${token.trim()}`
         };
         
         console.log('Headers:', JSON.stringify(headers));
@@ -377,7 +380,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         },
         body: JSON.stringify(newBroker)
       });
@@ -396,7 +399,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: token.trim()
+            Authorization: `Bearer ${token.trim()}`
           },
           body: JSON.stringify({
             recipientType: 'broker',
@@ -419,7 +422,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       const timestamp = new Date().getTime();
       const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
         headers: {
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         }
       });
       
@@ -482,7 +485,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         },
         body: JSON.stringify(newEmployer)
       });
@@ -508,7 +511,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: token.trim()
+            Authorization: `Bearer ${token.trim()}`
           },
           body: JSON.stringify({
             recipientType: 'employer',
@@ -533,7 +536,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       const timestamp = new Date().getTime();
       const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
         headers: {
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         }
       });
       
@@ -663,7 +666,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         },
         body: JSON.stringify(userData)
       });
@@ -725,7 +728,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       const response = await fetch(`${API_URL}/api/brokers/${brokerId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         }
       });
       
@@ -736,7 +739,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       // Refresh TPA data
       const tpaResponse = await fetch(`${API_URL}/api/tpa`, {
         headers: {
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         }
       });
       
@@ -773,7 +776,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       const response = await fetch(`${API_URL}/api/brokers/${brokerId}/employers/${employerId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         }
       });
       
@@ -784,7 +787,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       // Refresh TPA data
       const tpaResponse = await fetch(`${API_URL}/api/tpa`, {
         headers: {
-          Authorization: token.trim()
+          Authorization: `Bearer ${token.trim()}`
         }
       });
       
