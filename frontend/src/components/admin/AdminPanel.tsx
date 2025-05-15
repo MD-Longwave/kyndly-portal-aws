@@ -241,6 +241,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           endpoint = `${API_URL}/api/users?tpaId=${user.tpaId}`;
         }
         
+        // Add cache-busting timestamp parameter
+        const timestamp = new Date().getTime();
+        endpoint = endpoint.includes('?') 
+          ? `${endpoint}&_t=${timestamp}` 
+          : `${endpoint}?_t=${timestamp}`;
+        
         console.log(`AdminPanel: Fetching users from ${endpoint}`);
         
         const response = await fetch(endpoint, {
@@ -660,30 +666,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       setUserDialogOpen(false);
       setError(null);
 
-      // Set flag to trigger users refresh and immediately fetch users
+      // Set userCreated flag to true - this will trigger the useEffect to fetch users
       setUserCreated(true);
       
       // Show success message
       alert(`User ${result.user.username} created successfully`);
       
-      // Immediately fetch users to update the list
-      try {
-        setLoadingUsers(true);
-        const usersResponse = await fetch(`${API_URL}/api/users`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (usersResponse.ok) {
-          const data = await usersResponse.json();
-          setUsers(data.users || []);
-        }
-      } catch (fetchError) {
-        console.error('Error refreshing users after creation:', fetchError);
-      } finally {
-        setLoadingUsers(false);
-      }
+      // Don't fetch users here - rely on the useEffect to do that
+      // This prevents race conditions and double-fetching
     } catch (err: any) {
       console.error('Error creating user:', err);
       setError(err.message || "Failed to create user");
