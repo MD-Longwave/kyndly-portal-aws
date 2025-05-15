@@ -67,10 +67,10 @@ interface NewUser {
 
 // Add props interface
 interface AdminPanelProps {
-  initialActiveTab?: string;
+  // No props needed since we're removing tabs
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' }) => {
+const AdminPanel: React.FC<AdminPanelProps> = () => {
   const { user, getIdToken } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getThemeStyles(isDarkMode);
@@ -79,15 +79,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
   const [error, setError] = useState<string | null>(null);
   const [tpa, setTpa] = useState<TPA | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [brokerDialogOpen, setBrokerDialogOpen] = useState(false);
-  const [employerDialogOpen, setEmployerDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
-  const [newBroker, setNewBroker] = useState({ name: '' });
-  const [newEmployer, setNewEmployer] = useState({ name: '', brokerId: '' });
-  const [selectedBrokerId, setSelectedBrokerId] = useState('');
   
   // New state for user management
-  const [activeTab, setActiveTab] = useState(initialActiveTab);
   const [newUser, setNewUser] = useState<NewUser>({
     username: '',
     email: '',
@@ -107,7 +101,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userCreated, setUserCreated] = useState(false);
 
-  // Add these new state variables after the existing useState declarations
+  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBrokerId, setFilterBrokerId] = useState('');
   const [sortField, setSortField] = useState('name');
@@ -201,11 +195,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       setLoadingUsers(false);
     }
   };
-
-  // Add effect to update activeTab when initialActiveTab changes
-  useEffect(() => {
-    setActiveTab(initialActiveTab);
-  }, [initialActiveTab]);
 
   // Fetch users with TPA-based filtering
   useEffect(() => {
@@ -314,224 +303,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     
     fetchTpa();
   }, [user, getIdToken]);
-
-  // Handle adding a new broker
-  const handleAddBroker = async () => {
-    try {
-      if (!newBroker.name.trim()) {
-        setError('Broker name is required');
-        return;
-      }
-      
-      if (!API_URL) {
-        setError("API URL not configured");
-        return;
-      }
-      
-      const token = await getIdToken();
-      if (!token) {
-        throw new Error("Authentication token not available");
-      }
-      
-      console.log('AdminPanel: Creating new broker with name:', newBroker.name);
-      
-      // Add loading state
-      setError('Creating broker...');
-      
-      const response = await fetch(`${API_URL}/api/brokers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.trim()}`
-        },
-        body: JSON.stringify(newBroker)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `API error: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('AdminPanel: Broker created successfully:', result);
-      
-      // Send welcome email
-      try {
-        const emailResponse = await fetch(`${API_URL}/api/email/welcome`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token.trim()}`
-          },
-          body: JSON.stringify({
-            recipientType: 'broker',
-            name: newBroker.name,
-            recipientId: result.brokerId,
-            email: result.email || '' // If email is available
-          })
-        });
-        
-        if (emailResponse.ok) {
-          console.log('AdminPanel: Welcome email sent to new broker');
-        } else {
-          console.warn('AdminPanel: Failed to send welcome email to broker');
-        }
-      } catch (emailError) {
-        console.error('AdminPanel: Error sending welcome email:', emailError);
-      }
-      
-      // Refresh TPA data with cache-busting query parameter
-      const timestamp = new Date().getTime();
-      const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
-        headers: {
-          Authorization: `Bearer ${token.trim()}`
-        }
-      });
-      
-      if (!tpaResponse.ok) {
-        throw new Error(`API error: ${tpaResponse.status}`);
-      }
-      
-      const tpaData = await tpaResponse.json();
-      console.log('AdminPanel: Updated TPA data after broker creation:', tpaData);
-      
-      // Verify that the new broker exists in the updated data
-      const brokerExists = tpaData?.brokers?.some((b: Broker) => b.id === result.brokerId);
-      if (!brokerExists) {
-        console.warn('AdminPanel: Newly created broker not found in TPA data, might be a caching issue');
-      }
-      
-      setTpa(tpaData);
-      setNewBroker({ name: '' });
-      setBrokerDialogOpen(false);
-      setError(null);
-      
-      // Show success message
-      alert(`Broker "${newBroker.name}" created successfully!`);
-      
-    } catch (err: any) {
-      console.error('AdminPanel: Error adding broker:', err);
-      setError(err.message || "Failed to add broker");
-    }
-  };
-
-  // Handle adding a new employer
-  const handleAddEmployer = async () => {
-    try {
-      if (!newEmployer.name.trim()) {
-        setError('Employer name is required');
-        return;
-      }
-      
-      if (!newEmployer.brokerId) {
-        setError('Please select a broker');
-        return;
-      }
-      
-      if (!API_URL) {
-        setError("API URL not configured");
-        return;
-      }
-      
-      const token = await getIdToken();
-      if (!token) {
-        throw new Error("Authentication token not available");
-      }
-      
-      console.log('AdminPanel: Creating new employer with name:', newEmployer.name);
-      
-      // Add loading state
-      setError('Creating employer...');
-      
-      const response = await fetch(`${API_URL}/api/employers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.trim()}`
-        },
-        body: JSON.stringify(newEmployer)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `API error: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('AdminPanel: Employer created successfully:', result);
-      
-      // Send welcome email to employer
-      try {
-        // Find broker name for the email
-        let brokerName = '';
-        if (tpa && tpa.brokers) {
-          const broker = tpa.brokers.find(b => b.id === newEmployer.brokerId);
-          if (broker) brokerName = broker.name;
-        }
-        
-        const emailResponse = await fetch(`${API_URL}/api/email/welcome`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token.trim()}`
-          },
-          body: JSON.stringify({
-            recipientType: 'employer',
-            name: newEmployer.name,
-            recipientId: result.employerId,
-            brokerName: brokerName,
-            brokerId: newEmployer.brokerId,
-            email: result.email || '' // If email is available
-          })
-        });
-        
-        if (emailResponse.ok) {
-          console.log('AdminPanel: Welcome email sent to new employer');
-        } else {
-          console.warn('AdminPanel: Failed to send welcome email to employer');
-        }
-      } catch (emailError) {
-        console.error('AdminPanel: Error sending welcome email:', emailError);
-      }
-      
-      // Refresh TPA data with cache-busting query parameter
-      const timestamp = new Date().getTime();
-      const tpaResponse = await fetch(`${API_URL}/api/tpa?_t=${timestamp}`, {
-        headers: {
-          Authorization: `Bearer ${token.trim()}`
-        }
-      });
-      
-      if (!tpaResponse.ok) {
-        throw new Error(`API error: ${tpaResponse.status}`);
-      }
-      
-      const tpaData = await tpaResponse.json();
-      console.log('AdminPanel: Updated TPA data after employer creation:', tpaData);
-      
-      // Verify employer was added
-      const employerAdded = tpaData?.brokers?.some((b: Broker) => 
-        b.id === newEmployer.brokerId && 
-        b.employers?.some((e: Employer) => e.id === result.employerId)
-      );
-      
-      if (!employerAdded) {
-        console.warn('AdminPanel: Newly created employer not found in TPA data, might be a caching issue');
-      }
-      
-      setTpa(tpaData);
-      setNewEmployer({ name: '', brokerId: '' });
-      setEmployerDialogOpen(false);
-      setError(null);
-      
-      // Show success message
-      alert(`Employer "${newEmployer.name}" created successfully!`);
-      
-    } catch (err: any) {
-      console.error('AdminPanel: Error adding employer:', err);
-      setError(err.message || "Failed to add employer");
-    }
-  };
 
   // Handle adding a new user - modified to ensure role-based restrictions
   const handleAddUser = async () => {
@@ -672,9 +443,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     }
   };
 
-  // Handle deleting a broker
-  const handleDeleteBroker = async (brokerId: string) => {
-    if (!window.confirm("Are you sure you want to delete this broker? This will also delete all associated employers.")) {
+  // Handle deleting a user
+  const handleDeleteUser = async (username: string) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) {
       return;
     }
     
@@ -689,7 +460,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         throw new Error("Authentication token not available");
       }
       
-      const response = await fetch(`${API_URL}/api/brokers/${brokerId}`, {
+      const response = await fetch(`${API_URL}/api/users/${username}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token.trim()}`
@@ -700,559 +471,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         throw new Error(`API error: ${response.status}`);
       }
       
-      // Refresh TPA data
-      const tpaResponse = await fetch(`${API_URL}/api/tpa`, {
-        headers: {
-          Authorization: `Bearer ${token.trim()}`
-        }
-      });
-      
-      if (!tpaResponse.ok) {
-        throw new Error(`API error: ${tpaResponse.status}`);
-      }
-      
-      const tpaData = await tpaResponse.json();
-      setTpa(tpaData);
+      // Refresh users data
+      await fetchUsers();
       setError(null);
+      
+      // Show success message
+      alert(`User ${username} deleted successfully`);
     } catch (err: any) {
-      console.error('Error deleting broker:', err);
-      setError(err.message || "Failed to delete broker");
+      console.error('Error deleting user:', err);
+      setError(err.message || "Failed to delete user");
     }
-  };
-
-  // Handle deleting an employer
-  const handleDeleteEmployer = async (brokerId: string, employerId: string) => {
-    if (!window.confirm("Are you sure you want to delete this employer?")) {
-      return;
-    }
-    
-    try {
-      if (!API_URL) {
-        setError("API URL not configured");
-        return;
-      }
-      
-      const token = await getIdToken();
-      if (!token) {
-        throw new Error("Authentication token not available");
-      }
-      
-      const response = await fetch(`${API_URL}/api/brokers/${brokerId}/employers/${employerId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token.trim()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      // Refresh TPA data
-      const tpaResponse = await fetch(`${API_URL}/api/tpa`, {
-        headers: {
-          Authorization: `Bearer ${token.trim()}`
-        }
-      });
-      
-      if (!tpaResponse.ok) {
-        throw new Error(`API error: ${tpaResponse.status}`);
-      }
-      
-      const tpaData = await tpaResponse.json();
-      setTpa(tpaData);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error deleting employer:', err);
-      setError(err.message || "Failed to delete employer");
-    }
-  };
-
-  // Add this new function before the renderBrokers function
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      // Toggle direction if clicking the same field
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // Set new field and default to ascending
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  // Create filtered and sorted data
-  const getFilteredBrokers = () => {
-    if (!tpa || !tpa.brokers) return [];
-    
-    let filtered = [...tpa.brokers];
-    
-    // Apply search term filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(broker => 
-        broker.name.toLowerCase().includes(term) || 
-        broker.id.toLowerCase().includes(term)
-      );
-    }
-    
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let compareA, compareB;
-      
-      // Determine values to compare based on sort field
-      if (sortField === 'name') {
-        compareA = a.name.toLowerCase();
-        compareB = b.name.toLowerCase();
-      } else if (sortField === 'id') {
-        compareA = a.id.toLowerCase();
-        compareB = b.id.toLowerCase();
-      } else if (sortField === 'employers') {
-        compareA = (a.employers || []).length;
-        compareB = (b.employers || []).length;
-      } else {
-        // Default to name
-        compareA = a.name.toLowerCase();
-        compareB = b.name.toLowerCase();
-      }
-      
-      // Determine sort order
-      if (typeof compareA === 'string' && typeof compareB === 'string') {
-        const result = compareA.localeCompare(compareB);
-        return sortDirection === 'asc' ? result : -result;
-      } else {
-        // For numeric comparisons
-        const result = Number(compareA) - Number(compareB);
-        return sortDirection === 'asc' ? result : -result;
-      }
-    });
-    
-    return filtered;
-  };
-  
-  const getFilteredEmployers = () => {
-    if (!tpa || !tpa.brokers) return [];
-    
-    // Collect all employers from all brokers
-    let allEmployers = tpa.brokers.flatMap(broker => 
-      (broker.employers || []).map(employer => ({
-        ...employer,
-        brokerName: broker.name,
-        brokerId: broker.id
-      }))
-    );
-    
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      allEmployers = allEmployers.filter(employer => 
-        employer.name.toLowerCase().includes(term) || 
-        employer.id.toLowerCase().includes(term) ||
-        employer.brokerName.toLowerCase().includes(term)
-      );
-    }
-    
-    // Apply broker filter
-    if (filterBrokerId) {
-      allEmployers = allEmployers.filter(employer => 
-        employer.brokerId === filterBrokerId
-      );
-    }
-    
-    // Apply sorting
-    allEmployers.sort((a, b) => {
-      let compareA, compareB;
-      
-      // Determine values to compare based on sort field
-      if (sortField === 'name') {
-        compareA = a.name.toLowerCase();
-        compareB = b.name.toLowerCase();
-      } else if (sortField === 'id') {
-        compareA = a.id.toLowerCase();
-        compareB = b.id.toLowerCase();
-      } else if (sortField === 'broker') {
-        compareA = a.brokerName.toLowerCase();
-        compareB = b.brokerName.toLowerCase();
-      } else {
-        // Default to name
-        compareA = a.name.toLowerCase();
-        compareB = b.name.toLowerCase();
-      }
-      
-      // Determine sort order
-      const result = compareA.localeCompare(compareB);
-      return sortDirection === 'asc' ? result : -result;
-    });
-    
-    return allEmployers;
-  };
-
-  // Render the brokers tab with table layout
-  const renderBrokers = () => {
-    const filteredBrokers = getFilteredBrokers();
-    const filteredEmployers = getFilteredEmployers();
-    
-    // Determine permissions based on user role
-    const isAdmin = user?.role === 'admin';
-    const isTpaAdmin = user?.role === 'tpa_admin'; 
-    
-    // Only admin and TPA admin can add brokers
-    const canAddBroker = isAdmin || isTpaAdmin;
-    
-    // Admin and TPA admin can add employers
-    const canAddEmployer = isAdmin || isTpaAdmin;
-
-    return (
-      <div className="space-y-6">
-        {/* Search and Filter Controls */}
-        <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
-          <div className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Search input */}
-              <div className="flex-grow">
-                <label htmlFor="search" className="block text-sm font-medium text-night dark:text-white mb-1">
-                  Search
-                </label>
-                <div className="mb-4 flex flex-col md:flex-row gap-3">
-                  <input
-                    type="text"
-                    id="search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name or ID..."
-                    className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                  />
-                  
-                  {/* Add broker filter dropdown */}
-                  <select
-                    className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                    value={filterBrokerId}
-                    onChange={(e) => setFilterBrokerId(e.target.value)}
-                  >
-                    <option value="">All Brokers</option>
-                    {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                      <option key={broker.id} value={broker.id}>{broker.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              
-              {/* Reset filters button */}
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setFilterBrokerId('');
-                    setSortField('name');
-                    setSortDirection('asc');
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/30"
-                >
-                  Reset Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Brokers Section */}
-        <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-night dark:text-white">Brokers</h2>
-            </div>
-            
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
-                <span className="ml-3 text-night dark:text-white">Loading brokers...</span>
-              </div>
-            ) : error ? (
-              <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
-                <p>{error}</p>
-              </div>
-            ) : !filteredBrokers.length ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                {tpa && tpa.brokers && tpa.brokers.length > 0 ? (
-                  <p>No brokers match your search criteria.</p>
-                ) : (
-                  <>
-                    <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                    <p>No brokers found.</p>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
-                  <thead className="bg-gray-50 dark:bg-night-700">
-                    <tr>
-                      <th 
-                        scope="col" 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort('name')}
-                      >
-                        <div className="flex items-center">
-                          Name
-                          {sortField === 'name' && (
-                            <span className="ml-1">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        scope="col" 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort('employers')}
-                      >
-                        <div className="flex items-center">
-                          Employers
-                          {sortField === 'employers' && (
-                            <span className="ml-1">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                    {filteredBrokers.map((broker) => (
-                      <tr key={broker.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                              <BuildingOfficeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-night dark:text-white">{broker.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">ID: {broker.id}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
-                          {broker.employers && broker.employers.length > 0 ? (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              {broker.employers.length} employers
-                            </span>
-                          ) : (
-                            <span className="text-gray-500 dark:text-gray-400">No employers</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {/* Action buttons removed while preserving cell for layout consistency */}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Employers Section */}
-        {(tpa && tpa.brokers && tpa.brokers.some(broker => broker.employers && broker.employers.length > 0)) && (
-          <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-night dark:text-white">Employers</h2>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
-                  <thead className="bg-gray-50 dark:bg-night-700">
-                    <tr>
-                      <th 
-                        scope="col" 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort('name')}
-                      >
-                        <div className="flex items-center">
-                          Name
-                          {sortField === 'name' && (
-                            <span className="ml-1">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        scope="col" 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                        onClick={() => handleSort('broker')}
-                      >
-                        <div className="flex items-center">
-                          Broker
-                          {sortField === 'broker' && (
-                            <span className="ml-1">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                    {filteredEmployers.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                          No employers found
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredEmployers.map((employer) => (
-                        <tr key={employer.id} className="hover:bg-gray-50 dark:hover:bg-night-700">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <UserGroupIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-night dark:text-white">{employer.name}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">ID: {employer.id}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
-                            {employer.brokerName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {/* Action buttons removed while preserving cell for layout consistency */}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Broker Dialog */}
-        {brokerDialogOpen && (
-          <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
-            <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
-              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-night-700">
-                <h3 className="text-lg font-semibold text-night dark:text-white">Add New Broker</h3>
-                <button 
-                  onClick={() => setBrokerDialogOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="p-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker Name</label>
-                    <input
-                      type="text"
-                      value={newBroker.name}
-                      onChange={(e) => setNewBroker({...newBroker, name: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                      placeholder="Enter broker name"
-                    />
-                  </div>
-                </div>
-                
-                {error && (
-                  <div className="mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
-                    <p>{error}</p>
-                  </div>
-                )}
-                
-                <div className="mt-6 flex justify-end">
-                  <button
-                    onClick={() => setBrokerDialogOpen(false)}
-                    className="mr-2 px-4 py-2 text-sm font-medium text-night dark:text-white border border-gray-300 dark:border-night-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-night-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddBroker}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-500 border border-transparent rounded-md shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Create Broker
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Employer Dialog */}
-        {employerDialogOpen && (
-          <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-night-900/50">
-            <div className="relative bg-white dark:bg-night-800 rounded-lg shadow-xl max-w-md w-full">
-              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-night-700">
-                <h3 className="text-lg font-semibold text-night dark:text-white">Add New Employer</h3>
-                <button 
-                  onClick={() => setEmployerDialogOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="p-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer Name</label>
-                    <input
-                      type="text"
-                      value={newEmployer.name}
-                      onChange={(e) => setNewEmployer({...newEmployer, name: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                      placeholder="Enter employer name"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
-                    <select
-                      value={newEmployer.brokerId}
-                      onChange={(e) => setNewEmployer({...newEmployer, brokerId: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                    >
-                      <option value="">Select Broker</option>
-                      {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                        <option key={broker.id} value={broker.id}>{broker.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                {error && (
-                  <div className="mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
-                    <p>{error}</p>
-                  </div>
-                )}
-                
-                <div className="mt-6 flex justify-end">
-                  <button
-                    onClick={() => setEmployerDialogOpen(false)}
-                    className="mr-2 px-4 py-2 text-sm font-medium text-night dark:text-white border border-gray-300 dark:border-night-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-night-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddEmployer}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-500 border border-transparent rounded-md shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Create Employer
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   // Render the users tab with table layout
@@ -1838,80 +1066,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     }
   };
 
-  // Handle deleting a user
-  const handleDeleteUser = async (username: string) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) {
-      return;
-    }
-    
-    try {
-      if (!API_URL) {
-        setError("API URL not configured");
-        return;
-      }
-      
-      const token = await getIdToken();
-      if (!token) {
-        throw new Error("Authentication token not available");
-      }
-      
-      const response = await fetch(`${API_URL}/api/users/${username}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token.trim()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      // Refresh users data
-      await fetchUsers();
-      setError(null);
-      
-      // Show success message
-      alert(`User ${username} deleted successfully`);
-    } catch (err: any) {
-      console.error('Error deleting user:', err);
-      setError(err.message || "Failed to delete user");
-    }
-  };
-
-  // Modify the main render logic to restrict access for broker users
+  // Modify the main render logic to show only the users view
   return (
     <div className="space-y-6 w-full px-4">
-      {/* Tab navigation */}
-      <div className="border-b border-gray-200 dark:border-night-700">
-        <nav className="-mb-px flex space-x-6">
-          <button
-            onClick={() => setActiveTab('brokers')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'brokers'
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
-            }`}
-          >
-            Brokers & Employers
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'users'
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-night-600'
-            }`}
-          >
-            Users
-          </button>
-        </nav>
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+        <p className="text-gray-500 dark:text-gray-400">Manage system users and their permissions</p>
       </div>
       
-      {/* Tab content */}
-      {activeTab === 'brokers' && renderBrokers()}
-      
-      {activeTab === 'users' && renderUsers()}
+      {/* Display users panel */}
+      {renderUsers()}
     </div>
   );
 };
