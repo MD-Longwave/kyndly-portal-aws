@@ -247,9 +247,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         // Use the endpoint path that Lambda expects
         let endpoint = `${API_URL}/api/users`;
         
-        // If not a global admin, only fetch users for current TPA
-        // For filtering users, Lambda expects 'tpaId' as the parameter
-        if (user.role !== 'admin' && user.tpaId) {
+        // ALWAYS include tpaId parameter for all users
+        // The Lambda function appears to require this parameter regardless of role
+        if (user.tpaId) {
           endpoint = `${API_URL}/api/users?tpaId=${user.tpaId}`;
         }
         
