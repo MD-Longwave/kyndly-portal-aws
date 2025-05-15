@@ -159,7 +159,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getIdToken = async (): Promise<string | null> => {
     try {
       console.log('AuthContext: Getting ID token...');
+      
+      // Check if the current session exists and if the token is valid
       const session = await Auth.currentSession();
+      
+      // Check if token is expired or about to expire (within 5 minutes)
+      const expirationTime = session.getIdToken().getExpiration() * 1000; // Convert to milliseconds
+      const currentTime = Date.now();
+      const fiveMinutesInMs = 5 * 60 * 1000;
+      
+      // If token is expired or about to expire, refresh the session
+      if (expirationTime - currentTime < fiveMinutesInMs) {
+        console.log('AuthContext: Token is expired or about to expire, refreshing...');
+        await Auth.currentAuthenticatedUser({ bypassCache: true });
+        // Get the refreshed session
+        const refreshedSession = await Auth.currentSession();
+        const token = refreshedSession.getIdToken().getJwtToken();
+        console.log(`AuthContext: Token refreshed successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
+        
+        // Get the payload for debugging
+        const payload = refreshedSession.getIdToken().decodePayload();
+        console.log('AuthContext: Refreshed token payload:', JSON.stringify(payload));
+        
+        return token;
+      }
+      
+      // Otherwise use the existing token
       const token = session.getIdToken().getJwtToken();
       console.log(`AuthContext: Token retrieved successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
       
