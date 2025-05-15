@@ -62,6 +62,7 @@ interface NewUser {
   tpaId?: string;
   employerId?: string;
   tempPassword: string;
+  phoneNumber?: string;
 }
 
 // Add props interface
@@ -93,7 +94,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     name: '',
     role: 'broker',
     brokerId: '',
-    tempPassword: ''
+    tempPassword: '',
+    phoneNumber: ''
   });
   
   // Add state for the list of users
@@ -107,10 +109,104 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
+  // Extract fetchUsers function to make it available to handleDeleteUser
+  const fetchUsers = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingUsers(true);
+      
+      if (!API_URL) {
+        setError("API URL not configured. Please check your environment variables.");
+        setLoadingUsers(false);
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
+      
+      // Debug logging for troubleshooting
+      console.log('===== AUTH DEBUGGING =====');
+      console.log('Token obtained from getIdToken():');
+      console.log('Token length:', token.length);
+      console.log('Token first 15 chars:', token.substring(0, 15));
+      console.log('Token last 15 chars:', token.substring(token.length - 15));
+      console.log('===== END AUTH DEBUGGING =====');
+      
+      console.log('AdminPanel: Fetching users...');
+      
+      // Use the endpoint path that Lambda expects
+      let endpoint = `${API_URL}/api/users`;
+      
+      // ALWAYS include tpaId parameter for all users
+      const timestamp = new Date().getTime();
+      
+      // Add timestamp to prevent caching issues
+      if (user.tpaId) {
+        // Check if the URL already has query parameters
+        const separator = endpoint.includes('?') ? '&' : '?';
+        endpoint = `${endpoint}${separator}tpaId=${user.tpaId}`;
+      }
+      
+      // Base endpoint before adding timestamp
+      console.log('Base endpoint before adding timestamp:', endpoint);
+      
+      // Check if there are already query parameters
+      console.log('Contains ? :', endpoint.includes('?'));
+      const separator = endpoint.includes('?') ? '&' : '?';
+      
+      // Add timestamp to prevent caching
+      endpoint = `${endpoint}${separator}_t=${timestamp}`;
+      
+      console.log(`AdminPanel: Fetching users from ${endpoint}`);
+      
+      // Make sure there's no extra space in the Authorization header
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.trim()}`
+      };
+      
+      console.log('Headers:', headers);
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: headers
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`AdminPanel: API error (${response.status}): ${errorText}`);
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('AdminPanel: Users data received:', data);
+      
+      // Set users in state
+      setUsers(data.users || []);
+      
+      // Reset error and user created flag
+      setError(null);
+      setUserCreated(false);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(`Error fetching users: ${err.message}`);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   // Add effect to update activeTab when initialActiveTab changes
   useEffect(() => {
     setActiveTab(initialActiveTab);
   }, [initialActiveTab]);
+
+  // Fetch users with TPA-based filtering
+  useEffect(() => {
+    fetchUsers();
+  }, [user, userCreated, getIdToken]);
 
   // Check if user is in admin group
   useEffect(() => {
@@ -172,7 +268,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
           if (!response.ok) {
             const errorText = await response.text();
             console.error(`AdminPanel: API error (${response.status}): ${errorText}`);
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
+            throw new Error(`API error: ${response.status}`);
           }
           
           const data = await response.json();
@@ -214,144 +310,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
     
     fetchTpa();
   }, [user, getIdToken]);
-
-  // Fetch users with TPA-based filtering
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!user) return;
-      
-      try {
-        setLoadingUsers(true);
-        
-        if (!API_URL) {
-          setError("API URL not configured. Please check your environment variables.");
-          setLoadingUsers(false);
-          return;
-        }
-        
-        const token = await getIdToken();
-        if (!token) {
-          throw new Error("Authentication token not available");
-        }
-        
-        // Debug logging for troubleshooting
-        console.log('===== AUTH DEBUGGING =====');
-        console.log('Token obtained from getIdToken():');
-        console.log('Token length:', token.length);
-        console.log('Token first 15 chars:', token.substring(0, 15));
-        console.log('Token last 15 chars:', token.substring(token.length - 15));
-        console.log('===== END AUTH DEBUGGING =====');
-        
-        console.log('AdminPanel: Fetching users...');
-        
-        // Use the endpoint path that Lambda expects
-        let endpoint = `${API_URL}/api/users`;
-        
-        // ALWAYS include tpaId parameter for all users
-        // The Lambda function appears to require this parameter regardless of role
-        if (user.tpaId) {
-          endpoint = `${API_URL}/api/users?tpaId=${user.tpaId}`;
-        }
-        
-        // Add cache-busting timestamp parameter
-        const timestamp = new Date().getTime();
-        
-        // Debug URL construction
-        console.log('Base endpoint before adding timestamp:', endpoint);
-        console.log('Contains ? :', endpoint.includes('?'));
-        
-        // More explicit URL construction to avoid issues
-        if (endpoint.includes('?')) {
-          // Already has query parameters - ensure the & is added
-          endpoint = `${endpoint}&_t=${timestamp}`;
-        } else {
-          // No query parameters yet - add the first one with ?
-          endpoint = `${endpoint}?_t=${timestamp}`;
-        }
-        
-        console.log(`AdminPanel: Fetching users from ${endpoint}`);
-        
-        // Make sure there's no extra space in the Authorization header
-        const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.trim()}`
-        };
-        
-        console.log('Headers:', JSON.stringify(headers));
-        
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: headers
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log("Users data:", data);
-        console.log(`AdminPanel: Fetched ${data.users?.length || 0} users`);
-        
-        // Filter users if needed based on role
-        let filteredUsers = data.users || [];
-        
-        // For TPA admin, only show users under their TPA
-        if (user.role === 'tpa_admin' && user.tpaId) {
-          filteredUsers = filteredUsers.filter((u: User) => u.tpaId === user.tpaId);
-        }
-        
-        // For broker user, only show users associated with their broker ID
-        else if (user.role === 'broker' && user.brokerId) {
-          filteredUsers = filteredUsers.filter((u: User) => u.brokerId === user.brokerId);
-        }
-        
-        // Enrich users with organization data
-        const enrichedUsers = filteredUsers.map((user: User) => {
-          // Find broker name if brokerId exists
-          let brokerName = "";
-          if (user.brokerId && tpa && tpa.brokers) {
-            const broker = tpa.brokers.find(b => b.id === user.brokerId);
-            if (broker) {
-              brokerName = broker.name;
-              
-              // Find employer name if employerId exists
-              if (user.employerId && broker.employers) {
-                const employer = broker.employers.find(e => e.id === user.employerId);
-                if (employer) {
-                  user.employerName = employer.name;
-                }
-              }
-            }
-            
-            // Add broker name to user
-            user.brokerName = brokerName;
-          }
-          
-          // TPA name would be the current TPA's name
-          if (tpa && user.tpaId === tpa.id) {
-            user.tpaName = tpa.name;
-          }
-          
-          return user;
-        });
-        
-        setUsers(enrichedUsers);
-        setError(null);
-
-        // Reset the userCreated flag
-        if (userCreated) {
-          setUserCreated(false);
-        }
-      } catch (err: any) {
-        console.error('Error fetching users:', err);
-        setError(err.message || "Failed to fetch users");
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-    
-    fetchUsers();
-  }, [user, getIdToken, userCreated, tpa]);
 
   // Handle adding a new broker
   const handleAddBroker = async () => {
@@ -642,7 +600,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         email: newUser.email,
         name: newUser.name,
         role: newUser.role,
-        tempPassword: newUser.tempPassword
+        tempPassword: newUser.tempPassword,
+        phoneNumber: newUser.phoneNumber
       };
       
       // Add organization IDs based on role and permissions
@@ -688,7 +647,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         brokerId: '',
         tpaId: '',
         employerId: '',
-        tempPassword: ''
+        tempPassword: '',
+        phoneNumber: ''
       });
       
       setUserDialogOpen(false);
@@ -1392,28 +1352,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                               <div className="flex space-x-2">
                                 <button 
                                   className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-                                  onClick={() => {
-                                    // View user functionality
-                                    alert('View user functionality not yet implemented');
-                                  }}
+                                  onClick={() => handleViewUser(user)}
                                 >
                                   View
                                 </button>
                                 <button 
                                   className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-                                  onClick={() => {
-                                    // Edit user functionality
-                                    alert('Edit user functionality not yet implemented');
-                                  }}
+                                  onClick={() => handleEditUser(user)}
                                 >
                                   Edit
                                 </button>
                                 <button 
                                   className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                  onClick={() => {
-                                    // Delete user functionality
-                                    alert('Delete user functionality not yet implemented');
-                                  }}
+                                  onClick={() => handleDeleteUser(user.username)}
                                 >
                                   Delete
                                 </button>
@@ -1497,24 +1448,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
                   </div>
                   
                   <div>
+                    <label className="block text-sm font-medium text-night dark:text-white mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={newUser.phoneNumber}
+                      onChange={(e) => setNewUser({...newUser, phoneNumber: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                      placeholder="Phone Number"
+                    />
+                  </div>
+                  
+                  <div>
                     <label className="block text-sm font-medium text-night dark:text-white mb-1">Role</label>
                     <select
                       value={newUser.role}
                       onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                     >
-                      {/* Only global admins can create admin users */}
-                      {user?.role === 'admin' && (
-                        <>
-                          <option value="admin">Admin</option>
-                          <option value="tpa_admin">TPA Admin</option>
-                        </>
-                      )}
-                      
-                      {/* Admin and TPA admin can create broker users */}
+                      {/* Only show broker and employer roles */}
                       <option value="broker">Broker</option>
-                      
-                      {/* Admin and TPA admin can create employer users */}
                       <option value="employer">Employer</option>
                     </select>
                   </div>
@@ -1615,6 +1567,58 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         )}
       </div>
     );
+  };
+
+  // Handle viewing a user
+  const handleViewUser = (user: User) => {
+    // For now, just show the user data in an alert
+    alert(`User Details:\n\nUsername: ${user.username}\nName: ${user.name}\nEmail: ${user.email}\nRole: ${user.role}\nPhone: ${user.phoneNumber || 'Not provided'}\nTPA: ${user.tpaName || 'None'}\nBroker: ${user.brokerName || 'None'}\nEmployer: ${user.employerName || 'None'}`);
+  };
+
+  // Handle editing a user
+  const handleEditUser = (user: User) => {
+    // This will be implemented in the next phase
+    alert('Edit user functionality will be implemented in the next phase');
+  };
+
+  // Handle deleting a user
+  const handleDeleteUser = async (username: string) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) {
+      return;
+    }
+    
+    try {
+      if (!API_URL) {
+        setError("API URL not configured");
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        throw new Error("Authentication token not available");
+      }
+      
+      const response = await fetch(`${API_URL}/api/users/${username}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token.trim()}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      // Refresh users data
+      await fetchUsers();
+      setError(null);
+      
+      // Show success message
+      alert(`User ${username} deleted successfully`);
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      setError(err.message || "Failed to delete user");
+    }
   };
 
   // Modify the main render logic to restrict access for broker users
