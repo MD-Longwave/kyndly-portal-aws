@@ -278,43 +278,15 @@ const NewQuote: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Regular form field updates
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
     
-    // If broker changes, update employer options and reset employerId
-    if (name === 'brokerId') {
-      console.log(`NewQuote: Broker changed to ${value}, updating employers`);
-      
-      setFormData(prev => ({
-        ...prev,
-        employerId: '' // Reset employer selection when broker changes
-      }));
-      
-      if (!value) {
-        console.log('NewQuote: No broker selected, clearing employers');
-        setEmployers([]);
-        return;
-      }
-      
-      const selectedBroker = tpaData?.brokers?.find(broker => broker.id === value);
-      
-      if (selectedBroker && selectedBroker.employers && Array.isArray(selectedBroker.employers)) {
-        console.log(`NewQuote: Found ${selectedBroker.employers.length} employers for broker ${value}`);
-        
-        const employerOptions = selectedBroker.employers.map(employer => ({
-          id: employer.id,
-          name: employer.name
-        }));
-        
-        console.log('NewQuote: Setting employer options:', employerOptions);
-        setEmployers(employerOptions);
-      } else {
-        console.log(`NewQuote: No employers found for broker ${value} or invalid data structure`);
-        setEmployers([]);
-      }
-    }
+    // Special handling for broker change is now in handleBrokerChange
+    // Don't handle broker changes here anymore
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -514,8 +486,37 @@ const NewQuote: React.FC = () => {
     const brokerId = e.target.value;
     console.log(`NewQuote: handleBrokerChange called with brokerId ${brokerId}`);
     
-    // Call the existing handleChange function to maintain consistency
-    handleChange(e);
+    // Update the broker ID in the form data
+    setFormData(prev => ({
+      ...prev,
+      brokerId: brokerId,
+      employerId: '' // Reset employer selection when broker changes
+    }));
+    
+    // If no broker selected, clear employer list
+    if (!brokerId) {
+      console.log('NewQuote: No broker selected, clearing employers');
+      setEmployers([]);
+      return;
+    }
+    
+    // Update employers based on selected broker
+    const selectedBroker = tpaData?.brokers?.find(broker => broker.id === brokerId);
+    
+    if (selectedBroker && selectedBroker.employers && Array.isArray(selectedBroker.employers)) {
+      console.log(`NewQuote: Found ${selectedBroker.employers.length} employers for broker ${brokerId}`);
+      
+      const employerOptions = selectedBroker.employers.map(employer => ({
+        id: employer.id,
+        name: employer.name
+      }));
+      
+      console.log('NewQuote: Setting employer options:', employerOptions);
+      setEmployers(employerOptions);
+    } else {
+      console.log(`NewQuote: No employers found for broker ${brokerId} or invalid data structure`);
+      setEmployers([]);
+    }
   };
 
   return (

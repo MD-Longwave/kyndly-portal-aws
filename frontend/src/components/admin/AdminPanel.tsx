@@ -208,7 +208,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
         }
         
         console.log('AdminPanel: Fetching users...');
-        const response = await fetch(`${API_URL}/api/users`, {
+        // Add cache-busting timestamp parameter
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${API_URL}/api/users?_t=${timestamp}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -548,30 +550,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ initialActiveTab = 'brokers' })
       setUserDialogOpen(false);
       setError(null);
 
-      // Set flag to trigger users refresh and immediately fetch users
+      // Set userCreated flag to true - this will trigger the useEffect to fetch users
       setUserCreated(true);
       
       // Show success message
       alert(`User ${result.user.username} created successfully`);
       
-      // Immediately fetch users to update the list
-      try {
-        setLoadingUsers(true);
-        const usersResponse = await fetch(`${API_URL}/api/users`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        if (usersResponse.ok) {
-          const data = await usersResponse.json();
-          setUsers(data.users || []);
-        }
-      } catch (fetchError) {
-        console.error('Error refreshing users after creation:', fetchError);
-      } finally {
-        setLoadingUsers(false);
-      }
+      // Don't fetch users here - rely on the useEffect to do that
+      // This prevents race conditions and double-fetching
     } catch (err: any) {
       console.error('Error creating user:', err);
       setError(err.message || "Failed to create user");
