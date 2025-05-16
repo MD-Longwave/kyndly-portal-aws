@@ -566,7 +566,17 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
         (userData as any).tpaId = user.tpaId;
       }
       
+      // For broker users, set broker_id to the username
+      if (newUser.role === 'broker') {
+        (userData as any).brokerId = newUser.username;
+        console.log(`Setting broker_id to username for broker user: ${newUser.username}`);
+      }
+      
       if (newUser.role === 'employer') {
+        // For employer users, set employer_id to the username
+        (userData as any).employerId = newUser.username;
+        console.log(`Setting employer_id to username for employer user: ${newUser.username}`);
+        
         if (newUser.brokerId) {
           // Using broker username (Cognito user) as the ID now
           (userData as any).brokerId = newUser.brokerId;
@@ -579,10 +589,6 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
             (userData as any).brokerName = selectedBroker.name || selectedBroker.username;
           }
         }
-      }
-      
-      if (newUser.role === 'employer' && newUser.employerId) {
-        (userData as any).employerId = newUser.employerId;
       }
       
       console.log('AdminPanel: Creating user with data:', userData);
@@ -618,6 +624,13 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
       setUserDialogOpen(false);
       setUserCreated(true); // Trigger re-fetch of users
       setError(null);
+      
+      // Refresh broker users list if we created a broker
+      // This ensures the new broker shows up immediately in the dropdown
+      if (userData.role === 'broker') {
+        console.log('Refreshing broker users after creating new broker');
+        await fetchBrokerUsers();
+      }
     } catch (err: any) {
       console.error('Error creating user:', err);
       setError(err.message || 'Failed to create user');
@@ -1085,34 +1098,6 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                     </div>
                   )}
                   
-                  {/* Employer selection - modify to work with broker users */}
-                  {newUser.role === 'employer' && newUser.brokerId && (
-                    <div>
-                      <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer</label>
-                      <select
-                        value={newUser.employerId}
-                        onChange={(e) => setNewUser({...newUser, employerId: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                      >
-                        <option value="">Select Employer</option>
-                        {loadingEmployers ? (
-                          <option value="" disabled>Loading employers...</option>
-                        ) : (
-                          employerUsers.map((employer) => (
-                            <option key={employer.username} value={employer.username}>
-                              {employer.name || employer.username}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      {employerUsers.length === 0 && !loadingEmployers && (
-                        <p className="mt-1 text-xs text-red-500">
-                          No employer users found for this broker. You can create a new employer.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  
                   <div>
                     <label className="block text-sm font-medium text-night dark:text-white mb-1">Temporary Password</label>
                     <input
@@ -1252,14 +1237,8 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                           const selectedBrokerId = e.target.value;
                           setEditingUser({
                             ...editingUser,
-                            brokerId: selectedBrokerId,
-                            employerId: '' // Reset employer when broker changes
+                            brokerId: selectedBrokerId
                           });
-                          
-                          // Fetch employers for this broker if a broker is selected
-                          if (selectedBrokerId) {
-                            fetchEmployersForBroker(selectedBrokerId);
-                          }
                         }}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                       >
@@ -1277,34 +1256,6 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                       {brokerUsers.length === 0 && !loadingBrokers && (
                         <p className="mt-1 text-xs text-red-500">
                           No broker users found. Please create broker users first.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Employer selection for employer users */}
-                  {editingUser?.role === 'employer' && editingUser.brokerId && (
-                    <div>
-                      <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer</label>
-                      <select
-                        value={editingUser.employerId || ''}
-                        onChange={(e) => setEditingUser({...editingUser, employerId: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                      >
-                        <option value="">Select Employer</option>
-                        {loadingEmployers ? (
-                          <option value="" disabled>Loading employers...</option>
-                        ) : (
-                          employerUsers.map((employer) => (
-                            <option key={employer.username} value={employer.username}>
-                              {employer.name || employer.username}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      {employerUsers.length === 0 && !loadingEmployers && (
-                        <p className="mt-1 text-xs text-red-500">
-                          No employer users found for this broker.
                         </p>
                       )}
                     </div>
@@ -1406,7 +1357,17 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
         if (editingUser.tpaId) updatePayload.tpaId = editingUser.tpaId;
       }
       
+      // For broker users, always set broker_id to username
+      if (editingUser.role === 'broker') {
+        updatePayload.brokerId = editingUser.username;
+        console.log(`Setting broker_id to username for broker user: ${editingUser.username}`);
+      }
+      
       if (editingUser.role === 'employer') {
+        // For employer users, always set employer_id to username
+        updatePayload.employerId = editingUser.username;
+        console.log(`Setting employer_id to username for employer user: ${editingUser.username}`);
+        
         if (editingUser.brokerId) {
           updatePayload.brokerId = editingUser.brokerId;
           
@@ -1417,8 +1378,6 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
             updatePayload.brokerName = selectedBroker.name || selectedBroker.username;
           }
         }
-        
-        if (editingUser.employerId) updatePayload.employerId = editingUser.employerId;
       }
       
       console.log('AdminPanel: Updating user with data:', updatePayload);
@@ -1443,6 +1402,12 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
       setEditUserDialogOpen(false);
       setUserCreated(true); // Trigger re-fetch of users
       setError(null);
+      
+      // Refresh broker users list if we updated a broker
+      if (updatePayload.role === 'broker') {
+        console.log('Refreshing broker users after updating broker');
+        await fetchBrokerUsers();
+      }
     } catch (err: any) {
       console.error('Error updating user:', err);
       setError(err.message || 'Failed to update user');

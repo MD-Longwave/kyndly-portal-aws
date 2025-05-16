@@ -112,6 +112,12 @@ const NewQuote: React.FC = () => {
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
   
+  // Add state for real broker and employer users
+  const [brokerUsers, setBrokerUsers] = useState<BrokerOption[]>([]);
+  const [employerUsers, setEmployerUsers] = useState<EmployerOption[]>([]);
+  const [loadingBrokerUsers, setLoadingBrokerUsers] = useState(false);
+  const [loadingEmployerUsers, setLoadingEmployerUsers] = useState(false);
+  
   // Check API connection when component mounts
   useEffect(() => {
     const checkConnection = async () => {
@@ -131,9 +137,9 @@ const NewQuote: React.FC = () => {
     checkConnection();
   }, []);
   
-  // Fetch TPA data including brokers and employers
+  // Modify the useEffect to fetch broker users instead of TPA data
   useEffect(() => {
-    const fetchTpaData = async () => {
+    const fetchData = async () => {
       try {
         setLoadingTpaData(true);
         setDataError(null);
@@ -148,95 +154,11 @@ const NewQuote: React.FC = () => {
           return;
         }
         
-        console.log(`NewQuote: Fetching TPA data for TPA ID: ${userTpaId} using TpaService`);
+        // Fetch real broker users from Cognito
+        await fetchBrokerUsers();
         
-        // Use the new TpaService to fetch TPA data - handles auth token and all request details
-        const data = await TpaService.getTpaData();
-        
-        console.log('NewQuote: TPA data received:', data);
-        
-        // Verify the TPA ID matches the user's TPA ID
-        if (data.id !== userTpaId) {
-          console.warn(`NewQuote: TPA ID mismatch. Expected ${userTpaId}, got ${data.id}`);
-          setDataError(`Data integrity issue: The TPA ID in the response does not match your account. Please contact support.`);
-          setLoadingTpaData(false);
-          return;
-        }
-        
-        setTpaData(data);
-        
-        // Set available brokers
-        if (data && data.brokers && Array.isArray(data.brokers)) {
-          console.log(`NewQuote: Found ${data.brokers.length} brokers in TPA data`);
-          
-          const brokerOptions = data.brokers.map((broker: any) => ({
-            id: broker.id,
-            name: broker.name
-          }));
-          
-          console.log('NewQuote: Broker options:', brokerOptions);
-          setBrokers(brokerOptions);
-          
-          // If user is a broker, pre-select their broker
-          if (user?.brokerId) {
-            console.log(`NewQuote: User is a broker with ID ${user.brokerId}, pre-selecting`);
-            const userBroker = brokerOptions.find((broker: BrokerOption) => broker.id === user.brokerId);
-            if (userBroker) {
-              console.log('NewQuote: Found matching broker for user, setting form data');
-              setFormData(prev => ({
-                ...prev,
-                brokerId: user.brokerId || ''
-              }));
-              
-              // Load employers for this broker
-              const selectedBroker = data.brokers.find((b: any) => b.id === user.brokerId);
-              if (selectedBroker && selectedBroker.employers && Array.isArray(selectedBroker.employers)) {
-                console.log(`NewQuote: Found ${selectedBroker.employers.length} employers for broker ${user.brokerId}`);
-                
-                const employerOptions = selectedBroker.employers.map((emp: any) => ({
-                  id: emp.id,
-                  name: emp.name
-                }));
-                
-                console.log('NewQuote: Employer options:', employerOptions);
-                setEmployers(employerOptions);
-                
-                // If user is an employer, pre-select their employer
-                if (user?.employerId) {
-                  console.log(`NewQuote: User is an employer with ID ${user.employerId}, pre-selecting`);
-                  const userEmployer = employerOptions.find((emp: EmployerOption) => emp.id === user.employerId);
-                  
-                  if (userEmployer) {
-                    setFormData(prev => ({
-                      ...prev,
-                      employerId: user.employerId || ''
-                    }));
-                  } else {
-                    console.warn(`NewQuote: User employer ID ${user.employerId} not found in available employers`);
-                    setDataError(`Your account is associated with an employer that doesn't exist or you don't have access to. Please contact your administrator.`);
-                  }
-                }
-              } else {
-                console.log('NewQuote: No employers found for broker or invalid data structure');
-                setEmployers([]);
-              }
-            } else {
-              console.warn(`NewQuote: Broker ID ${user.brokerId} not found in available brokers`);
-              setDataError(`Your account is associated with a broker that doesn't exist or you don't have access to. Please contact your administrator.`);
-            }
-          } else {
-            console.log('NewQuote: User is not a broker, no pre-selection needed');
-          }
-        } else {
-          console.warn('NewQuote: No brokers found in TPA data or invalid data structure');
-          setBrokers([]);
-          setEmployers([]);
-          if (user?.role === 'broker' || user?.role === 'employer') {
-            setDataError(`No brokers found for your TPA. This may indicate a configuration issue. Please contact your administrator.`);
-          }
-        }
       } catch (error) {
-        console.error('Error fetching TPA data:', error);
+        console.error('Error fetching data:', error);
         let errorMessage = 'Failed to load broker/employer data';
         
         if (error instanceof Error) {
@@ -263,7 +185,7 @@ const NewQuote: React.FC = () => {
       }
     };
     
-    fetchTpaData();
+    fetchData();
   }, [user, getIdToken]);
   
   const [formData, setFormData] = useState({
@@ -384,9 +306,8 @@ const NewQuote: React.FC = () => {
       console.log('Starting form submission...');
       
       // Get the authentication token before submitting the quote
-      // This ensures the token is available before the API call
       let token;
-      let tpaId = 'default-tpa-id';
+      let tpaId = user?.tpaId || '';
       
       try {
         const session = await Auth.currentSession();
@@ -397,12 +318,12 @@ const NewQuote: React.FC = () => {
         const payload = session.getIdToken().decodePayload();
         console.log('Token payload for debugging:', payload);
         
-        // Extract TPA ID from token
-        if (payload['custom:tpa_id']) {
+        // Extract TPA ID from token if not already set
+        if (payload['custom:tpa_id'] && !tpaId) {
           tpaId = payload['custom:tpa_id'];
           console.log(`Found custom:tpa_id in token: ${tpaId}`);
-        } else {
-          console.warn('No custom:tpa_id found in token, using default');
+        } else if (!tpaId) {
+          console.warn('No TPA ID found in user context or token, form submission may fail');
         }
       } catch (authError) {
         console.error('Error getting authentication token:', authError);
@@ -429,7 +350,7 @@ const NewQuote: React.FC = () => {
         brokerEmail: formData.brokerEmail,
         priorityLevel: formData.priorityLevel,
         additionalNotes: formData.additionalNotes,
-        // Add the broker and employer IDs from the dropdowns
+        // Include the TPA ID and selected broker/employer IDs
         tpaId: tpaId,
         brokerId: formData.brokerId,
         employerId: formData.employerId,
@@ -512,22 +433,141 @@ const NewQuote: React.FC = () => {
       return;
     }
     
-    // Update employers based on selected broker
-    const selectedBroker = tpaData?.brokers?.find(broker => broker.id === brokerId);
-    
-    if (selectedBroker && selectedBroker.employers && Array.isArray(selectedBroker.employers)) {
-      console.log(`NewQuote: Found ${selectedBroker.employers.length} employers for broker ${brokerId}`);
+    // Fetch real employer users for selected broker from Cognito
+    fetchEmployersForBroker(brokerId);
+  };
+
+  // Add a function to fetch broker users from Cognito
+  const fetchBrokerUsers = async () => {
+    try {
+      setLoadingBrokerUsers(true);
       
-      const employerOptions = selectedBroker.employers.map(employer => ({
-        id: employer.id,
-        name: employer.name
-      }));
+      const userTpaId = user?.tpaId;
+      if (!userTpaId) {
+        console.warn('NewQuote: User does not have a TPA ID in token');
+        setBrokerUsers([]);
+        setLoadingBrokerUsers(false);
+        return;
+      }
       
-      console.log('NewQuote: Setting employer options:', employerOptions);
-      setEmployers(employerOptions);
-    } else {
-      console.log(`NewQuote: No employers found for broker ${brokerId} or invalid data structure`);
+      // Get auth token
+      const token = await getIdToken();
+      if (!token) {
+        console.warn('NewQuote: Failed to get auth token');
+        setBrokerUsers([]);
+        setLoadingBrokerUsers(false);
+        return;
+      }
+      
+      // Use the Admin API to fetch broker users
+      const adminApiUrl = process.env.REACT_APP_ADMIN_API_URL || 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+      const timestamp = new Date().getTime();
+      const url = `${adminApiUrl}/api/users?role=broker&tpaId=${userTpaId}&_t=${timestamp}`;
+      
+      console.log(`NewQuote: Fetching broker users from ${url}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'omit' // Don't include credentials - fixes CORS issue
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch broker users: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('NewQuote: Broker users data received:', data);
+      
+      // Map users to broker options
+      if (data.users && Array.isArray(data.users)) {
+        const brokerOptions = data.users
+          .filter((u: any) => u.role === 'broker')
+          .map((broker: any) => ({
+            id: broker.username,
+            name: broker.name || broker.username
+          }));
+        
+        console.log(`NewQuote: Found ${brokerOptions.length} broker users`);
+        setBrokers(brokerOptions); // Populate the existing brokers state
+      } else {
+        console.warn('NewQuote: No broker users found or invalid data format');
+        setBrokers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching broker users:', error);
+      setBrokers([]);
+    } finally {
+      setLoadingBrokerUsers(false);
+    }
+  };
+
+  // Add a function to fetch employer users for a specific broker
+  const fetchEmployersForBroker = async (brokerId: string) => {
+    try {
+      setLoadingEmployerUsers(true);
+      
+      const userTpaId = user?.tpaId;
+      if (!userTpaId || !brokerId) {
+        console.warn('NewQuote: Missing TPA ID or broker ID');
+        setEmployers([]);
+        setLoadingEmployerUsers(false);
+        return;
+      }
+      
+      // Get auth token
+      const token = await getIdToken();
+      if (!token) {
+        console.warn('NewQuote: Failed to get auth token');
+        setEmployers([]);
+        setLoadingEmployerUsers(false);
+        return;
+      }
+      
+      // Use the Admin API to fetch employer users
+      const adminApiUrl = process.env.REACT_APP_ADMIN_API_URL || 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+      const timestamp = new Date().getTime();
+      const url = `${adminApiUrl}/api/users?role=employer&tpaId=${userTpaId}&brokerId=${encodeURIComponent(brokerId)}&_t=${timestamp}`;
+      
+      console.log(`NewQuote: Fetching employer users for broker ${brokerId} from ${url}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'omit' // Don't include credentials - fixes CORS issue
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch employer users: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('NewQuote: Employer users data received:', data);
+      
+      // Map users to employer options
+      if (data.users && Array.isArray(data.users)) {
+        const employerOptions = data.users
+          .filter((u: any) => u.role === 'employer' && u.brokerId === brokerId)
+          .map((employer: any) => ({
+            id: employer.username,
+            name: employer.name || employer.username
+          }));
+        
+        console.log(`NewQuote: Found ${employerOptions.length} employer users for broker ${brokerId}`);
+        setEmployers(employerOptions); // Populate the existing employers state
+      } else {
+        console.warn('NewQuote: No employer users found or invalid data format');
+        setEmployers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching employer users:', error);
       setEmployers([]);
+    } finally {
+      setLoadingEmployerUsers(false);
     }
   };
 
@@ -625,7 +665,7 @@ const NewQuote: React.FC = () => {
                   value={formData.brokerId}
                   onChange={handleBrokerChange}
                   required
-                  disabled={loadingTpaData || Boolean(user?.brokerId)} // Disable if loading or user is a broker
+                  disabled={loadingTpaData}
                   options={[
                     { value: "", label: loadingTpaData ? "Loading brokers..." : "Select Broker" },
                     ...brokers.map(broker => ({ value: broker.id, label: broker.name }))
@@ -643,9 +683,6 @@ const NewQuote: React.FC = () => {
               {brokers.length === 0 && !loadingTpaData && (
                 <p className="text-sm text-red-500 mt-1">No brokers available. Please contact an administrator.</p>
               )}
-              {user?.brokerId && (
-                <p className="text-xs text-gray-500 mt-1">Your account is associated with a specific broker, so this field is locked.</p>
-              )}
             </div>
             
             {/* Employer Selection - Only enabled if broker is selected */}
@@ -660,7 +697,7 @@ const NewQuote: React.FC = () => {
                   value={formData.employerId}
                   onChange={handleChange}
                   required
-                  disabled={loadingTpaData || !formData.brokerId || Boolean(user?.employerId)} // Disable if loading, no broker selected, or user is employer
+                  disabled={loadingTpaData || !formData.brokerId}
                   options={[
                     { value: "", label: loadingTpaData ? "Loading employers..." : formData.brokerId ? "Select Employer" : "First select a broker" },
                     ...employers.map(employer => ({ value: employer.id, label: employer.name }))
@@ -677,9 +714,6 @@ const NewQuote: React.FC = () => {
               </div>
               {formData.brokerId && employers.length === 0 && !loadingTpaData && (
                 <p className="text-sm text-red-500 mt-1">No employers found for this broker. Please add an employer first.</p>
-              )}
-              {user?.employerId && (
-                <p className="text-xs text-gray-500 mt-1">Your account is associated with a specific employer, so this field is locked.</p>
               )}
             </div>
             
