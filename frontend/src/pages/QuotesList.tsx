@@ -45,16 +45,19 @@ const QuotesList: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
-        const response = await fetch(`${API_URL}/api/quotes`, { headers });
+        const response = await fetch(`${API_URL}/quotes`, { headers });
         if (response.ok) {
           const data = await response.json();
           setQuotes(data.quotes || []);
           setError(null);
         } else {
-          setError('Failed to fetch quotes');
+          const errorText = await response.text();
+          console.error('Error response:', response.status, errorText);
+          setError(`Failed to fetch quotes: ${response.status} ${response.statusText}`);
         }
       } catch (err) {
-        setError('Failed to fetch quotes');
+        console.error('Fetch error:', err);
+        setError('Failed to fetch quotes: Network error');
       } finally {
         setIsLoading(false);
       }
@@ -76,7 +79,7 @@ const QuotesList: React.FC = () => {
       const token = await getIdToken();
       const formData = new FormData();
       formData.append('file', file);
-      const url = `${API_URL}/api/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      const url = `${API_URL}/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
