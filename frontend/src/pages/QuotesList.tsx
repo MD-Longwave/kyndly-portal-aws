@@ -19,7 +19,8 @@ interface Quote {
   s3Key: string;
 }
 
-const API_KEY = process.env.REACT_APP_API_KEY || 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+// Use exact API key that matches Lambda function
+const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
 const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
 
 const QuotesList: React.FC = () => {
@@ -37,14 +38,15 @@ const QuotesList: React.FC = () => {
   
   useEffect(() => {
     const fetchQuotes = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
         const token = await getIdToken();
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
+        console.log('Using API key:', API_KEY);
         const response = await fetch(`${API_URL}/api/quotes`, { headers });
         if (response.ok) {
           const data = await response.json();
