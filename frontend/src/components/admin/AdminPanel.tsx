@@ -103,7 +103,6 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterBrokerId, setFilterBrokerId] = useState('');
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
@@ -483,15 +482,75 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
     }
   };
 
+  // Add function to handle sorting
+  const handleSort = (field: string) => {
+    // If clicking on the same field, toggle direction
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking on a new field, set it as the sort field and default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Add function to filter and sort users
+  const getFilteredAndSortedUsers = () => {
+    // First filter users based on search term
+    const filteredUsers = users.filter(user => {
+      if (!searchTerm.trim()) return true;
+      
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        (user.username && user.username.toLowerCase().includes(searchLower)) ||
+        (user.name && user.name.toLowerCase().includes(searchLower)) ||
+        (user.email && user.email.toLowerCase().includes(searchLower)) ||
+        (user.role && user.role.toLowerCase().includes(searchLower)) ||
+        (user.tpaName && user.tpaName.toLowerCase().includes(searchLower)) ||
+        (user.brokerName && user.brokerName.toLowerCase().includes(searchLower)) ||
+        (user.employerName && user.employerName.toLowerCase().includes(searchLower))
+      );
+    });
+    
+    // Then sort the filtered users
+    return filteredUsers.sort((a, b) => {
+      let aValue = a[sortField as keyof User] || '';
+      let bValue = b[sortField as keyof User] || '';
+      
+      // Special case for names, split into first and last
+      if (sortField === 'firstName') {
+        aValue = a.name ? a.name.split(' ')[0] : '';
+        bValue = b.name ? b.name.split(' ')[0] : '';
+      } else if (sortField === 'lastName') {
+        aValue = a.name ? a.name.split(' ').slice(1).join(' ') : '';
+        bValue = b.name ? b.name.split(' ').slice(1).join(' ') : '';
+      }
+      
+      // Convert to strings for comparison
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
+      
+      // Compare based on direction
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
   // Render the users tab with table layout
   const renderUsers = () => {
     const isAdmin = user?.role === 'admin';
     const isTpaAdmin = user?.role === 'tpa_admin';
     
+    // Get filtered and sorted users
+    const filteredSortedUsers = getFilteredAndSortedUsers();
+    
     return (
       <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-night dark:text-white">User management</h2>
             
             {/* Only show Add User button for admin and tpa_admin roles */}
@@ -520,52 +579,139 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
               <div className="mb-4 flex flex-col md:flex-row gap-3">
                 <input
                   type="text"
-                  placeholder="Search"
-                  className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
+                  placeholder="Search by name, email, role, etc."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                
-                {/* Add broker filter dropdown */}
-                <select
-                  className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
-                  value={filterBrokerId}
-                  onChange={(e) => setFilterBrokerId(e.target.value)}
-                >
-                  <option value="">All Brokers</option>
-                  {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                    <option key={broker.id} value={broker.id}>{broker.name}</option>
-                  ))}
-                </select>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
+              <div className="w-full overflow-x-auto">
+                <table className="w-full table-fixed divide-y divide-gray-200 dark:divide-night-700 text-sm">
                   <thead className="bg-gray-50 dark:bg-night-700">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">AVATAR</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">USERNAME</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">FIRST NAME</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">LAST NAME</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PHONE NUMBER</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">E-MAIL</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ROLE</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">TPA</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">BROKER</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">EMPLOYER</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">DISABLED</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ACTIONS</th>
+                      <th scope="col" className="w-12 px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"></th>
+                      <th 
+                        scope="col" 
+                        className="w-[10%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500"
+                        onClick={() => handleSort('username')}
+                      >
+                        USERNAME
+                        {sortField === 'username' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[10%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500"
+                        onClick={() => handleSort('firstName')}
+                      >
+                        FIRST
+                        {sortField === 'firstName' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[10%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500"
+                        onClick={() => handleSort('lastName')}
+                      >
+                        LAST
+                        {sortField === 'lastName' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[10%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500 hidden sm:table-cell"
+                        onClick={() => handleSort('phoneNumber')}
+                      >
+                        PHONE
+                        {sortField === 'phoneNumber' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[15%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500"
+                        onClick={() => handleSort('email')}
+                      >
+                        E-MAIL
+                        {sortField === 'email' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[8%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500"
+                        onClick={() => handleSort('role')}
+                      >
+                        ROLE
+                        {sortField === 'role' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[8%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500 hidden md:table-cell"
+                        onClick={() => handleSort('tpaName')}
+                      >
+                        TPA
+                        {sortField === 'tpaName' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[9%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500 hidden md:table-cell"
+                        onClick={() => handleSort('brokerName')}
+                      >
+                        BROKER
+                        {sortField === 'brokerName' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="w-[10%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary-500 hidden lg:table-cell"
+                        onClick={() => handleSort('employerName')}
+                      >
+                        EMPLOYER
+                        {sortField === 'employerName' && (
+                          <span className="ml-1">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </th>
+                      <th scope="col" className="w-[5%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">DIS</th>
+                      <th scope="col" className="w-[15%] px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-                    {users.length === 0 ? (
+                    {filteredSortedUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={11} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                          No users found
+                        <td colSpan={12} className="px-2 py-4 text-center text-gray-500 dark:text-gray-400">
+                          {searchTerm ? "No users match your search" : "No users found"}
                         </td>
                       </tr>
                     ) : (
-                      users.map((user) => {
+                      filteredSortedUsers.map((user) => {
                         // Split name into first and last name if available
                         const nameParts = user.name ? user.name.split(' ') : ['', ''];
                         const firstName = nameParts[0] || '';
@@ -573,24 +719,24 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                         
                         return (
                           <tr key={user.username} className="hover:bg-gray-50 dark:hover:bg-night-700">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex-shrink-0 h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                                <UserIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <td className="px-2 py-2 whitespace-nowrap">
+                              <div className="flex-shrink-0 h-8 w-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                                <UserIcon className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.username}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{firstName}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{lastName}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.phoneNumber || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.email}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.role}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.tpaName || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.brokerName || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">{user.employerName || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-night dark:text-white">
-                              {user.enabled === false ? 'Yes' : 'No'}
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate" title={user.username}>{user.username}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate" title={firstName}>{firstName}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate" title={lastName}>{lastName}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate hidden sm:table-cell" title={user.phoneNumber || '-'}>{user.phoneNumber || '-'}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate" title={user.email}>{user.email}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate" title={user.role}>{user.role}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate hidden md:table-cell" title={user.tpaName || '-'}>{user.tpaName || '-'}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate hidden md:table-cell" title={user.brokerName || '-'}>{user.brokerName || '-'}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate hidden lg:table-cell" title={user.employerName || '-'}>{user.employerName || '-'}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-night dark:text-white truncate hidden lg:table-cell">
+                              {user.enabled === false ? 'Y' : 'N'}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td className="px-2 py-2 whitespace-nowrap text-xs font-medium">
                               <div className="flex space-x-2">
                                 <button 
                                   className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
