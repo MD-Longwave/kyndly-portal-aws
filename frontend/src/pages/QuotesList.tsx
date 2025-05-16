@@ -19,7 +19,8 @@ interface Quote {
   s3Key: string;
 }
 
-const API_KEY = process.env.REACT_APP_API_KEY || '';
+const API_KEY = process.env.REACT_APP_API_KEY || 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
 
 const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -42,9 +43,9 @@ const QuotesList: React.FC = () => {
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'x-api-key': API_KEY
         };
-        if (API_KEY) headers['x-api-key'] = API_KEY;
-        const response = await fetch('/quotes', { headers });
+        const response = await fetch(`${API_URL}/api/quotes`, { headers });
         if (response.ok) {
           const data = await response.json();
           setQuotes(data.quotes || []);
@@ -75,12 +76,12 @@ const QuotesList: React.FC = () => {
       const token = await getIdToken();
       const formData = new FormData();
       formData.append('file', file);
-      const url = `/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      const url = `${API_URL}/api/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+          'x-api-key': API_KEY
         } as any,
         body: formData,
       });
