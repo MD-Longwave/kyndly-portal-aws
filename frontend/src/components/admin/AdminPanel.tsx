@@ -92,6 +92,10 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
     phoneNumber: ''
   });
   
+  // Add state for real broker users from Cognito
+  const [brokerUsers, setBrokerUsers] = useState<User[]>([]);
+  const [loadingBrokers, setLoadingBrokers] = useState(false);
+  
   // Add state for editing users
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -105,6 +109,10 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
+
+  // Add state for employer users
+  const [employerUsers, setEmployerUsers] = useState<User[]>([]);
+  const [loadingEmployers, setLoadingEmployers] = useState(false);
 
   // Extract fetchUsers function to make it available to handleDeleteUser
   const fetchUsers = async () => {
@@ -303,6 +311,178 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
     fetchTpa();
   }, [user, getIdToken]);
 
+  // New function to fetch real broker users
+  const fetchBrokerUsers = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingBrokers(true);
+      
+      if (!API_URL) {
+        console.error("API URL not configured. Please check your environment variables.");
+        setLoadingBrokers(false);
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        console.error("Authentication token not available");
+        setLoadingBrokers(false);
+        return;
+      }
+      
+      // Debug logging
+      console.log('AdminPanel: Fetching broker users...');
+      
+      // Use the endpoint path that Lambda expects with a filter for brokers
+      let endpoint = `${API_URL}/api/users?role=broker`;
+      
+      // Always include tpaId parameter to get brokers from the current TPA
+      if (user.tpaId) {
+        endpoint = `${endpoint}&tpaId=${user.tpaId}`;
+      }
+      
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      endpoint = `${endpoint}&_t=${timestamp}`;
+      
+      console.log(`AdminPanel: Fetching broker users from ${endpoint}`);
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.trim()}`
+      };
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: headers
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`AdminPanel: API error fetching brokers (${response.status}): ${errorText}`);
+        setLoadingBrokers(false);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('AdminPanel: Broker users data received:', data);
+      
+      // Set broker users in state
+      if (data.users && Array.isArray(data.users)) {
+        // Filter to only include users with broker role
+        const brokers = data.users.filter((u: User) => u.role === 'broker');
+        console.log(`AdminPanel: Found ${brokers.length} broker users`);
+        setBrokerUsers(brokers);
+      } else {
+        console.warn('AdminPanel: No broker users found or invalid data format');
+        setBrokerUsers([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching broker users:', err);
+    } finally {
+      setLoadingBrokers(false);
+    }
+  };
+
+  // Fetch broker users when component mounts or user changes
+  useEffect(() => {
+    fetchBrokerUsers();
+  }, [user, getIdToken]);
+
+  // New function to fetch employers for a selected broker
+  const fetchEmployersForBroker = async (brokerId: string) => {
+    if (!user || !brokerId) return;
+    
+    try {
+      setLoadingEmployers(true);
+      
+      if (!API_URL) {
+        console.error("API URL not configured. Please check your environment variables.");
+        setLoadingEmployers(false);
+        return;
+      }
+      
+      const token = await getIdToken();
+      if (!token) {
+        console.error("Authentication token not available");
+        setLoadingEmployers(false);
+        return;
+      }
+      
+      console.log(`AdminPanel: Fetching employers for broker: ${brokerId}`);
+      
+      // Use the endpoint path that Lambda expects with a filter for employers
+      let endpoint = `${API_URL}/api/users?role=employer&brokerId=${encodeURIComponent(brokerId)}`;
+      
+      // Always include tpaId parameter to get employers from the current TPA
+      if (user.tpaId) {
+        endpoint = `${endpoint}&tpaId=${user.tpaId}`;
+      }
+      
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      endpoint = `${endpoint}&_t=${timestamp}`;
+      
+      console.log(`AdminPanel: Fetching employer users from ${endpoint}`);
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.trim()}`
+      };
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: headers
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`AdminPanel: API error fetching employers (${response.status}): ${errorText}`);
+        setLoadingEmployers(false);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('AdminPanel: Employer users data received:', data);
+      
+      // Set employer users in state
+      if (data.users && Array.isArray(data.users)) {
+        // Filter to only include users with employer role
+        const employers = data.users.filter((u: User) => u.role === 'employer' && u.brokerId === brokerId);
+        console.log(`AdminPanel: Found ${employers.length} employer users for broker ${brokerId}`);
+        setEmployerUsers(employers);
+      } else {
+        console.warn('AdminPanel: No employer users found or invalid data format');
+        setEmployerUsers([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching employer users:', err);
+    } finally {
+      setLoadingEmployers(false);
+    }
+  };
+
+  // Add handler for broker selection change
+  const handleBrokerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedBrokerId = e.target.value;
+    
+    // Update the form data
+    setNewUser(prev => ({
+      ...prev,
+      brokerId: selectedBrokerId,
+      employerId: '' // Reset employer selection when broker changes
+    }));
+    
+    // Fetch employers for this broker if a broker is selected
+    if (selectedBrokerId) {
+      fetchEmployersForBroker(selectedBrokerId);
+    } else {
+      // Clear employers if no broker selected
+      setEmployerUsers([]);
+    }
+  };
+
   // Handle adding a new user - modified to ensure role-based restrictions
   const handleAddUser = async () => {
     try {
@@ -381,11 +561,23 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
       // Add organization IDs based on role and permissions
       if (newUser.tpaId) {
         (userData as any).tpaId = newUser.tpaId;
+      } else if (user?.tpaId) {
+        // Always include TPA ID from current user if available
+        (userData as any).tpaId = user.tpaId;
       }
       
-      if (newUser.role === 'broker' || newUser.role === 'employer') {
+      if (newUser.role === 'employer') {
         if (newUser.brokerId) {
+          // Using broker username (Cognito user) as the ID now
           (userData as any).brokerId = newUser.brokerId;
+          
+          // Find the selected broker to get additional details if needed
+          const selectedBroker = brokerUsers.find(b => b.username === newUser.brokerId);
+          if (selectedBroker) {
+            console.log(`Selected broker: ${selectedBroker.name} (${selectedBroker.username})`);
+            // Include broker name for reference
+            (userData as any).brokerName = selectedBroker.name || selectedBroker.username;
+          }
         }
       }
       
@@ -410,35 +602,25 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
       }
       
       const result = await response.json();
-      console.log('User created:', result);
+      console.log('AdminPanel: User created successfully:', result);
       
-      // Reset form
+      // Reset form and close dialog
       setNewUser({
         username: '',
         email: '',
         name: '',
         role: 'broker',
         brokerId: '',
-        tpaId: '',
-        employerId: '',
         tempPassword: '',
         phoneNumber: ''
       });
       
       setUserDialogOpen(false);
+      setUserCreated(true); // Trigger re-fetch of users
       setError(null);
-
-      // Set userCreated flag to true - this will trigger the useEffect to fetch users
-      setUserCreated(true);
-      
-      // Show success message
-      alert(`User ${result.user.username} created successfully`);
-      
-      // Don't fetch users here - rely on the useEffect to do that
-      // This prevents race conditions and double-fetching
     } catch (err: any) {
       console.error('Error creating user:', err);
-      setError(err.message || "Failed to create user");
+      setError(err.message || 'Failed to create user');
     }
   };
 
@@ -881,18 +1063,29 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                       <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
                       <select
                         value={newUser.brokerId}
-                        onChange={(e) => setNewUser({...newUser, brokerId: e.target.value})}
+                        onChange={handleBrokerChange}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                       >
                         <option value="">Select Broker</option>
-                        {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                          <option key={broker.id} value={broker.id}>{broker.name}</option>
-                        ))}
+                        {loadingBrokers ? (
+                          <option value="" disabled>Loading brokers...</option>
+                        ) : (
+                          brokerUsers.map((broker) => (
+                            <option key={broker.username} value={broker.username}>
+                              {broker.name || broker.username}
+                            </option>
+                          ))
+                        )}
                       </select>
+                      {brokerUsers.length === 0 && !loadingBrokers && (
+                        <p className="mt-1 text-xs text-red-500">
+                          No broker users found. Please create broker users first.
+                        </p>
+                      )}
                     </div>
                   )}
                   
-                  {/* Employer selection - only available when a broker is selected */}
+                  {/* Employer selection - modify to work with broker users */}
                   {newUser.role === 'employer' && newUser.brokerId && (
                     <div>
                       <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer</label>
@@ -902,15 +1095,21 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                       >
                         <option value="">Select Employer</option>
-                        {tpa && tpa.brokers && tpa.brokers
-                          .filter(broker => broker.id === newUser.brokerId)
-                          .map(broker => 
-                            broker.employers && broker.employers.map(employer => (
-                              <option key={employer.id} value={employer.id}>{employer.name}</option>
-                            ))
-                          )
-                        }
+                        {loadingEmployers ? (
+                          <option value="" disabled>Loading employers...</option>
+                        ) : (
+                          employerUsers.map((employer) => (
+                            <option key={employer.username} value={employer.username}>
+                              {employer.name || employer.username}
+                            </option>
+                          ))
+                        )}
                       </select>
+                      {employerUsers.length === 0 && !loadingEmployers && (
+                        <p className="mt-1 text-xs text-red-500">
+                          No employer users found for this broker. You can create a new employer.
+                        </p>
+                      )}
                     </div>
                   )}
                   
@@ -1044,24 +1243,47 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                   )}
                   
                   {/* Broker selection for employer users */}
-                  {(editingUser.role === 'employer') && (
+                  {(editingUser?.role === 'employer') && (
                     <div>
                       <label className="block text-sm font-medium text-night dark:text-white mb-1">Broker</label>
                       <select
                         value={editingUser.brokerId || ''}
-                        onChange={(e) => setEditingUser({...editingUser, brokerId: e.target.value})}
+                        onChange={(e) => {
+                          const selectedBrokerId = e.target.value;
+                          setEditingUser({
+                            ...editingUser,
+                            brokerId: selectedBrokerId,
+                            employerId: '' // Reset employer when broker changes
+                          });
+                          
+                          // Fetch employers for this broker if a broker is selected
+                          if (selectedBrokerId) {
+                            fetchEmployersForBroker(selectedBrokerId);
+                          }
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                       >
                         <option value="">Select Broker</option>
-                        {tpa && tpa.brokers && tpa.brokers.map((broker) => (
-                          <option key={broker.id} value={broker.id}>{broker.name}</option>
-                        ))}
+                        {loadingBrokers ? (
+                          <option value="" disabled>Loading brokers...</option>
+                        ) : (
+                          brokerUsers.map((broker) => (
+                            <option key={broker.username} value={broker.username}>
+                              {broker.name || broker.username}
+                            </option>
+                          ))
+                        )}
                       </select>
+                      {brokerUsers.length === 0 && !loadingBrokers && (
+                        <p className="mt-1 text-xs text-red-500">
+                          No broker users found. Please create broker users first.
+                        </p>
+                      )}
                     </div>
                   )}
                   
-                  {/* Employer selection - only available when a broker is selected */}
-                  {editingUser.role === 'employer' && editingUser.brokerId && (
+                  {/* Employer selection for employer users */}
+                  {editingUser?.role === 'employer' && editingUser.brokerId && (
                     <div>
                       <label className="block text-sm font-medium text-night dark:text-white mb-1">Employer</label>
                       <select
@@ -1070,15 +1292,21 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-night-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-night-700 text-night dark:text-white"
                       >
                         <option value="">Select Employer</option>
-                        {tpa && tpa.brokers && tpa.brokers
-                          .filter(broker => broker.id === editingUser.brokerId)
-                          .map(broker => 
-                            broker.employers && broker.employers.map(employer => (
-                              <option key={employer.id} value={employer.id}>{employer.name}</option>
-                            ))
-                          )
-                        }
+                        {loadingEmployers ? (
+                          <option value="" disabled>Loading employers...</option>
+                        ) : (
+                          employerUsers.map((employer) => (
+                            <option key={employer.username} value={employer.username}>
+                              {employer.name || employer.username}
+                            </option>
+                          ))
+                        )}
                       </select>
+                      {employerUsers.length === 0 && !loadingEmployers && (
+                        <p className="mt-1 text-xs text-red-500">
+                          No employer users found for this broker.
+                        </p>
+                      )}
                     </div>
                   )}
                   
@@ -1138,6 +1366,13 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setEditUserDialogOpen(true);
+    setError(null);
+    
+    // If this is an employer user and they have a broker ID, 
+    // fetch the employers for that broker
+    if (user.role === 'employer' && user.brokerId) {
+      fetchEmployersForBroker(user.brokerId);
+    }
   };
 
   // Handle updating a user
@@ -1145,17 +1380,6 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
     if (!editingUser) return;
     
     try {
-      // Validate required fields
-      if (!editingUser.email?.trim()) {
-        setError('Email is required');
-        return;
-      }
-      
-      if (!editingUser.name?.trim()) {
-        setError('Name is required');
-        return;
-      }
-      
       if (!API_URL) {
         setError("API URL not configured");
         return;
@@ -1166,18 +1390,38 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
         throw new Error("Authentication token not available");
       }
       
-      // Create update payload
-      const userData = {
-        email: editingUser.email,
-        name: editingUser.name,
-        role: editingUser.role,
-        phoneNumber: editingUser.phoneNumber || undefined,
-        tpaId: editingUser.tpaId || undefined,
-        brokerId: editingUser.brokerId || undefined,
-        employerId: editingUser.employerId || undefined
+      // Create update payload with only fields that have changed
+      const updatePayload: Record<string, any> = {
+        username: editingUser.username // This is required for identification
       };
       
-      console.log('AdminPanel: Updating user with data:', userData);
+      // Only include fields that have values
+      if (editingUser.email) updatePayload.email = editingUser.email;
+      if (editingUser.name) updatePayload.name = editingUser.name;
+      if (editingUser.phoneNumber) updatePayload.phoneNumber = editingUser.phoneNumber;
+      if (editingUser.role) updatePayload.role = editingUser.role;
+      
+      // Update organization relationships
+      if (editingUser.role === 'broker' || editingUser.role === 'tpa_admin' || editingUser.role === 'tpa_user') {
+        if (editingUser.tpaId) updatePayload.tpaId = editingUser.tpaId;
+      }
+      
+      if (editingUser.role === 'employer') {
+        if (editingUser.brokerId) {
+          updatePayload.brokerId = editingUser.brokerId;
+          
+          // Find the selected broker to get additional details if needed
+          const selectedBroker = brokerUsers.find(b => b.username === editingUser.brokerId);
+          if (selectedBroker) {
+            console.log(`Selected broker: ${selectedBroker.name} (${selectedBroker.username})`);
+            updatePayload.brokerName = selectedBroker.name || selectedBroker.username;
+          }
+        }
+        
+        if (editingUser.employerId) updatePayload.employerId = editingUser.employerId;
+      }
+      
+      console.log('AdminPanel: Updating user with data:', updatePayload);
       
       const response = await fetch(`${API_URL}/api/users/${editingUser.username}`, {
         method: 'PUT',
@@ -1185,7 +1429,7 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token.trim()}`
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(updatePayload)
       });
       
       if (!response.ok) {
@@ -1194,21 +1438,14 @@ const AdminPanel: React.FC<AdminPanelProps> = () => {
       }
       
       const result = await response.json();
-      console.log('User updated:', result);
+      console.log('AdminPanel: User updated successfully:', result);
       
-      // Reset form
-      setEditingUser(null);
       setEditUserDialogOpen(false);
+      setUserCreated(true); // Trigger re-fetch of users
       setError(null);
-
-      // Refresh user list
-      await fetchUsers();
-      
-      // Show success message
-      alert(`User ${editingUser.username} updated successfully`);
     } catch (err: any) {
       console.error('Error updating user:', err);
-      setError(err.message || "Failed to update user");
+      setError(err.message || 'Failed to update user');
     }
   };
 
