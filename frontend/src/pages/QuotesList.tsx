@@ -45,7 +45,7 @@ const QuotesList: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
-        const response = await fetch(`${API_URL}/quotes`, { headers });
+        const response = await fetch(`${API_URL}/api/quotes`, { headers });
         if (response.ok) {
           const data = await response.json();
           setQuotes(data.quotes || []);
@@ -79,7 +79,7 @@ const QuotesList: React.FC = () => {
       const token = await getIdToken();
       const formData = new FormData();
       formData.append('file', file);
-      const url = `${API_URL}/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      const url = `${API_URL}/api/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {

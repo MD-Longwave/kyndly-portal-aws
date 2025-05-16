@@ -53,7 +53,7 @@ const QuoteDetails: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
-        const response = await fetch(`${API_URL}/quotes/${id}?brokerId=${brokerId}&employerId=${employerId}`, { headers });
+        const response = await fetch(`${API_URL}/api/quotes/${id}?brokerId=${brokerId}&employerId=${employerId}`, { headers });
         if (response.ok) {
           const data = await response.json();
           setQuote(data);
