@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Auth } from 'aws-amplify';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,20 +6,29 @@ import { Select, Button } from '../components/ui/FormElements';
 
 // Quote type definition based on the actual form fields
 interface Quote {
-  id: string;
+  submissionId: string;
   companyName: string;
   transperraRep: string;
   ichraEffectiveDate: string;
-  pepm: number;
-  priorityLevel: string;
+  pepm: string;
   status: string;
+  brokerName: string;
+  employerName: string;
+  brokerId: string;
+  employerId: string;
+  s3Key: string;
 }
+
+const API_KEY = process.env.REACT_APP_API_KEY || '';
 
 const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { getIdToken } = useAuth();
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<{quote: Quote} | null>(null);
   
   // Filter states
   const [statusFilter, setStatusFilter] = useState('');
@@ -29,53 +38,64 @@ const QuotesList: React.FC = () => {
     const fetchQuotes = async () => {
       try {
         setIsLoading(true);
-        
-        // Try to fetch from API
-        try {
-          // Get JWT token
-          const token = await getIdToken();
-          
-          // Create headers with Authorization if token is available
-          const headers: HeadersInit = {
-            'Content-Type': 'application/json'
-          };
-          
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-            console.log('Added Authorization header with JWT token to quotes request');
-          } else {
-            console.warn('No JWT token available for quotes request');
-          }
-          
-          const response = await fetch('/api/quotes', { 
-            headers,
-            credentials: 'include' // Include cookies and auth tokens
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            setQuotes(data);
-            setError(null);
-            return;
-          }
-        } catch (apiError) {
-          console.log("API not available yet:", apiError);
-          // Continue to fallback - empty data
+        const token = await getIdToken();
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        };
+        if (API_KEY) headers['x-api-key'] = API_KEY;
+        const response = await fetch('/quotes', { headers });
+        if (response.ok) {
+          const data = await response.json();
+          setQuotes(data.quotes || []);
+          setError(null);
+        } else {
+          setError('Failed to fetch quotes');
         }
-        
-        // Return empty array if API not available
-        setQuotes([]);
-        setError(null);
       } catch (err) {
-        console.error("Error fetching quotes:", err);
-        setError("Failed to load quotes. Please try again later.");
+        setError('Failed to fetch quotes');
       } finally {
         setIsLoading(false);
       }
     };
-    
     fetchQuotes();
   }, [getIdToken]);
+
+  const handleUploadClick = (quote: Quote) => {
+    setUploadTarget({ quote });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!uploadTarget || !e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setUploadingId(uploadTarget.quote.submissionId);
+    try {
+      const token = await getIdToken();
+      const formData = new FormData();
+      formData.append('file', file);
+      const url = `/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+        } as any,
+        body: formData,
+      });
+      if (response.ok) {
+        alert('Document uploaded successfully!');
+      } else {
+        alert('Failed to upload document.');
+      }
+    } catch (err) {
+      alert('Error uploading document.');
+    } finally {
+      setUploadingId(null);
+      setUploadTarget(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -179,6 +199,12 @@ const QuotesList: React.FC = () => {
       {/* Quotes table */}
       <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
         <div className="overflow-x-auto">
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
           <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
             <thead className="bg-gray-50 dark:bg-night-700">
               <tr>
@@ -212,6 +238,18 @@ const QuotesList: React.FC = () => {
                 >
                   Status
                 </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Broker
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Employer
+                </th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -220,10 +258,10 @@ const QuotesList: React.FC = () => {
             <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
               {quotes.length > 0 ? (
                 quotes.map((quote) => (
-                <tr key={quote.id} className="hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
+                <tr key={quote.s3Key} className="hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
-                      to={`/quotes/${quote.id}`}
+                      to={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
                       className="text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400 font-medium"
                     >
                         {quote.companyName}
@@ -236,7 +274,7 @@ const QuotesList: React.FC = () => {
                       <div className="text-sm text-gray-900 dark:text-white">{quote.ichraEffectiveDate}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      ${quote.pepm.toLocaleString()}
+                      {quote.pepm}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -251,19 +289,32 @@ const QuotesList: React.FC = () => {
                       {quote.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">{quote.brokerName}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">{quote.employerName}</div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link
-                      to={`/quotes/${quote.id}`}
+                      to={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
                       className="text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400"
                     >
                       View
                     </Link>
+                    <button
+                      className="text-green-600 hover:underline"
+                      onClick={() => handleUploadClick(quote)}
+                      disabled={uploadingId === quote.submissionId}
+                    >
+                      {uploadingId === quote.submissionId ? 'Uploading...' : 'Upload Document'}
+                    </button>
                   </td>
                 </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                     <p className="mb-2">No quotes available yet</p>
                     <Link
                       to="/quotes/new"
