@@ -41,12 +41,16 @@ const QuotesList: React.FC = () => {
       setIsLoading(true);
       try {
         const token = await getIdToken();
+        console.log('Token available:', !!token);
+        
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
         console.log('Using API key:', API_KEY);
+        console.log('Request headers:', headers);
+        
         const response = await fetch(`${API_URL}/api/quotes`, { headers });
         if (response.ok) {
           const data = await response.json();

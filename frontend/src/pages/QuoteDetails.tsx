@@ -24,7 +24,7 @@ interface QuoteDetailsData {
   documents?: DocumentInfo[];
 }
 
-const API_KEY = process.env.REACT_APP_API_KEY || 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
 const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
 
 function useQuery() {
