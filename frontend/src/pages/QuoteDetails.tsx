@@ -25,7 +25,7 @@ interface QuoteDetailsData {
 }
 
 const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
-const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/prod';
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);

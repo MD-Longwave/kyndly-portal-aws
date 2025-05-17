@@ -21,7 +21,7 @@ interface Quote {
 
 // Use exact API key that matches Lambda function
 const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
-const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/dev';
+const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/prod';
 
 const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -59,6 +59,7 @@ const QuotesList: React.FC = () => {
         } else {
           const errorText = await response.text();
           console.error('Error response:', response.status, errorText);
+          console.error('Full response:', response);
           setError(`Failed to fetch quotes: ${response.status} ${response.statusText}`);
         }
       } catch (err) {
