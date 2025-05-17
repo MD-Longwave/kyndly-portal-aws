@@ -51,11 +51,21 @@ const QuoteDetails: React.FC = () => {
       try {
         setIsLoading(true);
         const token = await getIdToken();
+        
+        // Make sure token doesn't have any extra spaces or special characters
+        const cleanToken = token?.trim();
+        
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
+        
+        // Only add Authorization header if the token is valid
+        if (cleanToken) {
+          headers['Authorization'] = `Bearer ${cleanToken}`;
+          console.log('Token length:', cleanToken.length);
+          console.log('Token first 15 chars:', cleanToken.substring(0, 15) + '...');
+        }
         
         console.log('Making request to:', `${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`);
         
@@ -95,17 +105,27 @@ const QuoteDetails: React.FC = () => {
     setUploading(true);
     try {
       const token = await getIdToken();
+      
+      // Clean the token
+      const cleanToken = token?.trim();
+      
       const formData = new FormData();
       formData.append('file', file);
       const url = `${API_URL}${API_PATH_PREFIX}/${quote.submissionId}/documents?brokerId=${quote.brokerId}&employerId=${quote.employerId}`;
       console.log('Making upload request to:', url);
       
+      const headers: any = {
+        'x-api-key': API_KEY
+      };
+      
+      // Only add Authorization header if the token is valid
+      if (cleanToken) {
+        headers['Authorization'] = `Bearer ${cleanToken}`;
+      }
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-api-key': API_KEY
-        } as any,
+        headers,
         body: formData,
       });
       
