@@ -54,15 +54,23 @@ const QuotesList: React.FC = () => {
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'x-api-key': API_KEY
       };
+      
+      // Only add Authorization header if the token is valid
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       console.log('Using API key:', API_KEY);
       console.log('Request headers:', headers);
       console.log('Making request to:', `${API_URL}${API_PATH}`);
       
       const response = await fetch(`${API_URL}${API_PATH}`, { 
-        headers
+        headers,
+        // Add mode and credentials for better CORS support
+        mode: 'cors',
+        credentials: 'include'
       });
       
       console.log('Response status:', response.status);
@@ -117,14 +125,26 @@ const QuotesList: React.FC = () => {
       const url = `${API_URL}${API_PATH}/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
       console.log('Making upload request to:', url);
       
+      // Important: Don't set Content-Type header for multipart/form-data
+      // The browser will set it automatically with the correct boundary
+      const headers: any = {
+        'x-api-key': API_KEY
+      };
+      
+      // Only add Authorization header if the token is valid
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-api-key': API_KEY
-        } as any,
+        headers,
         body: formData,
+        // Add mode and credentials for better CORS support
+        mode: 'cors',
+        credentials: 'include'
       });
+      
       if (response.ok) {
         alert('Document uploaded successfully!');
         // Refresh the quotes list to show updated data
