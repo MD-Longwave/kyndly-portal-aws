@@ -21,8 +21,9 @@ interface Quote {
 
 // Use exact API key that matches Lambda function
 const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
-const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/prod';
-// API path remains '/api/quotes' since our Lambda now handles both with and without the /prod prefix
+// Update with your new REST API Gateway endpoint
+const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
+// API path should match what we created in the REST API
 const API_PATH = '/api/quotes';
 
 const QuotesList: React.FC = () => {
