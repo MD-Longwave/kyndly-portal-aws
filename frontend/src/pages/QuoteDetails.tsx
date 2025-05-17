@@ -24,7 +24,7 @@ interface QuoteDetailsData {
   documents?: DocumentInfo[];
 }
 
-const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+const API_KEY = '4ws9KDIWIW11u8mNVP0Th2bGN3GhlnnZlquHiv8b';
 // Update with your new REST API Gateway endpoint
 const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
 // API path prefix should match what we created in the REST API
@@ -68,10 +68,20 @@ const QuoteDetails: React.FC = () => {
         console.log('Making request to:', `${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`);
         
         const response = await fetch(`${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`, { 
-          headers
+          headers,
+          // Add mode and credentials for better CORS support
+          mode: 'cors',
+          credentials: 'include'
         });
         
         console.log('Response status:', response.status);
+        
+        // Log headers for debugging
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+        console.log('Response headers:', responseHeaders);
         
         if (response.ok) {
           const data = await response.json();
@@ -109,6 +119,8 @@ const QuoteDetails: React.FC = () => {
       const url = `${API_URL}${API_PATH_PREFIX}/${quote.submissionId}/documents?brokerId=${quote.brokerId}&employerId=${quote.employerId}`;
       console.log('Making upload request to:', url);
       
+      // Important: Don't set Content-Type header for multipart/form-data
+      // The browser will set it automatically with the correct boundary
       const headers: any = {
         'x-api-key': API_KEY
       };
@@ -122,6 +134,9 @@ const QuoteDetails: React.FC = () => {
         method: 'POST',
         headers,
         body: formData,
+        // Add mode and credentials for better CORS support
+        mode: 'cors',
+        credentials: 'include'
       });
       
       console.log('Upload response status:', response.status);
@@ -136,6 +151,7 @@ const QuoteDetails: React.FC = () => {
         alert(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
+      console.error('Upload error:', err);
       alert('Error uploading document.');
     } finally {
       setUploading(false);

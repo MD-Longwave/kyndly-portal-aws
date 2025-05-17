@@ -20,7 +20,7 @@ interface Quote {
 }
 
 // Use exact API key that matches Lambda function
-const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
+const API_KEY = '4ws9KDIWIW11u8mNVP0Th2bGN3GhlnnZlquHiv8b';
 // Update with your new REST API Gateway endpoint
 const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
 // API path should match what we created in the REST API
