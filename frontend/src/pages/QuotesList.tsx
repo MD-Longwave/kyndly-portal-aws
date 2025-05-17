@@ -112,7 +112,10 @@ const QuotesList: React.FC = () => {
       const token = await getIdToken();
       const formData = new FormData();
       formData.append('file', file);
-      const url = `${API_URL}/api/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      
+      // Fix the URL construction to match QuoteDetails.tsx
+      const url = `${API_URL}${API_PATH}/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      console.log('Making upload request to:', url);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -124,10 +127,15 @@ const QuotesList: React.FC = () => {
       });
       if (response.ok) {
         alert('Document uploaded successfully!');
+        // Refresh the quotes list to show updated data
+        fetchQuotes();
       } else {
-        alert('Failed to upload document.');
+        const errorText = await response.text();
+        console.error('Upload error response:', response.status, errorText);
+        alert(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
+      console.error('Error uploading document:', err);
       alert('Error uploading document.');
     } finally {
       setUploadingId(null);
