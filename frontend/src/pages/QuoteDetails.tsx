@@ -7,6 +7,7 @@ interface DocumentInfo {
   s3Key: string;
   size: number;
   lastModified: string;
+  downloadUrl: string;
 }
 
 interface QuoteDetailsData {
@@ -353,7 +354,7 @@ const QuoteDetails: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.lastModified).toLocaleString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <a
-                            href={`https://${S3_BUCKET}.s3.amazonaws.com/${doc.s3Key}`}
+                            href={doc.downloadUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-seafoam hover:text-seafoam-600"
