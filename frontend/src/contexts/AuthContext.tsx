@@ -176,25 +176,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const refreshedSession = await Auth.currentSession();
         const token = refreshedSession.getIdToken().getJwtToken();
         
-        // Ensure token is properly formatted
-        const cleanToken = token.trim();
-        
-        console.log(`AuthContext: Token refreshed successfully (length: ${cleanToken.length}, first 15 chars: ${cleanToken.substring(0, 15)}...)`);
+        // Don't trim the token as it can corrupt the format
+        console.log(`AuthContext: Token refreshed successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
         
         // Get the payload for debugging
         const payload = refreshedSession.getIdToken().decodePayload();
         console.log('AuthContext: Refreshed token payload:', JSON.stringify(payload));
         
-        return cleanToken;
+        return token;
       }
       
       // Otherwise use the existing token
       const token = session.getIdToken().getJwtToken();
       
-      // Ensure token is properly formatted
-      const cleanToken = token.trim();
-      
-      console.log(`AuthContext: Token retrieved successfully (length: ${cleanToken.length}, first 15 chars: ${cleanToken.substring(0, 15)}...)`);
+      console.log(`AuthContext: Token retrieved successfully (length: ${token.length}, first 15 chars: ${token.substring(0, 15)}...)`);
       
       // Get the payload for debugging
       const payload = session.getIdToken().decodePayload();
@@ -214,11 +209,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       // Make sure the token isn't malformed
-      if (!cleanToken.startsWith('ey')) {
+      if (!token.startsWith('ey')) {
         console.error('AuthContext: Token does not start with expected JWT format');
       }
       
-      return cleanToken;
+      return token;
     } catch (error) {
       console.error('AuthContext: Error getting ID token:', error);
       return null;
