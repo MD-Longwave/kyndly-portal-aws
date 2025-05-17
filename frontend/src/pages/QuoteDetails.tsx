@@ -168,60 +168,231 @@ const QuoteDetails: React.FC = () => {
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">{error}</div>
       ) : quote ? (
-        <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
-          <div className="mb-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div><strong>Company:</strong> {quote.companyName}</div>
-              <div><strong>Transperra Rep:</strong> {quote.transperraRep}</div>
-              <div><strong>Effective Date:</strong> {quote.ichraEffectiveDate}</div>
-              <div><strong>PEPM:</strong> {quote.pepm}</div>
-              <div><strong>Status:</strong> {quote.status}</div>
-              <div><strong>Broker:</strong> {quote.brokerName}</div>
-              <div><strong>Employer:</strong> {quote.employerName}</div>
+        <div className="space-y-6">
+          {/* Basic Quote Info Card */}
+          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+            <h2 className="text-xl font-semibold mb-4 text-seafoam">Quote Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Company</h3>
+                  <p className="text-lg font-medium">{quote.companyName}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">ICHRA Effective Date</h3>
+                  <p className="text-lg">{quote.ichraEffectiveDate}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">PEPM</h3>
+                  <p className="text-lg">${quote.pepm}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Current Funding Strategy</h3>
+                  <p className="text-lg">{quote.currentFundingStrategy || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Transperra Rep</h3>
+                  <p className="text-lg">{quote.transperraRep}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                  <p>
+                    <span className={`inline-flex px-2 py-1 text-sm font-semibold rounded-full ${
+                      quote.status === 'Approved'
+                        ? 'bg-green-100 text-green-800'
+                        : quote.status === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {quote.status || 'New'}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Submission ID</h3>
+                  <p className="text-xs font-mono bg-gray-100 py-1 px-2 rounded inline-block">{quote.submissionId}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Submission Date</h3>
+                  <p className="text-lg">{new Date(quote.submissionDate || Date.now()).toLocaleDateString()}</p>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold mb-2">Documents</h2>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={handleFileChange}
-            />
-            <button
-              className="text-green-600 hover:underline mb-2"
-              onClick={handleUploadClick}
-              disabled={uploading}
-            >
-              {uploading ? 'Uploading...' : 'Upload Document'}
-            </button>
-            <ul className="list-disc pl-6">
-              {quote.documents && quote.documents.length > 0 ? (
-                quote.documents.map((doc) => (
-                  <li key={doc.s3Key}>
-                    <a
-                      href={`https://${S3_BUCKET}.s3.amazonaws.com/${doc.s3Key}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {doc.filename}
-                    </a>
-                    <span className="ml-2 text-gray-500 text-xs">
-                      ({(doc.size / 1024).toFixed(1)} KB, {new Date(doc.lastModified).toLocaleString()})
-                    </span>
-                  </li>
-                ))
-              ) : (
-                <li className="text-gray-500">No documents uploaded yet.</li>
-              )}
-            </ul>
+
+          {/* Plan & Company Details */}
+          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+            <h2 className="text-xl font-semibold mb-4 text-seafoam">Plan Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Target Deductible</h3>
+                  <p className="text-lg">{quote.targetDeductible ? `$${quote.targetDeductible}` : 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Target HSA</h3>
+                  <p className="text-lg">{quote.targetHSA || 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Is GLI</h3>
+                  <p className="text-lg">{quote.isGLI ? 'Yes' : 'No'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Priority Level</h3>
+                  <p className="text-lg capitalize">{quote.priorityLevel || 'Standard'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Contact Type</h3>
+                  <p className="text-lg">{quote.contactType || 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Additional Notes</h3>
+                  <p className="text-lg italic">{quote.additionalNotes || 'No additional notes'}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-2">All Quote Data</h2>
-            <pre className="bg-gray-100 p-4 rounded text-xs overflow-x-auto">
-              {JSON.stringify(quote, null, 2)}
-            </pre>
+
+          {/* Broker & Employer Info */}
+          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+            <h2 className="text-xl font-semibold mb-4 text-seafoam">Broker & Employer</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Broker Name</h3>
+                  <p className="text-lg">{quote.brokerName || 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Broker Email</h3>
+                  <p className="text-lg">
+                    {quote.brokerEmail ? (
+                      <a href={`mailto:${quote.brokerEmail}`} className="text-seafoam hover:underline">
+                        {quote.brokerEmail}
+                      </a>
+                    ) : (
+                      'N/A'
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Broker ID</h3>
+                  <p className="text-sm font-mono bg-gray-100 py-1 px-2 rounded inline-block">{quote.brokerId}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Employer Name</h3>
+                  <p className="text-lg">{quote.employerName || 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Employer ID</h3>
+                  <p className="text-sm font-mono bg-gray-100 py-1 px-2 rounded inline-block">{quote.employerId}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">TPA ID</h3>
+                  <p className="text-sm font-mono bg-gray-100 py-1 px-2 rounded inline-block">{quote.tpaId}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents Section */}
+          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-seafoam">Documents</h2>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+              <button
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors duration-300 flex items-center gap-2"
+                onClick={handleUploadClick}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Upload Document</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {quote.documents && quote.documents.length > 0 ? (
+              <div className="border rounded-md overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {quote.documents.map((doc) => (
+                      <tr key={doc.s3Key}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{doc.filename}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(doc.size / 1024).toFixed(1)} KB</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.lastModified).toLocaleString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <a
+                            href={`https://${S3_BUCKET}.s3.amazonaws.com/${doc.s3Key}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-seafoam hover:text-seafoam-600"
+                          >
+                            View
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="mt-2 text-sm text-gray-500">No documents uploaded yet</p>
+                <p className="text-xs text-gray-400 mt-1">Click the upload button to add a document</p>
+              </div>
+            )}
+          </div>
+
+          {/* Developer Section with JSON data - can be toggled or removed */}
+          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-seafoam">Developer Data</h2>
+              <button 
+                onClick={() => document.getElementById('jsonData')?.classList.toggle('hidden')}
+                className="text-sm text-gray-500 hover:text-seafoam"
+              >
+                Toggle JSON View
+              </button>
+            </div>
+            <div id="jsonData" className="hidden">
+              <pre className="bg-gray-100 p-4 rounded text-xs overflow-x-auto">
+                {JSON.stringify(quote, null, 2)}
+              </pre>
+            </div>
           </div>
         </div>
       ) : null}
