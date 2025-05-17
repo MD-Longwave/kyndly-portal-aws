@@ -26,6 +26,11 @@ const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
 // API path should match what we created in the REST API
 const API_PATH = '/api/quotes';
 
+interface FilterValues {
+  status: string;
+  priority: string;
+}
+
 const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,55 +41,58 @@ const QuotesList: React.FC = () => {
   const [uploadTarget, setUploadTarget] = useState<{quote: Quote} | null>(null);
   
   // Filter states
-  const [statusFilter, setStatusFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
+  const [filters, setFilters] = useState<FilterValues>({
+    status: 'All',
+    priority: 'All'
+  });
+  
+  const fetchQuotes = async () => {
+    setIsLoading(true);
+    try {
+      const token = await getIdToken();
+      console.log('Token available:', !!token);
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-api-key': API_KEY
+      };
+      console.log('Using API key:', API_KEY);
+      console.log('Request headers:', headers);
+      console.log('Making request to:', `${API_URL}${API_PATH}`);
+      
+      const response = await fetch(`${API_URL}${API_PATH}`, { 
+        headers
+      });
+      
+      console.log('Response status:', response.status);
+      
+      // Log headers in a way that's compatible with all TypeScript targets
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+      console.log('Response headers:', responseHeaders);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setQuotes(data.quotes || []);
+        setError(null);
+      } else {
+        const errorText = await response.text();
+        console.error('Error response:', response.status, errorText);
+        console.error('Full response:', response);
+        setError(`Failed to fetch quotes: ${response.status} ${response.statusText}`);
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(`Failed to fetch quotes: ${err instanceof Error ? err.message : 'Network error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   useEffect(() => {
-    const fetchQuotes = async () => {
-      setIsLoading(true);
-      try {
-        const token = await getIdToken();
-        console.log('Token available:', !!token);
-        
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-api-key': API_KEY
-        };
-        console.log('Using API key:', API_KEY);
-        console.log('Request headers:', headers);
-        console.log('Making request to:', `${API_URL}${API_PATH}`);
-        
-        const response = await fetch(`${API_URL}${API_PATH}`, { 
-          headers
-        });
-        
-        console.log('Response status:', response.status);
-        
-        // Log headers in a way that's compatible with all TypeScript targets
-        const responseHeaders: Record<string, string> = {};
-        response.headers.forEach((value, key) => {
-          responseHeaders[key] = value;
-        });
-        console.log('Response headers:', responseHeaders);
-        
-        if (response.ok) {
-          const data = await response.json();
-          setQuotes(data.quotes || []);
-          setError(null);
-        } else {
-          const errorText = await response.text();
-          console.error('Error response:', response.status, errorText);
-          console.error('Full response:', response);
-          setError(`Failed to fetch quotes: ${response.status} ${response.statusText}`);
-        }
-      } catch (err) {
-        console.error('Fetch error:', err);
-        setError(`Failed to fetch quotes: ${err instanceof Error ? err.message : 'Network error'}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchQuotes();
   }, [getIdToken]);
 
@@ -96,13 +104,16 @@ const QuotesList: React.FC = () => {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!uploadTarget || !e.target.files || e.target.files.length === 0) return;
+    
     const file = e.target.files[0];
     setUploadingId(uploadTarget.quote.submissionId);
+    
     try {
       const token = await getIdToken();
       const formData = new FormData();
       formData.append('file', file);
       const url = `${API_URL}/api/quotes/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -121,6 +132,9 @@ const QuotesList: React.FC = () => {
     } finally {
       setUploadingId(null);
       setUploadTarget(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -148,9 +162,8 @@ const QuotesList: React.FC = () => {
   ];
 
   // Handle filter application
-  const applyFilters = () => {
-    // In a real implementation, this would filter the data or make an API call with filters
-    console.log('Applying filters:', { status: statusFilter, priority: priorityFilter });
+  const applyFilters = (newFilters: FilterValues) => {
+    setFilters(newFilters);
   };
 
   return (
@@ -179,8 +192,8 @@ const QuotesList: React.FC = () => {
             <Select 
               label="Status" 
               name="status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={filters.status}
+              onChange={(e) => setFilters({...filters, status: e.target.value})}
               options={statusOptions}
             />
           </div>
@@ -188,8 +201,8 @@ const QuotesList: React.FC = () => {
             <Select 
               label="Priority" 
               name="priority"
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
+              value={filters.priority}
+              onChange={(e) => setFilters({...filters, priority: e.target.value})}
               options={priorityOptions}
             />
           </div>
@@ -197,7 +210,7 @@ const QuotesList: React.FC = () => {
             <Button 
               variant="primary" 
               type="button" 
-              onClick={applyFilters}
+              onClick={() => applyFilters(filters)}
               className="bg-seafoam hover:bg-seafoam-600 transition-colors duration-300 font-medium text-white mb-4 px-6"
             >
               Apply Filters

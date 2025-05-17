@@ -56,6 +56,7 @@ const QuoteDetails: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
+        
         console.log('Making request to:', `${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`);
         
         const response = await fetch(`${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`, { 
