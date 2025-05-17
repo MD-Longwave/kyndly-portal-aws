@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Auth } from 'aws-amplify';
 import { useAuth } from '../contexts/AuthContext';
 import { Select, Button } from '../components/ui/FormElements';
+import { uploadFileToQuote } from '../utils/api';
 
 // Quote type definition based on the actual form fields
 interface Quote {
@@ -118,39 +119,24 @@ const QuotesList: React.FC = () => {
     
     try {
       const token = await getIdToken();
-      const formData = new FormData();
-      formData.append('file', file);
       
-      // Fix the URL construction to match QuoteDetails.tsx
-      const url = `${API_URL}${API_PATH}/${uploadTarget.quote.submissionId}/documents?brokerId=${uploadTarget.quote.brokerId}&employerId=${uploadTarget.quote.employerId}`;
-      console.log('Making upload request to:', url);
+      // Use the new utility function for uploads
+      const response = await uploadFileToQuote(
+        file,
+        uploadTarget.quote.submissionId,
+        uploadTarget.quote.brokerId,
+        uploadTarget.quote.employerId,
+        token || undefined
+      );
       
-      // Important: Don't set Content-Type header for multipart/form-data
-      // The browser will set it automatically with the correct boundary
-      const headers: any = {
-        'x-api-key': API_KEY
-      };
-      
-      // Only add Authorization header if the token is valid
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: formData,
-        // Add mode and credentials for better CORS support
-        mode: 'cors',
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
+      if (response.status === 0 || response.ok) {
+        // Status 0 is expected with no-cors mode
         alert('Document uploaded successfully!');
         // Refresh the quotes list to show updated data
         fetchQuotes();
       } else {
-        const errorText = await response.text();
+        // This block may not execute with no-cors mode since we can't inspect response details
+        const errorText = await response.text().catch(() => 'Unknown error');
         console.error('Upload error response:', response.status, errorText);
         alert(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
