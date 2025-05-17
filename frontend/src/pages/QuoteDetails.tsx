@@ -26,6 +26,8 @@ interface QuoteDetailsData {
 
 const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
 const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/prod';
+// API path prefix remains '/api/quotes' since our Lambda now handles both with and without the /prod prefix
+const API_PATH_PREFIX = '/api/quotes';
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -53,16 +55,26 @@ const QuoteDetails: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'x-api-key': API_KEY
         };
-        const response = await fetch(`${API_URL}/api/quotes/${id}?brokerId=${brokerId}&employerId=${employerId}`, { headers });
+        console.log('Making request to:', `${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`);
+        
+        const response = await fetch(`${API_URL}${API_PATH_PREFIX}/${id}?brokerId=${brokerId}&employerId=${employerId}`, { 
+          headers
+        });
+        
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
           setQuote(data);
           setError(null);
         } else {
-          setError('Failed to fetch quote details');
+          const errorText = await response.text();
+          console.error('Error response:', response.status, errorText);
+          setError(`Failed to fetch quote details: ${response.status} ${response.statusText}`);
         }
       } catch (err) {
-        setError('Failed to fetch quote details');
+        console.error('Fetch error:', err);
+        setError(`Failed to fetch quote details: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setIsLoading(false);
       }
@@ -83,7 +95,9 @@ const QuoteDetails: React.FC = () => {
       const token = await getIdToken();
       const formData = new FormData();
       formData.append('file', file);
-      const url = `${API_URL}/quotes/${quote.submissionId}/documents?brokerId=${quote.brokerId}&employerId=${quote.employerId}`;
+      const url = `${API_URL}${API_PATH_PREFIX}/${quote.submissionId}/documents?brokerId=${quote.brokerId}&employerId=${quote.employerId}`;
+      console.log('Making upload request to:', url);
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -92,12 +106,17 @@ const QuoteDetails: React.FC = () => {
         } as any,
         body: formData,
       });
+      
+      console.log('Upload response status:', response.status);
+      
       if (response.ok) {
         alert('Document uploaded successfully!');
         // Refresh quote details to show new document
         window.location.reload();
       } else {
-        alert('Failed to upload document.');
+        const errorText = await response.text();
+        console.error('Upload error response:', response.status, errorText);
+        alert(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       alert('Error uploading document.');

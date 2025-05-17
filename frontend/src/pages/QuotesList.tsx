@@ -22,6 +22,8 @@ interface Quote {
 // Use exact API key that matches Lambda function
 const API_KEY = 'EOpsK0PFHivt1qB5pbGH1GHRPKzFeG27ooU4KX8f';
 const API_URL = 'https://3ein5nfb8k.execute-api.us-east-2.amazonaws.com/prod';
+// API path remains '/api/quotes' since our Lambda now handles both with and without the /prod prefix
+const API_PATH = '/api/quotes';
 
 const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -50,8 +52,21 @@ const QuotesList: React.FC = () => {
         };
         console.log('Using API key:', API_KEY);
         console.log('Request headers:', headers);
+        console.log('Making request to:', `${API_URL}${API_PATH}`);
         
-        const response = await fetch(`${API_URL}/api/quotes`, { headers });
+        const response = await fetch(`${API_URL}${API_PATH}`, { 
+          headers
+        });
+        
+        console.log('Response status:', response.status);
+        
+        // Log headers in a way that's compatible with all TypeScript targets
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+        console.log('Response headers:', responseHeaders);
+        
         if (response.ok) {
           const data = await response.json();
           setQuotes(data.quotes || []);
@@ -64,7 +79,7 @@ const QuotesList: React.FC = () => {
         }
       } catch (err) {
         console.error('Fetch error:', err);
-        setError('Failed to fetch quotes: Network error');
+        setError(`Failed to fetch quotes: ${err instanceof Error ? err.message : 'Network error'}`);
       } finally {
         setIsLoading(false);
       }
