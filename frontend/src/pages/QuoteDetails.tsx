@@ -162,7 +162,10 @@ const QuoteDetails: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Quote Details</h1>
+      <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
+        <h1 className="text-3xl font-bold mb-2">Quote Details</h1>
+        <p className="text-sky-100">View and manage quote information</p>
+      </div>
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-seafoam border-t-transparent"></div>
@@ -354,20 +357,37 @@ const QuoteDetails: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(doc.size / 1024).toFixed(1)} KB</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.lastModified).toLocaleString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-3">
+                          <div className="flex space-x-2">
                             <a
                               href={doc.downloadUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-seafoam hover:text-seafoam-600"
+                              className="bg-seafoam hover:bg-seafoam-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 flex items-center"
                             >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                              </svg>
                               View
                             </a>
                             <a
                               href={doc.downloadUrl}
-                              download={doc.filename}
-                              className="text-seafoam hover:text-seafoam-600"
+                              download
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 flex items-center"
+                              onClick={(e) => {
+                                // Force download by recreating the link and clicking it programmatically
+                                e.preventDefault();
+                                const a = document.createElement('a');
+                                a.href = doc.downloadUrl;
+                                a.download = doc.filename || 'document';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                              }}
                             >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
                               Download
                             </a>
                           </div>
