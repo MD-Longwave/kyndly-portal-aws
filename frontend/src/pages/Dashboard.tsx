@@ -292,8 +292,8 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-teal-800 to-blue-900">
       {/* Main Banner */}
-      <div className="bg-gradient-to-r from-teal-700 to-blue-900 rounded-xl m-4 p-6 shadow-md">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+      <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
+        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
       </div>
 
       <div className="p-6 space-y-6">
