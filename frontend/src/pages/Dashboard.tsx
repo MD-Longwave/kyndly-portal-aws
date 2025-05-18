@@ -136,11 +136,11 @@ const Dashboard: React.FC = () => {
             
             // Calculate average quote value (PEPM)
             const validPepmValues = quotes
-              .map(quote => parseFloat(quote.pepm))
-              .filter(pepm => !isNaN(pepm));
+              .map((quote: Quote) => parseFloat(quote.pepm))
+              .filter((pepm: number) => !isNaN(pepm));
             
             const avgQuoteValue = validPepmValues.length > 0 
-              ? Math.round(validPepmValues.reduce((sum, val) => sum + val, 0) / validPepmValues.length) 
+              ? Math.round(validPepmValues.reduce((sum: number, val: number) => sum + val, 0) / validPepmValues.length) 
               : 0;
             
             // Count quotes by status
