@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Auth } from 'aws-amplify';
 import { useAuth } from '../contexts/AuthContext';
 import { Input, Button } from '../components/ui/FormElements';
+import { exportQuoteToCSV, exportQuoteToExcel } from '../utils/exportUtils';
 
 // Quote type definition based on the actual form fields
 interface Quote {
@@ -43,6 +44,8 @@ const QuotesList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('companyName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  
+  const [showExportMenu, setShowExportMenu] = useState(false);
   
   const fetchQuotes = React.useCallback(async () => {
     setIsLoading(true);
@@ -232,6 +235,45 @@ const QuotesList: React.FC = () => {
     });
   }, [quotes, searchTerm, sortField, sortDirection]);
 
+  // Function to handle exporting all quotes to CSV
+  const handleExportAllToCsv = () => {
+    if (filteredAndSortedQuotes.length > 0) {
+      // Export each quote as a separate file
+      filteredAndSortedQuotes.forEach(quote => {
+        exportQuoteToCSV(quote, `quote-${quote.companyName}-${quote.submissionId}.csv`);
+      });
+      setShowExportMenu(false);
+    }
+  };
+
+  // Function to handle exporting all quotes to Excel
+  const handleExportAllToExcel = () => {
+    if (filteredAndSortedQuotes.length > 0) {
+      // Export each quote as a separate file
+      filteredAndSortedQuotes.forEach(quote => {
+        exportQuoteToExcel(quote, `quote-${quote.companyName}-${quote.submissionId}.xlsx`);
+      });
+      setShowExportMenu(false);
+    }
+  };
+
+  // Close the export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportMenu) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('#export-menu') && !target.closest('#export-button')) {
+          setShowExportMenu(false);
+        }
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -264,14 +306,59 @@ const QuotesList: React.FC = () => {
             />
           </div>
         </div>
-        <Link to="/quotes/new">
-          <Button variant="primary" className="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span>New Quote</span>
-          </Button>
-        </Link>
+        <div className="flex space-x-2">
+          <div className="relative">
+            <button 
+              id="export-button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition-colors duration-200 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+              Export
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {showExportMenu && (
+              <div 
+                id="export-menu"
+                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10"
+              >
+                <div className="py-1">
+                  <button
+                    onClick={handleExportAllToCsv}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={handleExportAllToExcel}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-2 text-green-600" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    Export as Excel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <Link to="/quotes/new">
+            <Button variant="primary" className="flex items-center space-x-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span>New Quote</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {error && (
