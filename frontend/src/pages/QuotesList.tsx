@@ -4,6 +4,8 @@ import { Auth } from 'aws-amplify';
 import { useAuth } from '../contexts/AuthContext';
 import { Input, Button } from '../components/ui/FormElements';
 import { exportQuoteToCSV, exportQuoteToExcel } from '../utils/exportUtils';
+import { motion } from 'framer-motion';
+import { FadeIn } from '../components/animations';
 
 // Quote type definition based on the actual form fields
 interface Quote {
@@ -265,12 +267,22 @@ const QuotesList: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-2 py-8" style={{ minWidth: '1100px' }}>
-      <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand"
+      >
         <h1 className="text-3xl font-bold mb-2">Quotes</h1>
         <p className="text-sky-100">Manage and track ICHRA quotes</p>
-      </div>
+      </motion.div>
 
-      <div className="flex justify-between items-center mb-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.2 }}
+        className="flex justify-between items-center mb-4"
+      >
         <div className="w-full max-w-md">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -289,35 +301,47 @@ const QuotesList: React.FC = () => {
         </div>
         <div className="flex space-x-2">
           <Link to="/quotes/new">
-            <Button variant="primary" className="flex items-center space-x-2">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center space-x-2 bg-seafoam hover:bg-seafoam-600 text-white px-4 py-2 rounded-md transition-colors duration-200"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <span>New Quote</span>
-            </Button>
+            </motion.button>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {error && (
-        <div className="rounded-brand bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300 mb-6">
-          <p className="flex items-start">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </p>
-          <button 
-            onClick={() => fetchQuotes()}
-            className="mt-2 px-3 py-1 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 rounded-md transition-colors duration-200"
-          >
-            Try Again
-          </button>
-        </div>
+        <FadeIn>
+          <div className="rounded-brand bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300 mb-6">
+            <p className="flex items-start">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {error}
+            </p>
+            <button 
+              onClick={() => fetchQuotes()}
+              className="mt-2 px-3 py-1 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 rounded-md transition-colors duration-200"
+            >
+              Try Again
+            </button>
+          </div>
+        </FadeIn>
       )}
 
       {/* Quotes table */}
-      <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-x-auto" style={{ minWidth: '1050px' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.2 }}
+        className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-x-auto" 
+        style={{ minWidth: '1050px' }}
+      >
         <div className="overflow-x-auto">
           <input
             type="file"
@@ -405,8 +429,14 @@ const QuotesList: React.FC = () => {
             </thead>
             <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
               {filteredAndSortedQuotes.length > 0 ? (
-                filteredAndSortedQuotes.map((quote) => (
-                <tr key={quote.s3Key} className="hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
+                filteredAndSortedQuotes.map((quote, index) => (
+                <motion.tr 
+                  key={quote.s3Key} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * index, duration: 0.3 }}
+                  className="hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       to={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
@@ -445,15 +475,19 @@ const QuotesList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex space-x-2 justify-end">
-                      <Link
-                        to={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
+                      <motion.a
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        href={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
                         className="bg-seafoam hover:bg-seafoam-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
                       >
                         View
-                      </Link>
+                      </motion.a>
                       
                       <div className="relative">
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           id={`export-button-${quote.submissionId}`}
                           onClick={() => {
                             const exportMenu = document.getElementById(`export-menu-${quote.submissionId}`);
@@ -467,11 +501,12 @@ const QuotesList: React.FC = () => {
                             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
                           Export
-                        </button>
+                        </motion.button>
                         
                         <div id={`export-menu-${quote.submissionId}`} className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10 hidden">
                           <div className="py-1">
-                            <button
+                            <motion.button
+                              whileHover={{ backgroundColor: "#f3f4f6" }}
                               onClick={() => exportQuoteToCSV(quote)}
                               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                             >
@@ -479,8 +514,9 @@ const QuotesList: React.FC = () => {
                                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                               </svg>
                               CSV
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ backgroundColor: "#f3f4f6" }}
                               onClick={() => exportQuoteToExcel(quote)}
                               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                             >
@@ -488,12 +524,14 @@ const QuotesList: React.FC = () => {
                                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                               </svg>
                               Excel
-                            </button>
+                            </motion.button>
                           </div>
                         </div>
                       </div>
                       
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         className={`${uploadingId === quote.submissionId 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-seafoam hover:bg-seafoam-700'} 
@@ -517,10 +555,10 @@ const QuotesList: React.FC = () => {
                             Upload
                           </>
                         )}
-                      </button>
+                      </motion.button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
                 ))
               ) : (
                 <tr>
@@ -542,7 +580,7 @@ const QuotesList: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

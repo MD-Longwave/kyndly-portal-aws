@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { exportQuoteToCSV, exportQuoteToExcel } from '../utils/exportUtils';
+import { motion } from 'framer-motion';
+import { FadeIn } from '../components/animations';
 
 interface DocumentInfo {
   filename: string;
@@ -197,7 +199,12 @@ const QuoteDetails: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand"
+      >
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold mb-2">Quote Details</h1>
@@ -205,7 +212,9 @@ const QuoteDetails: React.FC = () => {
           </div>
           {quote && (
             <div className="relative">
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 id="export-button"
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 className="bg-white hover:bg-gray-100 text-seafoam font-medium px-4 py-2 rounded-md text-sm transition-colors duration-200 flex items-center shadow-sm"
@@ -217,15 +226,18 @@ const QuoteDetails: React.FC = () => {
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </motion.button>
               
               {showExportMenu && (
-                <div 
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   id="export-menu"
                   className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10"
                 >
                   <div className="py-1">
-                    <button
+                    <motion.button
+                      whileHover={{ backgroundColor: "#f3f4f6" }}
                       onClick={handleExportToCsv}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                     >
@@ -233,8 +245,9 @@ const QuoteDetails: React.FC = () => {
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                       </svg>
                       Export as CSV
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ backgroundColor: "#f3f4f6" }}
                       onClick={handleExportToExcel}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                     >
@@ -242,24 +255,31 @@ const QuoteDetails: React.FC = () => {
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                       </svg>
                       Export as Excel
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-seafoam border-t-transparent"></div>
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">{error}</div>
+        <FadeIn>
+          <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">{error}</div>
+        </FadeIn>
       ) : quote ? (
         <div className="space-y-6">
           {/* Basic Quote Info Card */}
-          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.2 }}
+            className="bg-white rounded-brand shadow-brand overflow-hidden p-6"
+          >
             <h2 className="text-xl font-semibold mb-4 text-seafoam">Quote Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-4">
@@ -309,10 +329,15 @@ const QuoteDetails: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Plan & Company Details */}
-          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.2 }}
+            className="bg-white rounded-brand shadow-brand overflow-hidden p-6"
+          >
             <h2 className="text-xl font-semibold mb-4 text-seafoam">Plan Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-4">
@@ -344,10 +369,15 @@ const QuoteDetails: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Broker & Employer Info */}
-          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.2 }}
+            className="bg-white rounded-brand shadow-brand overflow-hidden p-6"
+          >
             <h2 className="text-xl font-semibold mb-4 text-seafoam">Broker & Employer</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-4">
@@ -387,10 +417,15 @@ const QuoteDetails: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Documents Section */}
-          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.2 }}
+            className="bg-white rounded-brand shadow-brand overflow-hidden p-6"
+          >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-seafoam">Documents</h2>
               <input
@@ -490,10 +525,15 @@ const QuoteDetails: React.FC = () => {
                 <p className="text-xs text-gray-400 mt-1">Click the upload button to add a document</p>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Developer Section with JSON data - can be toggled or removed */}
-          <div className="bg-white rounded-brand shadow-brand overflow-hidden p-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.2 }}
+            className="bg-white rounded-brand shadow-brand overflow-hidden p-6"
+          >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-seafoam">Developer Data</h2>
               <button 
@@ -508,7 +548,7 @@ const QuoteDetails: React.FC = () => {
                 {JSON.stringify(quote, null, 2)}
               </pre>
             </div>
-          </div>
+          </motion.div>
         </div>
       ) : null}
     </div>

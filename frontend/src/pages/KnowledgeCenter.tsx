@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIService, ChatMessage } from '../services/ai.service';
 import ChatMessageComponent from '../components/ui/ChatMessage';
+import { motion } from 'framer-motion';
+import { FadeIn, SlideIn } from '../components/animations';
 
 // Flag to control whether to use the actual API or simulated responses
 // Set to true now that we have the backend configured
@@ -196,12 +198,22 @@ const KnowledgeCenter: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)]">
-      <div className="bg-brand-gradient dark:bg-dark-gradient rounded-brand p-6 mb-6 text-white shadow-brand dark:shadow-dark">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="bg-brand-gradient dark:bg-dark-gradient rounded-brand p-6 mb-6 text-white shadow-brand dark:shadow-dark"
+      >
         <h1 className="text-3xl font-bold mb-2">ICHRA Knowledge Center</h1>
         <p className="text-sky-100">Ask questions about Individual Coverage Health Reimbursement Arrangements</p>
-      </div>
+      </motion.div>
 
-      <div className="flex-1 bg-white dark:bg-night-900 rounded-brand shadow-brand dark:shadow-dark overflow-hidden flex flex-col">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="flex-1 bg-white dark:bg-night-900 rounded-brand shadow-brand dark:shadow-dark overflow-hidden flex flex-col"
+      >
         {/* Chat header */}
         <div className="bg-gradient-to-r from-moss to-seafoam dark:from-night-800 dark:to-night-950 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -226,18 +238,20 @@ const KnowledgeCenter: React.FC = () => {
         
         {/* Error message */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 mx-4 my-2">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          <FadeIn>
+            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 mx-4 my-2">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                </div>
               </div>
             </div>
-          </div>
+          </FadeIn>
         )}
         
         {/* Chat messages or prompt cards */}
@@ -247,9 +261,19 @@ const KnowledgeCenter: React.FC = () => {
         >
           {/* Show prompt cards if no messages and showPrompts is true */}
           {messages.length === 0 && showPrompts ? (
-            <div className="py-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="py-6"
+            >
               {/* Welcome message */}
-              <div className="mb-8 text-center max-w-2xl mx-auto">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mb-8 text-center max-w-2xl mx-auto"
+              >
                 <div className="mb-4">
                   <div className="w-16 h-16 bg-gradient-to-r from-seafoam to-moss dark:from-sky dark:to-seafoam rounded-full flex items-center justify-center mx-auto shadow-md">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -261,12 +285,15 @@ const KnowledgeCenter: React.FC = () => {
                 <p className="text-night-600 dark:text-night-100 text-lg">
                   I'm your ICHRA expert. Ask me anything about Individual Coverage Health Reimbursement Arrangements.
                 </p>
-              </div>
+              </motion.div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto">
                 {PROMPT_CARDS.map((cardGroup, groupIndex) => (
-                  <div 
-                    key={groupIndex} 
+                  <motion.div 
+                    key={groupIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + groupIndex * 0.1 }}
                     className="bg-white dark:bg-night-700 p-5 rounded-brand border border-gray-200 dark:border-night-600 shadow-sm dark:shadow-dark hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center mb-3">
@@ -282,29 +309,43 @@ const KnowledgeCenter: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       {cardGroup.prompts.map((prompt, promptIndex) => (
-                        <button
+                        <motion.button
                           key={`${groupIndex}-${promptIndex}`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           className="w-full text-left p-3 rounded-md bg-gray-50 dark:bg-night-600 hover:bg-seafoam/10 dark:hover:bg-sky/10 text-sm text-night-800 dark:text-white transition-colors border border-gray-200 dark:border-night-500"
                           onClick={() => handlePromptClick(prompt)}
                         >
                           {prompt}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
               
               {!USE_ACTUAL_API && (
-                <div className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500 italic">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500 italic"
+                >
                   Note: This is a preview with simulated responses. Full AI functionality coming soon.
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           ) : (
             <div className="py-4 space-y-4">
               {messages.map((message, index) => (
-                <ChatMessageComponent key={index} message={message} />
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: message.role === "user" ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * index, duration: 0.3 }}
+                >
+                  <ChatMessageComponent message={message} />
+                </motion.div>
               ))}
               {messages.length > 0 && !USE_ACTUAL_API && (
                 <div className="text-center text-xs text-gray-400 dark:text-gray-500 italic py-1">
@@ -312,7 +353,11 @@ const KnowledgeCenter: React.FC = () => {
                 </div>
               )}
               {isLoading && (
-                <div className="flex justify-start">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-start"
+                >
                   <div className="bg-white dark:bg-night-700 rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
                     <div className="flex items-center space-x-2">
                       <div className="rounded-full bg-seafoam w-6 h-6 flex items-center justify-center">
@@ -325,7 +370,7 @@ const KnowledgeCenter: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -333,7 +378,12 @@ const KnowledgeCenter: React.FC = () => {
         </div>
         
         {/* Chat input */}
-        <div className="border-t border-gray-200 dark:border-night-700 p-4 bg-white dark:bg-night-900">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="border-t border-gray-200 dark:border-night-700 p-4 bg-white dark:bg-night-900"
+        >
           <div className="relative flex items-center bg-gray-50 dark:bg-night-800 rounded-full border border-gray-300 dark:border-night-600 focus-within:border-seafoam dark:focus-within:border-sky focus-within:ring-1 focus-within:ring-seafoam dark:focus-within:ring-sky shadow-sm">
             <textarea
               className="flex-1 resize-none bg-transparent border-0 focus:ring-0 py-3 pl-4 pr-10 min-h-[50px] max-h-32 text-night dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-l-full"
@@ -344,7 +394,9 @@ const KnowledgeCenter: React.FC = () => {
               disabled={isLoading}
               rows={1}
             />
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className={`absolute right-3 rounded-full p-2 ${
                 isLoading || !inputMessage.trim()
                   ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
@@ -357,13 +409,13 @@ const KnowledgeCenter: React.FC = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
               </svg>
-            </button>
+            </motion.button>
           </div>
           <div className="mt-2 text-xs text-center text-gray-500 dark:text-gray-400">
             Press Enter to send, Shift+Enter for new line
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };
