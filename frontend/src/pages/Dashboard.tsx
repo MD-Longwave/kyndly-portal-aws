@@ -294,6 +294,7 @@ const Dashboard: React.FC = () => {
       {/* Main Banner */}
       <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
         <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+        <p className="text-sky-100">View key metrics and monitor performance</p>
       </div>
 
       <div className="p-6 space-y-6">
