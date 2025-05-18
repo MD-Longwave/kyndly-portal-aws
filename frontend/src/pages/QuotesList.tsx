@@ -264,7 +264,7 @@ const QuotesList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 py-8">
+    <div className="space-y-6 max-w-7xl mx-auto px-2 py-8" style={{ minWidth: '1100px' }}>
       <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
         <h1 className="text-3xl font-bold mb-2">Quotes</h1>
         <p className="text-sky-100">Manage and track ICHRA quotes</p>
@@ -317,7 +317,7 @@ const QuotesList: React.FC = () => {
       )}
 
       {/* Quotes table */}
-      <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-hidden">
+      <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-x-auto" style={{ minWidth: '1050px' }}>
         <div className="overflow-x-auto">
           <input
             type="file"
@@ -461,7 +461,7 @@ const QuotesList: React.FC = () => {
                               exportMenu.classList.toggle('hidden');
                             }
                           }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 flex items-center"
+                          className="bg-seafoam hover:bg-seafoam-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 flex items-center"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -496,7 +496,7 @@ const QuotesList: React.FC = () => {
                       <button
                         className={`${uploadingId === quote.submissionId 
                           ? 'bg-gray-400 cursor-not-allowed' 
-                          : 'bg-green-600 hover:bg-green-700'} 
+                          : 'bg-seafoam hover:bg-seafoam-700'} 
                           text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 flex items-center`}
                         onClick={() => handleUploadClick(quote)}
                         disabled={uploadingId === quote.submissionId}
