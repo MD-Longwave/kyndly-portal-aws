@@ -290,7 +290,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${theme.layout.container}`}>
+    <div className="min-h-screen bg-gradient-to-r from-teal-800 to-blue-900">
       {/* Header */}
       <header className={`sticky top-0 z-50 ${theme.layout.section} border-b rounded-xl bg-gradient-to-r from-teal-500 to-forest mb-6 shadow-sm`}>
         <div className="flex items-center justify-between px-6 py-4">
