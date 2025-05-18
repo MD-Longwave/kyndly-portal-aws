@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { exportQuoteToCSV, exportQuoteToExcel } from '../utils/exportUtils';
 
 interface DocumentInfo {
   filename: string;
@@ -47,6 +48,7 @@ const QuoteDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     const fetchQuote = async () => {
@@ -160,11 +162,93 @@ const QuoteDetails: React.FC = () => {
     }
   };
 
+  // Function to handle exporting the quote to CSV
+  const handleExportToCsv = () => {
+    if (quote) {
+      exportQuoteToCSV(quote);
+      setShowExportMenu(false);
+    }
+  };
+
+  // Function to handle exporting the quote to Excel
+  const handleExportToExcel = () => {
+    if (quote) {
+      exportQuoteToExcel(quote);
+      setShowExportMenu(false);
+    }
+  };
+
+  // Close the export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportMenu) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('#export-menu') && !target.closest('#export-button')) {
+          setShowExportMenu(false);
+        }
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto px-4 py-8">
       <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
-        <h1 className="text-3xl font-bold mb-2">Quote Details</h1>
-        <p className="text-sky-100">View and manage quote information</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Quote Details</h1>
+            <p className="text-sky-100">View and manage quote information</p>
+          </div>
+          {quote && (
+            <div className="relative">
+              <button 
+                id="export-button"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="bg-white hover:bg-gray-100 text-seafoam px-4 py-2 rounded-md text-sm transition-colors duration-200 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                Export Quote
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {showExportMenu && (
+                <div 
+                  id="export-menu"
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10"
+                >
+                  <div className="py-1">
+                    <button
+                      onClick={handleExportToCsv}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                    >
+                      <svg className="h-4 w-4 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      </svg>
+                      Export as CSV
+                    </button>
+                    <button
+                      onClick={handleExportToExcel}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                    >
+                      <svg className="h-4 w-4 mr-2 text-green-600" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      </svg>
+                      Export as Excel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       {isLoading ? (
         <div className="flex justify-center items-center h-64">

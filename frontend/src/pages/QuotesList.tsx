@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Auth } from 'aws-amplify';
 import { useAuth } from '../contexts/AuthContext';
-import { Select, Button } from '../components/ui/FormElements';
+import { Input, Button } from '../components/ui/FormElements';
 
 // Quote type definition based on the actual form fields
 interface Quote {
@@ -26,10 +26,9 @@ const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
 // API path should match what we created in the REST API
 const API_PATH = '/api/quotes';
 
-interface FilterValues {
-  status: string;
-  priority: string;
-}
+// Sorting options for quotes
+type SortField = 'companyName' | 'transperraRep' | 'ichraEffectiveDate' | 'pepm' | 'status' | 'brokerName' | 'employerName';
+type SortDirection = 'asc' | 'desc';
 
 const QuotesList: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -40,13 +39,12 @@ const QuotesList: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadTarget, setUploadTarget] = useState<{quote: Quote} | null>(null);
   
-  // Filter states
-  const [filters, setFilters] = useState<FilterValues>({
-    status: 'All',
-    priority: 'All'
-  });
+  // Search and sorting states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<SortField>('companyName');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
-  const fetchQuotes = async () => {
+  const fetchQuotes = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getIdToken();
@@ -98,11 +96,11 @@ const QuotesList: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getIdToken]);
   
   useEffect(() => {
     fetchQuotes();
-  }, [getIdToken]);
+  }, [fetchQuotes]);
 
   const handleUploadClick = (quote: Quote) => {
     setUploadTarget({ quote });
@@ -167,6 +165,73 @@ const QuotesList: React.FC = () => {
     }
   };
 
+  // Handle column sort
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      // Toggle sort direction if clicking the same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new sort field and default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Get sort icon based on current sort state
+  const getSortIcon = (field: SortField) => {
+    if (field !== sortField) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
+        </svg>
+      );
+    }
+    
+    return sortDirection === 'asc' ? (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-seafoam" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+      </svg>
+    ) : (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-seafoam" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+      </svg>
+    );
+  };
+
+  // Filter and sort the quotes
+  const filteredAndSortedQuotes = useMemo(() => {
+    // First, filter by search term
+    const filtered = searchTerm
+      ? quotes.filter(quote => 
+          quote.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+          quote.brokerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.transperraRep?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.employerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.submissionId?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : quotes;
+    
+    // Then, sort the filtered results
+    return [...filtered].sort((a, b) => {
+      const aValue = a[sortField] || '';
+      const bValue = b[sortField] || '';
+      
+      // Handle numerical sorts (like PEPM)
+      if (sortField === 'pepm') {
+        const aNum = parseFloat(aValue.toString());
+        const bNum = parseFloat(bValue.toString());
+        return sortDirection === 'asc' 
+          ? aNum - bNum
+          : bNum - aNum;
+      }
+      
+      // Handle string comparisons
+      return sortDirection === 'asc'
+        ? aValue.toString().localeCompare(bValue.toString())
+        : bValue.toString().localeCompare(aValue.toString());
+    });
+  }, [quotes, searchTerm, sortField, sortDirection]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -175,26 +240,6 @@ const QuotesList: React.FC = () => {
     );
   }
 
-  // Status options for filter
-  const statusOptions = [
-    { value: '', label: 'All' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'processing', label: 'Processing' }
-  ];
-
-  // Priority options for filter
-  const priorityOptions = [
-    { value: '', label: 'All' },
-    { value: 'asap', label: 'ASAP' },
-    { value: 'earliest', label: 'Earliest Convenience' }
-  ];
-
-  // Handle filter application
-  const applyFilters = (newFilters: FilterValues) => {
-    setFilters(newFilters);
-  };
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 py-8">
       <div className="bg-brand-gradient rounded-brand p-6 mb-8 text-white shadow-brand">
@@ -202,7 +247,23 @@ const QuotesList: React.FC = () => {
         <p className="text-sky-100">Manage and track ICHRA quotes</p>
       </div>
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="w-full max-w-md">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search quotes by company, broker, rep..."
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-seafoam focus:border-transparent w-full bg-white dark:bg-night-800 dark:border-night-700 dark:text-white"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
         <Link to="/quotes/new">
           <Button variant="primary" className="flex items-center space-x-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -211,41 +272,6 @@ const QuotesList: React.FC = () => {
             <span>New Quote</span>
           </Button>
         </Link>
-      </div>
-
-      {/* Filters section */}
-      <div className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark p-6 mb-6">
-        <h2 className="text-xl font-semibold text-night dark:text-white mb-4">Filter Quotes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <Select 
-              label="Status" 
-              name="status"
-              value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
-              options={statusOptions}
-            />
-          </div>
-          <div>
-            <Select 
-              label="Priority" 
-              name="priority"
-              value={filters.priority}
-              onChange={(e) => setFilters({...filters, priority: e.target.value})}
-              options={priorityOptions}
-            />
-          </div>
-          <div className="flex items-end">
-            <Button 
-              variant="primary" 
-              type="button" 
-              onClick={() => applyFilters(filters)}
-              className="bg-seafoam hover:bg-seafoam-600 transition-colors duration-300 font-medium text-white mb-4 px-6"
-            >
-              Apply Filters
-            </Button>
-          </div>
-        </div>
       </div>
 
       {error && (
@@ -257,8 +283,8 @@ const QuotesList: React.FC = () => {
             {error}
           </p>
           <button 
-            onClick={() => window.location.reload()}
-            className="mt-2 text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+            onClick={() => fetchQuotes()}
+            className="mt-2 px-3 py-1 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 rounded-md transition-colors duration-200"
           >
             Try Again
           </button>
@@ -279,45 +305,73 @@ const QuotesList: React.FC = () => {
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('companyName')}
                 >
-                  Company
+                  <div className="flex items-center space-x-1">
+                    <span>Company</span>
+                    {getSortIcon('companyName')}
+                  </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('transperraRep')}
                 >
-                  Transperra Rep
+                  <div className="flex items-center space-x-1">
+                    <span>Transperra Rep</span>
+                    {getSortIcon('transperraRep')}
+                  </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('ichraEffectiveDate')}
                 >
-                  Effective Date
+                  <div className="flex items-center space-x-1">
+                    <span>Effective Date</span>
+                    {getSortIcon('ichraEffectiveDate')}
+                  </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('pepm')}
                 >
-                  PEPM
+                  <div className="flex items-center space-x-1">
+                    <span>PEPM</span>
+                    {getSortIcon('pepm')}
+                  </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('status')}
                 >
-                  Status
+                  <div className="flex items-center space-x-1">
+                    <span>Status</span>
+                    {getSortIcon('status')}
+                  </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('brokerName')}
                 >
-                  Broker
+                  <div className="flex items-center space-x-1">
+                    <span>Broker</span>
+                    {getSortIcon('brokerName')}
+                  </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('employerName')}
                 >
-                  Employer
+                  <div className="flex items-center space-x-1">
+                    <span>Employer</span>
+                    {getSortIcon('employerName')}
+                  </div>
                 </th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Actions</span>
@@ -325,8 +379,8 @@ const QuotesList: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-night-800 divide-y divide-gray-200 dark:divide-night-700">
-              {quotes.length > 0 ? (
-                quotes.map((quote) => (
+              {filteredAndSortedQuotes.length > 0 ? (
+                filteredAndSortedQuotes.map((quote) => (
                 <tr key={quote.s3Key} className="hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
@@ -404,13 +458,17 @@ const QuotesList: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-                    <p className="mb-2">No quotes available yet</p>
-                    <Link
-                      to="/quotes/new"
-                      className="text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400 font-medium"
-                    >
-                      Create your first quote
-                    </Link>
+                    <p className="mb-2">
+                      {searchTerm ? 'No quotes match your search criteria' : 'No quotes available yet'}
+                    </p>
+                    {!searchTerm && (
+                      <Link
+                        to="/quotes/new"
+                        className="text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400 font-medium"
+                      >
+                        Create your first quote
+                      </Link>
+                    )}
                   </td>
                 </tr>
               )}
