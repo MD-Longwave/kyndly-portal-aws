@@ -53,7 +53,7 @@ export const commonStyles = {
   card: {
     base: 'rounded-2xl shadow-lg transition-shadow duration-300',
     light: 'bg-white border border-slate-200 hover:shadow-xl',
-    dark: 'bg-slate-800 border border-slate-700 hover:shadow-xl',
+    dark: 'bg-[#042C3A] border border-[#46BC97] hover:shadow-xl',
   },
   // Button Styles
   button: {
@@ -64,14 +64,14 @@ export const commonStyles = {
     },
     secondary: {
       light: 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50',
-      dark: 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600',
+      dark: 'bg-[#042C3A] border border-[#46BC97] text-slate-200 hover:bg-[#031C25]',
     },
   },
   // Input Styles
   input: {
     base: 'rounded-lg transition-colors duration-200',
     light: 'bg-white border border-slate-200 focus:border-teal-500 focus:ring-teal-500',
-    dark: 'bg-slate-800 border border-slate-700 focus:border-teal-400 focus:ring-teal-400',
+    dark: 'bg-[#042C3A] border border-[#46BC97]/50 focus:border-[#46BC97] focus:ring-[#46BC97]',
   },
   // Typography
   typography: {
@@ -124,11 +124,11 @@ export const commonStyles = {
   layout: {
     container: {
       light: 'bg-gradient-to-br from-white to-slate-50',
-      dark: 'bg-gradient-to-br from-slate-900 to-slate-800',
+      dark: 'bg-gradient-to-br from-[#042C3A] to-[#031C25]',
     },
     section: {
       light: 'bg-white border border-slate-200',
-      dark: 'bg-slate-800 border border-slate-700',
+      dark: 'bg-[#042C3A] border border-[#46BC97]',
     },
   },
   // Animation

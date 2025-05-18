@@ -354,25 +354,15 @@ const QuoteDetails: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(doc.size / 1024).toFixed(1)} KB</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.lastModified).toLocaleString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {doc.isPdf ? (
-                            <div className="flex space-x-3">
-                              <a
-                                href={doc.downloadUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-seafoam hover:text-seafoam-600"
-                              >
-                                View
-                              </a>
-                              <a
-                                href={doc.downloadUrl}
-                                download={doc.filename}
-                                className="text-seafoam hover:text-seafoam-600"
-                              >
-                                Download
-                              </a>
-                            </div>
-                          ) : (
+                          <div className="flex space-x-3">
+                            <a
+                              href={doc.downloadUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-seafoam hover:text-seafoam-600"
+                            >
+                              View
+                            </a>
                             <a
                               href={doc.downloadUrl}
                               download={doc.filename}
@@ -380,7 +370,7 @@ const QuoteDetails: React.FC = () => {
                             >
                               Download
                             </a>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     ))}

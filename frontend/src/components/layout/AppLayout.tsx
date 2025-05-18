@@ -327,7 +327,7 @@ export function AppLayout() {
         </div>
       </div>
 
-      <div className="lg:pl-80">
+      <div className="lg:pl-72">
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-primary-100 dark:border-dark-border bg-white dark:bg-dark-surface px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"
@@ -341,7 +341,8 @@ export function AppLayout() {
           {/* Separator */}
           <div className="h-6 w-px bg-primary-200 dark:bg-dark-border lg:hidden" aria-hidden="true" />
 
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-end">
+          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+            <div className="flex-1"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               {/* Theme Toggle Button */}
               <button
@@ -357,10 +358,12 @@ export function AppLayout() {
                 )}
               </button>
 
-              {/* Profile dropdown - removed text label but kept functionality */}
+              {/* Profile dropdown with username */}
               <Menu as="div" className="relative">
                 <Menu.Button className="-m-1.5 flex items-center p-1.5">
-                  <span className="sr-only">Open user menu</span>
+                  <span className="hidden md:block mr-2 font-medium text-forest dark:text-neutral-100">
+                    {user?.name || user?.username || 'User'}
+                  </span>
                   <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-sm font-semibold text-forest dark:text-primary-100">
                     {user?.name ? user.name.charAt(0).toUpperCase() : (user?.username ? user.username.charAt(0).toUpperCase() : 'U')}
                   </div>
@@ -402,7 +405,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <main className="py-4 bg-mint dark:bg-dark-bg">
+        <main className="bg-mint dark:bg-dark-bg">
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>
