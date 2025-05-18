@@ -53,19 +53,19 @@ const StatusBadge: React.FC<{ status: string; theme: any }> = ({ status, theme }
     switch (statusLower) {
       case 'active':
       case 'approved':
-        return theme.badge.success;
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
       case 'pending':
-        return theme.badge.warning;
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300';
       case 'inactive':
       case 'rejected':
-        return theme.badge.error;
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
       default:
-        return theme.badge.info;
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
     }
   };
 
   return (
-    <span className={`${commonStyles.badge.base} ${getStatusStyles()}`}>
+    <span className={`inline-flex px-2.5 py-1 text-sm font-medium rounded-full ${getStatusStyles()}`}>
       {status || 'Unknown'}
     </span>
   );
@@ -316,11 +316,11 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className={theme.typography.caption}>Total Quotes</p>
-                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.totalQuotes}</h3>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Quotes</p>
+                <h3 className="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{dashboardData.totalQuotes}</h3>
               </div>
               <div className={`p-3 rounded-xl bg-teal-50 shadow-sm`}>
-                <DocumentTextIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+                <DocumentTextIcon className="h-7 w-7 text-teal-600" aria-hidden="true" />
               </div>
             </div>
           </motion.div>
@@ -334,11 +334,11 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className={theme.typography.caption}>Active Quotes</p>
-                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.activeQuotes}</h3>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Quotes</p>
+                <h3 className="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{dashboardData.activeQuotes}</h3>
               </div>
               <div className={`p-3 rounded-xl bg-teal-50 shadow-sm`}>
-                <DocumentTextIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+                <DocumentTextIcon className="h-7 w-7 text-teal-600" aria-hidden="true" />
               </div>
             </div>
           </motion.div>
@@ -352,11 +352,11 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className={theme.typography.caption}>Total Documents</p>
-                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.totalDocuments}</h3>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Documents</p>
+                <h3 className="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{dashboardData.totalDocuments}</h3>
               </div>
               <div className={`p-3 rounded-xl bg-teal-50 shadow-sm`}>
-                <DocumentIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+                <DocumentIcon className="h-7 w-7 text-teal-600" aria-hidden="true" />
               </div>
             </div>
           </motion.div>
@@ -370,24 +370,142 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className={theme.typography.caption}>Recent Uploads</p>
-                <h3 className={`mt-2 ${theme.typography.h2}`}>{dashboardData.recentUploads}</h3>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Recent Uploads</p>
+                <h3 className="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{dashboardData.recentUploads}</h3>
               </div>
               <div className={`p-3 rounded-xl bg-teal-50 shadow-sm`}>
-                <ArrowUpTrayIcon className="h-6 w-6 text-teal-600" aria-hidden="true" />
+                <ArrowUpTrayIcon className="h-7 w-7 text-teal-600" aria-hidden="true" />
               </div>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Recent Activity */}
+        {/* Additional Metrics (replacing Quick Actions) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className={`${theme.card} p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
         >
-          <h2 className={`${theme.typography.h2} mb-4`}>Recent Activity</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Additional Metrics</h2>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Completion Rate */}
+            <motion.div
+              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Completion Rate</p>
+                  <h3 className="mt-2 text-3xl font-bold text-slate-800 dark:text-white">
+                    {dashboardData.completionRate || 0}%
+                  </h3>
+                  <p className="text-sm font-medium text-teal-600 dark:text-teal-400">
+                    <span className="flex items-center">
+                      <ArrowUpIcon className="h-3 w-3 mr-1" /> 
+                      Quotes reaching approval
+                    </span>
+                  </p>
+                </div>
+                <div className={`p-3 rounded-xl bg-green-50 shadow-sm`}>
+                  <CheckCircleIcon className="h-7 w-7 text-green-600" aria-hidden="true" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Average Quote Value */}
+            <motion.div
+              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Average Quote Value</p>
+                  <h3 className="mt-2 text-3xl font-bold text-slate-800 dark:text-white">
+                    ${dashboardData.avgQuoteValue || 0}
+                  </h3>
+                  <p className="text-sm font-medium text-teal-600 dark:text-teal-400">
+                    <span className="flex items-center">
+                      <span>Per Employee Per Month</span>
+                    </span>
+                  </p>
+                </div>
+                <div className={`p-3 rounded-xl bg-blue-50 shadow-sm`}>
+                  <ChartBarIcon className="h-7 w-7 text-blue-600" aria-hidden="true" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Status Distribution */}
+            <motion.div
+              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
+            >
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Quotes by Status</p>
+                  <div className={`p-2 rounded-xl bg-amber-50 shadow-sm`}>
+                    <ClockIcon className="h-6 w-6 text-amber-600" aria-hidden="true" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-2">
+                  {dashboardData.statusCounts ? (
+                    Object.entries(dashboardData.statusCounts).map(([status, count]) => (
+                      <div key={status} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                        <span className="capitalize font-medium text-slate-700 dark:text-slate-300">{status}</span>
+                        <span className="font-bold text-slate-800 dark:text-white">{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-slate-500 p-2 rounded-lg bg-slate-50">No data available</div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Top Brokers */}
+            <motion.div
+              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
+            >
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Most Active Brokers</p>
+                  <div className={`p-2 rounded-xl bg-purple-50 shadow-sm`}>
+                    <DocumentPlusIcon className="h-6 w-6 text-purple-600" aria-hidden="true" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-2">
+                  {dashboardData.topBrokers && dashboardData.topBrokers.length > 0 ? (
+                    dashboardData.topBrokers.map((broker: {name: string, count: number}) => (
+                      <div key={broker.name} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{broker.name}</span>
+                        <span className="font-bold text-slate-800 dark:text-white">{broker.count} quotes</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-slate-500 p-2 rounded-lg bg-slate-50">No broker data available</div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className={`${theme.card} p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
+        >
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Recent Activity</h2>
           <div className="mt-4 space-y-4">
             {dashboardData.recentQuotes && dashboardData.recentQuotes.length > 0 ? (
               <ul className="divide-y divide-slate-200">
@@ -408,17 +526,17 @@ const Dashboard: React.FC = () => {
                         quote.status?.toLowerCase() === 'inactive' ? 'bg-gray-50' : 'bg-red-50'
                       } shadow-sm`}
                     >
-                      {quote.name || quote.companyName}
+                      <span className="font-medium">{quote.name || quote.companyName}</span>
                     </motion.div>
                     <motion.div className="flex-1">
-                      <p className={theme.typography.body}>
+                      <p className="font-medium text-slate-700 dark:text-slate-200">
                         {
                           (quote.status?.toLowerCase() === 'active' || quote.status?.toLowerCase() === 'approved') ? 'Approved' : 
                           quote.status?.toLowerCase() === 'pending' ? 'Pending' : 
                           quote.status?.toLowerCase() === 'inactive' ? 'Inactive' : 'Status Unknown'
                         }
                       </p>
-                      <p className={theme.typography.caption}>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {quote.date || quote.ichraEffectiveDate || new Date().toLocaleDateString()}
                       </p>
                     </motion.div>
@@ -433,124 +551,6 @@ const Dashboard: React.FC = () => {
                 No recent quotes found.
               </div>
             )}
-          </div>
-        </motion.div>
-
-        {/* Additional Metrics (replacing Quick Actions) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className={`${theme.card} p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
-        >
-          <h2 className={`${theme.typography.h2} mb-4`}>Additional Metrics</h2>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Completion Rate */}
-            <motion.div
-              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-              whileTap={{ scale: 0.98 }}
-              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={theme.typography.caption}>Completion Rate</p>
-                  <h3 className={`mt-2 ${theme.typography.h2}`}>
-                    {dashboardData.completionRate || 0}%
-                  </h3>
-                  <p className={`${theme.typography.caption} text-teal-600`}>
-                    <span className="flex items-center">
-                      <ArrowUpIcon className="h-3 w-3 mr-1" /> 
-                      Quotes reaching approval
-                    </span>
-                  </p>
-                </div>
-                <div className={`p-3 rounded-xl bg-green-50 shadow-sm`}>
-                  <CheckCircleIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Average Quote Value */}
-            <motion.div
-              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-              whileTap={{ scale: 0.98 }}
-              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={theme.typography.caption}>Average Quote Value</p>
-                  <h3 className={`mt-2 ${theme.typography.h2}`}>
-                    ${dashboardData.avgQuoteValue || 0}
-                  </h3>
-                  <p className={`${theme.typography.caption} text-teal-600`}>
-                    <span className="flex items-center">
-                      <span>Per Employee Per Month</span>
-                    </span>
-                  </p>
-                </div>
-                <div className={`p-3 rounded-xl bg-blue-50 shadow-sm`}>
-                  <ChartBarIcon className="h-6 w-6 text-blue-600" aria-hidden="true" />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Status Distribution */}
-            <motion.div
-              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-              whileTap={{ scale: 0.98 }}
-              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
-            >
-              <div className="flex flex-col">
-                <div className="flex justify-between items-center mb-2">
-                  <p className={theme.typography.caption}>Quotes by Status</p>
-                  <div className={`p-2 rounded-xl bg-amber-50 shadow-sm`}>
-                    <ClockIcon className="h-5 w-5 text-amber-600" aria-hidden="true" />
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mt-2">
-                  {dashboardData.statusCounts ? (
-                    Object.entries(dashboardData.statusCounts).map(([status, count]) => (
-                      <div key={status} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                        <span className="capitalize">{status}</span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-slate-500 p-2 rounded-lg bg-slate-50">No data available</div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Top Brokers */}
-            <motion.div
-              whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-              whileTap={{ scale: 0.98 }}
-              className={`${theme.card} border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
-            >
-              <div className="flex flex-col">
-                <div className="flex justify-between items-center mb-2">
-                  <p className={theme.typography.caption}>Most Active Brokers</p>
-                  <div className={`p-2 rounded-xl bg-purple-50 shadow-sm`}>
-                    <DocumentPlusIcon className="h-5 w-5 text-purple-600" aria-hidden="true" />
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mt-2">
-                  {dashboardData.topBrokers && dashboardData.topBrokers.length > 0 ? (
-                    dashboardData.topBrokers.map((broker: {name: string, count: number}) => (
-                      <div key={broker.name} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                        <span>{broker.name}</span>
-                        <span className="font-medium">{broker.count} quotes</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-slate-500 p-2 rounded-lg bg-slate-50">No broker data available</div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
           </div>
         </motion.div>
       </div>

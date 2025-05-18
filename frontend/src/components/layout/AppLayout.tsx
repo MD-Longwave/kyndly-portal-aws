@@ -203,7 +203,7 @@ export function AppLayout() {
                   </div>
                 </Transition.Child>
 
-                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest px-6 pb-4">
+                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest px-6 pb-4 shadow-lg">
                   <div className="flex h-16 items-center justify-center">
                     <Link to="/dashboard" className="p-2 rounded-md">
                       <img
@@ -268,7 +268,7 @@ export function AppLayout() {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest dark:bg-dark-surface px-6 pb-4">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest dark:bg-dark-surface px-6 pb-4 shadow-[4px_0_10px_rgba(0,0,0,0.1)]">
           <div className="flex h-16 items-center justify-center">
             <Link to="/dashboard" className="p-2 rounded-md">
               <img
@@ -403,7 +403,9 @@ export function AppLayout() {
         </div>
 
         <main className="py-4 bg-mint dark:bg-dark-bg">
-          <Outlet />
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
