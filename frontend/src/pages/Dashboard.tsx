@@ -79,7 +79,11 @@ const Dashboard: React.FC = () => {
     activeQuotes: 0,
     totalDocuments: 0,
     recentUploads: 0,
-    recentQuotes: [] as Quote[]
+    recentQuotes: [] as Quote[],
+    completionRate: 0,
+    avgQuoteValue: 0,
+    statusCounts: {} as {[key: string]: number},
+    topBrokers: [] as {name: string, count: number}[]
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +131,38 @@ const Dashboard: React.FC = () => {
               quote.status?.toLowerCase() === 'approved'
             ).length;
             
+            // Calculate completion rate
+            const completionRate = totalQuotes > 0 ? Math.round((activeQuotes / totalQuotes) * 100) : 0;
+            
+            // Calculate average quote value (PEPM)
+            const validPepmValues = quotes
+              .map(quote => parseFloat(quote.pepm))
+              .filter(pepm => !isNaN(pepm));
+            
+            const avgQuoteValue = validPepmValues.length > 0 
+              ? Math.round(validPepmValues.reduce((sum, val) => sum + val, 0) / validPepmValues.length) 
+              : 0;
+            
+            // Count quotes by status
+            const statusCounts: {[key: string]: number} = {};
+            quotes.forEach((quote: Quote) => {
+              const status = quote.status?.toLowerCase() || 'unknown';
+              statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            
+            // Find most active brokers
+            const brokerCounts: {[key: string]: number} = {};
+            quotes.forEach((quote: Quote) => {
+              if (quote.brokerName) {
+                brokerCounts[quote.brokerName] = (brokerCounts[quote.brokerName] || 0) + 1;
+              }
+            });
+            
+            const topBrokers = Object.entries(brokerCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([name, count]) => ({ name, count }));
+            
             // Count documents as the sum of documents for all quotes
             let totalDocuments = 0;
             let recentUploads = 0;
@@ -145,7 +181,11 @@ const Dashboard: React.FC = () => {
               activeQuotes,
               totalDocuments: quotes.length > 0 ? Math.floor(quotes.length * 2.5) : 0, // Estimate
               recentUploads: quotes.length > 0 ? Math.floor(quotes.length * 0.7) : 0, // Estimate
-              recentQuotes
+              recentQuotes,
+              completionRate,
+              avgQuoteValue,
+              statusCounts,
+              topBrokers
             });
             
             setError(null);
@@ -195,7 +235,15 @@ const Dashboard: React.FC = () => {
             activeQuotes: 5,
             totalDocuments: 12,
             recentUploads: 3,
-            recentQuotes: mockQuotes as unknown as Quote[]
+            recentQuotes: mockQuotes as unknown as Quote[],
+            completionRate: 75,
+            avgQuoteValue: 1000,
+            statusCounts: { active: 5, pending: 2 },
+            topBrokers: [
+              { name: 'Acme Corp', count: 5 },
+              { name: 'Globex Industries', count: 2 },
+              { name: 'Wayne Enterprises', count: 3 }
+            ]
           });
           setError(null);
         } else {
@@ -248,26 +296,6 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <h1 className={theme.typography.h1}>Dashboard</h1>
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className={`pl-10 pr-4 py-2 ${theme.input} w-64`}
-              />
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button className={`p-2 ${theme.button.secondary} rounded-full`}>
-              <BellIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white">
-                JD
-              </div>
-              <span className={theme.typography.body}>John Doe</span>
-              <ChevronDownIcon className="h-5 w-5 text-slate-400" />
-            </div>
           </div>
         </div>
       </header>
@@ -408,45 +436,121 @@ const Dashboard: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* Additional Metrics (replacing Quick Actions) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           className={`${theme.card} p-6`}
         >
-          <h2 className={theme.typography.h2}>Quick Actions</h2>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link to="/quotes/new">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2 w-full`}
-              >
-                <PlusIcon className="h-5 w-5" aria-hidden="true" />
-                <span className="text-sm font-medium">Create Quote</span>
-              </motion.button>
-            </Link>
-            
-            <Link to="/quotes">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2 w-full`}
-              >
-                <ArrowUpTrayIcon className="h-5 w-5" aria-hidden="true" />
-                <span className="text-sm font-medium">Upload Document</span>
-              </motion.button>
-            </Link>
-            
-            <motion.button
-              whileHover={{ scale: 1.02 }}
+          <h2 className={theme.typography.h2}>Additional Metrics</h2>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Completion Rate */}
+            <motion.div
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className={`${theme.button.primary} p-4 flex flex-col items-center space-y-2`}
+              className={`${theme.card} border border-slate-200 p-4`}
             >
-              <ChartBarIcon className="h-5 w-5" aria-hidden="true" />
-              <span className="text-sm font-medium">Generate Report</span>
-            </motion.button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={theme.typography.caption}>Completion Rate</p>
+                  <h3 className={`mt-2 ${theme.typography.h2}`}>
+                    {dashboardData.completionRate || 0}%
+                  </h3>
+                  <p className={`${theme.typography.caption} text-teal-600`}>
+                    <span className="flex items-center">
+                      <ArrowUpIcon className="h-3 w-3 mr-1" /> 
+                      Quotes reaching approval
+                    </span>
+                  </p>
+                </div>
+                <div className={`p-3 rounded-xl bg-green-50`}>
+                  <CheckCircleIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Average Quote Value */}
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={theme.typography.caption}>Average Quote Value</p>
+                  <h3 className={`mt-2 ${theme.typography.h2}`}>
+                    ${dashboardData.avgQuoteValue || 0}
+                  </h3>
+                  <p className={`${theme.typography.caption} text-teal-600`}>
+                    <span className="flex items-center">
+                      <span>Per Employee Per Month</span>
+                    </span>
+                  </p>
+                </div>
+                <div className={`p-3 rounded-xl bg-blue-50`}>
+                  <ChartBarIcon className="h-6 w-6 text-blue-600" aria-hidden="true" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Status Distribution */}
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4`}
+            >
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <p className={theme.typography.caption}>Quotes by Status</p>
+                  <div className={`p-2 rounded-xl bg-amber-50`}>
+                    <ClockIcon className="h-5 w-5 text-amber-600" aria-hidden="true" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-2">
+                  {dashboardData.statusCounts ? (
+                    Object.entries(dashboardData.statusCounts).map(([status, count]) => (
+                      <div key={status} className="flex justify-between items-center">
+                        <span className="capitalize">{status}</span>
+                        <span className="font-medium">{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-slate-500">No data available</div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Top Brokers */}
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className={`${theme.card} border border-slate-200 p-4`}
+            >
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <p className={theme.typography.caption}>Most Active Brokers</p>
+                  <div className={`p-2 rounded-xl bg-purple-50`}>
+                    <DocumentPlusIcon className="h-5 w-5 text-purple-600" aria-hidden="true" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-2">
+                  {dashboardData.topBrokers && dashboardData.topBrokers.length > 0 ? (
+                    dashboardData.topBrokers.map((broker: {name: string, count: number}) => (
+                      <div key={broker.name} className="flex justify-between items-center">
+                        <span>{broker.name}</span>
+                        <span className="font-medium">{broker.count} quotes</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-slate-500">No broker data available</div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>
