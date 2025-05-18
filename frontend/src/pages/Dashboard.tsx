@@ -47,7 +47,10 @@ interface Quote {
 // Status Badge Component
 const StatusBadge: React.FC<{ status: string; theme: any }> = ({ status, theme }) => {
   const getStatusStyles = () => {
-    switch (status.toLowerCase()) {
+    // Add null check for status
+    const statusLower = status?.toLowerCase() || '';
+    
+    switch (statusLower) {
       case 'active':
       case 'approved':
         return theme.badge.success;
@@ -63,7 +66,7 @@ const StatusBadge: React.FC<{ status: string; theme: any }> = ({ status, theme }
 
   return (
     <span className={`${commonStyles.badge.base} ${getStatusStyles()}`}>
-      {status}
+      {status || 'Unknown'}
     </span>
   );
 };
@@ -371,22 +374,28 @@ const Dashboard: React.FC = () => {
                     <motion.div
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`p-2 rounded-lg ${quote.status === 'Active' ? 'bg-teal-50' : quote.status === 'Pending' ? 'bg-amber-50' : quote.status === 'Inactive' ? 'bg-gray-50' : 'bg-red-50'}`}
+                      className={`p-2 rounded-lg ${
+                        (quote.status?.toLowerCase() === 'active' || quote.status?.toLowerCase() === 'approved') ? 'bg-teal-50' : 
+                        quote.status?.toLowerCase() === 'pending' ? 'bg-amber-50' : 
+                        quote.status?.toLowerCase() === 'inactive' ? 'bg-gray-50' : 'bg-red-50'
+                      }`}
                     >
                       {quote.name || quote.companyName}
                     </motion.div>
                     <motion.div className="flex-1">
                       <p className={theme.typography.body}>
-                        {quote.status === 'Active' ? 'Approved' : 
-                         quote.status === 'Pending' ? 'Pending' : 
-                         quote.status === 'Inactive' ? 'Inactive' : 'Rejected'}
+                        {
+                          (quote.status?.toLowerCase() === 'active' || quote.status?.toLowerCase() === 'approved') ? 'Approved' : 
+                          quote.status?.toLowerCase() === 'pending' ? 'Pending' : 
+                          quote.status?.toLowerCase() === 'inactive' ? 'Inactive' : 'Status Unknown'
+                        }
                       </p>
                       <p className={theme.typography.caption}>
                         {quote.date || quote.ichraEffectiveDate || new Date().toLocaleDateString()}
                       </p>
                     </motion.div>
                     <motion.div className="flex-shrink-0 flex">
-                      <StatusBadge status={quote.status} theme={theme} />
+                      <StatusBadge status={quote.status || ''} theme={theme} />
                     </motion.div>
                   </motion.li>
                 ))}
