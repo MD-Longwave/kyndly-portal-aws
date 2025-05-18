@@ -475,14 +475,17 @@ const QuotesList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex space-x-2 justify-end">
-                      <motion.a
+                      <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        href={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
-                        className="bg-seafoam hover:bg-seafoam-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
                       >
-                        View
-                      </motion.a>
+                        <Link
+                          to={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
+                          className="bg-seafoam hover:bg-seafoam-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 inline-block"
+                        >
+                          View
+                        </Link>
+                      </motion.div>
                       
                       <div className="relative">
                         <motion.button
