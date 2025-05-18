@@ -356,27 +356,14 @@ export function AppLayout() {
                   <SunIcon className="h-5 w-5" />
                 )}
               </button>
-              
-              <button
-                type="button"
-                className="-m-2.5 p-2.5 text-forest hover:text-primary-700 dark:text-neutral-300"
-              >
-                <span className="sr-only">View notifications</span>
-                <BellIcon className="h-6 w-6" aria-hidden="true" />
-              </button>
 
-              {/* Profile dropdown */}
+              {/* Profile dropdown - removed text label but kept functionality */}
               <Menu as="div" className="relative">
                 <Menu.Button className="-m-1.5 flex items-center p-1.5">
                   <span className="sr-only">Open user menu</span>
                   <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-sm font-semibold text-forest dark:text-primary-100">
                     {user?.name ? user.name.charAt(0).toUpperCase() : (user?.username ? user.username.charAt(0).toUpperCase() : 'U')}
                   </div>
-                  <span className="hidden lg:flex lg:items-center">
-                    <span className="ml-4 text-sm font-semibold leading-6 text-forest dark:text-neutral-200" aria-hidden="true">
-                      {user?.name || user?.username || 'User'}
-                    </span>
-                  </span>
                 </Menu.Button>
                 <Transition
                   as={Fragment}
