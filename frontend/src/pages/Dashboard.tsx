@@ -292,10 +292,10 @@ const Dashboard: React.FC = () => {
   return (
     <div className={`min-h-screen ${theme.layout.container}`}>
       {/* Header */}
-      <header className={`sticky top-0 z-50 ${theme.layout.section} border-b`}>
+      <header className={`sticky top-0 z-50 ${theme.layout.section} border-b rounded-xl bg-gradient-to-r from-teal-500 to-forest mb-6 shadow-sm`}>
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
-            <h1 className={theme.typography.h1}>Dashboard</h1>
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
           </div>
         </div>
       </header>
