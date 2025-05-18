@@ -268,7 +268,7 @@ export function AppLayout() {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest dark:bg-dark-surface px-6 pb-4 shadow-[4px_0_10px_rgba(0,0,0,0.1)]">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest dark:bg-dark-surface px-6 pb-4 shadow-[6px_0_15px_rgba(0,0,0,0.15)]">
           <div className="flex h-16 items-center justify-center">
             <Link to="/dashboard" className="p-2 rounded-md">
               <img
@@ -327,7 +327,7 @@ export function AppLayout() {
         </div>
       </div>
 
-      <div className="lg:pl-72">
+      <div className="lg:pl-80">
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-primary-100 dark:border-dark-border bg-white dark:bg-dark-surface px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"

@@ -291,14 +291,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-teal-800 to-blue-900">
-      {/* Header */}
-      <header className={`sticky top-0 z-50 ${theme.layout.section} border-b rounded-xl bg-gradient-to-r from-teal-500 to-forest mb-6 shadow-sm`}>
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          </div>
-        </div>
-      </header>
+      {/* Main Banner */}
+      <div className="bg-gradient-to-r from-teal-700 to-blue-900 rounded-xl m-4 p-6 shadow-md">
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+      </div>
 
       <div className="p-6 space-y-6">
         {/* Stats Overview */}
