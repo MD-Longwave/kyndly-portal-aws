@@ -163,21 +163,35 @@ const DocumentsList: React.FC = () => {
       }
       
       console.log(`Fetching documents for quote ${quote.submissionId}`);
-      const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
+      
+      // Fetch from the documents subfolder only
+      await fetchFromPath(`${API_URL}/api/quotes/${quote.submissionId}/documents/documents`, headers, allDocuments, quote);
+      
+    } catch (err) {
+      console.warn(`Failed to fetch documents for quote ${quote?.submissionId}:`, err);
+      // Continue with other quotes
+    }
+  };
+  
+  // Helper function to fetch documents from a specific path
+  const fetchFromPath = async (url: string, headers: HeadersInit, allDocuments: Document[], quote: any) => {
+    try {
+      console.log(`Trying to fetch documents from path: ${url}`);
+      const docsResponse = await fetch(url, { headers });
       
       if (docsResponse.status === 404) {
-        console.log(`No documents found for quote ${quote.submissionId}`);
-        return; // Silently continue, this is an expected case for quotes without documents
+        console.log(`No documents found at ${url}`);
+        return; // Silently continue, this is an expected case for paths without documents
       }
       
       if (!docsResponse.ok) {
-        console.warn(`Error fetching documents for quote ${quote.submissionId}: ${docsResponse.status} ${docsResponse.statusText}`);
+        console.warn(`Error fetching documents from ${url}: ${docsResponse.status} ${docsResponse.statusText}`);
         return;
       }
       
       const docsData = await docsResponse.json();
       
-      console.log(`Documents response for ${quote.submissionId}:`, docsData);
+      console.log(`Documents response from ${url}:`, docsData);
       
       // Handle different response formats
       if (!docsData) {
@@ -188,12 +202,34 @@ const DocumentsList: React.FC = () => {
       if (Array.isArray(docsData)) {
         console.log('Documents data is an array with length:', docsData.length);
         if (docsData.length > 0) {
-          allDocuments.push(...docsData);
+          const processedDocs = docsData.map((doc: any) => {
+            // Ensure each document has the submission ID
+            if (!doc.submissionId && quote?.submissionId) {
+              doc.submissionId = quote.submissionId;
+            }
+            // Ensure each document has company name if available
+            if (!doc.companyName && quote?.companyName) {
+              doc.companyName = quote.companyName;
+            }
+            return doc;
+          });
+          allDocuments.push(...processedDocs);
         }
       } else if (docsData.documents && Array.isArray(docsData.documents)) {
         console.log('Documents data has documents array with length:', docsData.documents.length);
         if (docsData.documents.length > 0) {
-          allDocuments.push(...docsData.documents);
+          const processedDocs = docsData.documents.map((doc: any) => {
+            // Ensure each document has the submission ID
+            if (!doc.submissionId && quote?.submissionId) {
+              doc.submissionId = quote.submissionId;
+            }
+            // Ensure each document has company name if available
+            if (!doc.companyName && quote?.companyName) {
+              doc.companyName = quote.companyName;
+            }
+            return doc;
+          });
+          allDocuments.push(...processedDocs);
         }
       } else if (typeof docsData === 'object') {
         console.log('Documents data is a single object');
@@ -203,12 +239,31 @@ const DocumentsList: React.FC = () => {
           console.log('Found array in documents response:', possibleArrays[0]);
           const documentsArray = possibleArrays[0] as Document[];
           if (documentsArray.length > 0) {
-            allDocuments.push(...documentsArray);
+            const processedDocs = documentsArray.map((doc: any) => {
+              // Ensure each document has the submission ID
+              if (!doc.submissionId && quote?.submissionId) {
+                doc.submissionId = quote.submissionId;
+              }
+              // Ensure each document has company name if available
+              if (!doc.companyName && quote?.companyName) {
+                doc.companyName = quote.companyName;
+              }
+              return doc;
+            });
+            allDocuments.push(...processedDocs);
           }
         } else {
           // Check if it's a valid document object with required fields
           if (docsData.documentId) {
             // If no arrays found, treat as a single document
+            // Ensure the document has the submission ID
+            if (!docsData.submissionId && quote?.submissionId) {
+              docsData.submissionId = quote.submissionId;
+            }
+            // Ensure the document has company name if available
+            if (!docsData.companyName && quote?.companyName) {
+              docsData.companyName = quote.companyName;
+            }
             allDocuments.push(docsData as Document);
           } else {
             console.warn(`Response doesn't contain valid document data:`, docsData);
@@ -218,8 +273,7 @@ const DocumentsList: React.FC = () => {
         console.warn(`Unhandled documents response type: ${typeof docsData}`);
       }
     } catch (err) {
-      console.warn(`Failed to fetch documents for quote ${quote?.submissionId}:`, err);
-      // Continue with other quotes
+      console.warn(`Failed to fetch documents from ${url}:`, err);
     }
   };
   
