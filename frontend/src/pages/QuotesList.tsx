@@ -65,16 +65,32 @@ const QuotesList: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Extract the actual submissionId without the "submission-" prefix if it exists
-      const submissionId = quote.submissionId.startsWith('submission-') ? 
-        quote.submissionId.substring('submission-'.length) : 
-        quote.submissionId;
+      // We need to preserve the submission ID format exactly as it is in the S3 bucket
+      // The format is "submission-1747404164592" - keep it with the "submission-" prefix
+      const submissionId = quote.submissionId;
       
-      // Clean up brokerId and employerId to remove any prefixes
-      const brokerId = quote.brokerId.replace(/^Broker_|^broker_|^broker-/, '');
-      const employerId = quote.employerId.replace(/^Employer_|^employer_|^employer-/, '');
+      // Keep the broker and employer IDs exactly as they are in the S3 bucket
+      // From the screenshots they should be like "Broker_tpa-a" and "employer_a"
+      const brokerId = quote.brokerId;
+      const employerId = quote.employerId;
       
-      const url = `${API_URL}${API_PATH}/${submissionId}?brokerId=${brokerId}&employerId=${employerId}`;
+      console.log('Using exact S3 path structure data:', {
+        submissionId: submissionId,
+        brokerId: brokerId,
+        employerId: employerId
+      });
+      
+      // Log expected S3 path for debugging
+      console.log('Expected S3 path (for reference):', 
+        `submissions/tpa_a/${brokerId}/${employerId}/${submissionId}/submission-data.json`);
+      
+      // The URL needs to match the expected Lambda path format
+      // We need to send the submission ID in the correct format for the Lambda function
+      // Looking at the S3 path, we'll extract the numeric part from "submission-1747404164592"
+      const numericId = submissionId.replace('submission-', '');
+      const url = `${API_URL}${API_PATH}/${numericId}?brokerId=${brokerId}&employerId=${employerId}`;
+      
+      console.log('Using numeric ID in API URL:', numericId);
       
       // Create the request body as a plain object first
       const requestData = { status: newStatus };
