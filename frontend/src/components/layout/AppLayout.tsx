@@ -17,15 +17,59 @@ import kyndlyLogo from '../../assets/images/Kyndly-Temp-web-logo-blue.png';
 import kyndlyLogoWhite from '../../assets/images/Kyndly-Temp-web-logo-white.png';
 import { featureAccess } from '../../config/accessConfig';
 
+// Define animation keyframes for AI badge
+const aiAnimationStyles = `
+  @keyframes pulse-glow {
+    0% {
+      box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 6px 3px rgba(124, 58, 237, 0.4);
+      transform: scale(1.03);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes sparkle {
+    0% {
+      opacity: 0.8;
+      transform: rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: rotate(5deg);
+    }
+    100% {
+      opacity: 0.8;
+      transform: rotate(0deg);
+    }
+  }
+  
+  .ai-badge {
+    animation: pulse-glow 2.5s infinite ease-in-out;
+    position: relative;
+  }
+  
+  .ai-sparkle {
+    animation: sparkle 1.5s infinite ease-in-out;
+    transform-origin: center;
+    display: inline-block;
+  }
+`;
+
 // Navigation links for the sidebar
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon, isExternal: false },
   { name: 'Quotes', href: '/quotes', icon: QuotesIcon, isExternal: false },
   { name: 'Sold Cases', href: '/sold-cases', icon: SoldCasesIcon, isExternal: false },
   { name: 'Enrollments', href: '/enrollments', icon: EnrollmentsIcon, isExternal: false },
-  { name: 'Kynd Choice', href: 'https://ichra.kyndchoice.com/clients?locale=en', icon: KyndChoiceIcon, isExternal: true },
-  { name: 'Knowledge Center', href: '/knowledge-center', icon: KnowledgeCenterIcon, isExternal: false },
   { name: 'Documents', href: '/documents', icon: DocumentsIcon, isExternal: false },
+  { name: 'Kynd Choice', href: 'https://ichra.kyndchoice.com/clients?locale=en', icon: KyndChoiceIcon, isExternal: true },
+  { name: 'Knowledge Center', href: '/knowledge-center', icon: KnowledgeCenterIcon, isExternal: false, aiPowered: true },
   { name: 'Admin Panel', href: '/admin-panel', icon: Cog6ToothIcon, isExternal: false, className: 'admin-nav-item' },
 ];
 
@@ -160,6 +204,9 @@ export function AppLayout() {
   
   return (
     <div className="min-h-screen bg-mint dark:bg-dark-bg">
+      {/* Inject animation styles */}
+      <style dangerouslySetInnerHTML={{ __html: aiAnimationStyles }} />
+
       {/* Mobile sidebar */}
       <Transition.Root show={sidebarOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
@@ -242,6 +289,14 @@ export function AppLayout() {
                                   >
                                     <item.icon aria-hidden="true" />
                                     {item.name}
+                                    {item.aiPowered && (
+                                      <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                                        </svg>
+                                        AI
+                                      </span>
+                                    )}
                                   </a>
                                 ) : (
                                   <Link
@@ -250,6 +305,14 @@ export function AppLayout() {
                                   >
                                     <item.icon aria-hidden="true" />
                                     {item.name}
+                                    {item.aiPowered && (
+                                      <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                                        </svg>
+                                        AI
+                                      </span>
+                                    )}
                                   </Link>
                                 )}
                               </li>
@@ -307,6 +370,14 @@ export function AppLayout() {
                           >
                             <item.icon aria-hidden="true" />
                             {item.name}
+                            {item.aiPowered && (
+                              <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                                </svg>
+                                AI
+                              </span>
+                            )}
                           </a>
                         ) : (
                           <Link
@@ -315,6 +386,14 @@ export function AppLayout() {
                           >
                             <item.icon aria-hidden="true" />
                             {item.name}
+                            {item.aiPowered && (
+                              <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                                </svg>
+                                AI
+                              </span>
+                            )}
                           </Link>
                         )}
                       </li>
