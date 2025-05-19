@@ -582,25 +582,14 @@ const DocumentsList: React.FC = () => {
     return Array.from(typesSet).sort();
   };
   
-  // Filter document groups based on search and filters
+  // Filter document groups based on search only
   const filteredGroups = documentGroups.filter(group => {
-    // If no search term or type filter, include all groups
-    if (!searchTerm && !selectedType) return true;
+    // If no search term, include all groups
+    if (!searchTerm) return true;
     
     // Check if the group matches the search term
-    const matchesSearch = !searchTerm || 
-      (group.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return (group.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (group.submissionId || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Check if any document in the group matches the type filter
-    const matchesType = !selectedType || 
-      group.documents.some(doc => {
-        const docType = (doc.type || 'unknown').toString().toLowerCase();
-        const filterType = selectedType.toLowerCase();
-        return docType === filterType;
-      });
-    
-    return matchesSearch && matchesType;
   });
 
   if (isLoading) {
@@ -626,15 +615,15 @@ const DocumentsList: React.FC = () => {
         <p className="text-sky-100">Manage and access documents for your ICHRA quotes</p>
       </motion.div>
       
-      {/* Search and filters */}
+      {/* Search */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.2 }}
         className="bg-white dark:bg-night-800 p-4 shadow rounded-brand mb-6"
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-4">
+          <div>
             <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
             <div className="relative rounded-md shadow-sm">
               <input
@@ -652,88 +641,6 @@ const DocumentsList: React.FC = () => {
                 </svg>
               </div>
             </div>
-          </div>
-          
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Document Type</label>
-            <select
-              id="type"
-              name="type"
-              className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-seafoam focus:border-transparent bg-white dark:bg-night-800 dark:border-night-700 dark:text-white"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {availableDocumentTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </motion.div>
-      
-      {/* Upload controls */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.2 }}
-        className="bg-white dark:bg-night-800 p-4 shadow rounded-brand mb-6"
-      >
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="w-full md:w-auto flex-grow max-w-xs">
-            <label htmlFor="submission-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Upload Document to Quote
-            </label>
-            <select
-              id="submission-select"
-              className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-seafoam focus:border-transparent bg-white dark:bg-night-800 dark:border-night-700 dark:text-white"
-              value={selectedSubmission}
-              onChange={(e) => setSelectedSubmission(e.target.value)}
-            >
-              <option value="">Select a Quote</option>
-              {documentGroups.map(group => (
-                <option key={group.submissionId} value={group.submissionId}>
-                  {group.companyName} ({group.submissionId})
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={handleFileChange}
-            />
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleUploadClick}
-              disabled={uploadLoading || !selectedSubmission}
-              className={`flex items-center space-x-2 ${
-                uploadLoading || !selectedSubmission
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-seafoam hover:bg-seafoam-600'
-              } text-white px-4 py-2 rounded-md transition-colors duration-200`}
-            >
-              {uploadLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Upload Document</span>
-                </>
-              )}
-            </motion.button>
           </div>
         </div>
       </motion.div>
@@ -865,24 +772,17 @@ const DocumentsList: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-            {searchTerm || selectedType ? 'No documents match your search' : error ? 'Error loading documents' : 'No documents found'}
+            {searchTerm ? 'No documents match your search' : error ? 'Error loading documents' : 'No documents found'}
           </h3>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {searchTerm || selectedType 
-              ? 'Try adjusting your search criteria or clear filters to see all documents.'
-              : error
-              ? error
-              : 'Documents may not be available for your quotes yet. Upload your first document by selecting a quote and clicking the upload button.'}
+            {searchTerm ? 'Try adjusting your search criteria or clear filters to see all documents.' : error ? error : 'Documents may not be available for your quotes yet. Upload your first document by selecting a quote and clicking the upload button.'}
           </p>
-          {(searchTerm || selectedType) && (
+          {searchTerm && (
             <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedType('');
-              }}
+              onClick={() => setSearchTerm('')}
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-seafoam hover:bg-seafoam-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-seafoam-500"
             >
-              Clear Filters
+              Clear Search
             </button>
           )}
           {error && (
