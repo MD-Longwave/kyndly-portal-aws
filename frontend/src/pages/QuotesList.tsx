@@ -76,10 +76,15 @@ const QuotesList: React.FC = () => {
       
       const url = `${API_URL}${API_PATH}/${submissionId}?brokerId=${brokerId}&employerId=${employerId}`;
       
-      // Create the request body - make sure it's properly formatted
-      const requestBody = JSON.stringify({ status: newStatus });
+      // Create the request body as a plain object first
+      const requestData = { status: newStatus };
+      // Then stringify it for the request
+      const requestBody = JSON.stringify(requestData);
+      
       console.log('Making status update request to:', url);
-      console.log('Request body:', requestBody);
+      console.log('Request headers:', headers);
+      console.log('Request body (object):', requestData);
+      console.log('Request body (JSON string):', requestBody);
       
       const response = await fetch(url, {
         method: 'PUT',
@@ -89,16 +94,27 @@ const QuotesList: React.FC = () => {
         credentials: 'include'
       });
       
+      // Log the response for debugging
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         // Update the quote status in the local state
         setQuotes(quotes.map(q => 
           q.submissionId === quote.submissionId ? { ...q, status: newStatus } : q
         ));
+        console.log('Status successfully updated to:', newStatus);
       } else {
-        const errorText = await response.text();
-        console.error('Status update error:', response.status, errorText);
+        // Try to get the error text from the response
+        let errorText = '';
+        try {
+          errorText = await response.text();
+          console.error('Status update error response:', errorText);
+        } catch (textError) {
+          console.error('Could not read error response text:', textError);
+        }
+        
+        console.error('Status update error:', response.status, response.statusText);
         alert(`Failed to update status: ${response.status} ${response.statusText}`);
-        // Rollback UI to original status
       }
     } catch (err) {
       console.error('Error updating status:', err);
