@@ -21,6 +21,8 @@ interface Document {
   employerId: string;
   uploadedAt: string;
   uploadedBy: string;
+  downloadUrl?: string;
+  filename?: string;
 }
 
 // Type for document groups (by quote)
@@ -265,9 +267,11 @@ const DocumentsList: React.FC = () => {
               submissionId: doc.submissionId || quote?.submissionId || '',
               companyName: doc.companyName || quote?.companyName || '',
               documentId: doc.documentId || doc.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
-              name: doc.name || 'Unnamed Document',
-              type: (doc.type || 'unknown').toString(),
-              size: doc.size || '0 KB'
+              name: doc.filename || doc.name || 'Unnamed Document',
+              filename: doc.filename || doc.name || 'Unnamed Document',
+              type: (doc.type || getFileTypeFromName(doc.filename || doc.name || '')).toString(),
+              size: doc.size || '0 KB',
+              downloadUrl: doc.downloadUrl || doc.url || '',
             };
           });
           allDocuments.push(...processedDocs);
@@ -282,9 +286,11 @@ const DocumentsList: React.FC = () => {
               submissionId: doc.submissionId || quote?.submissionId || '',
               companyName: doc.companyName || quote?.companyName || '',
               documentId: doc.documentId || doc.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
-              name: doc.name || 'Unnamed Document',
-              type: (doc.type || 'unknown').toString(),
-              size: doc.size || '0 KB'
+              name: doc.filename || doc.name || 'Unnamed Document',
+              filename: doc.filename || doc.name || 'Unnamed Document',
+              type: (doc.type || getFileTypeFromName(doc.filename || doc.name || '')).toString(),
+              size: doc.size || '0 KB',
+              downloadUrl: doc.downloadUrl || doc.url || '',
             };
           });
           allDocuments.push(...processedDocs);
@@ -304,9 +310,11 @@ const DocumentsList: React.FC = () => {
                 submissionId: doc.submissionId || quote?.submissionId || '',
                 companyName: doc.companyName || quote?.companyName || '',
                 documentId: doc.documentId || doc.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
-                name: doc.name || 'Unnamed Document',
-                type: (doc.type || 'unknown').toString(),
-                size: doc.size || '0 KB'
+                name: doc.filename || doc.name || 'Unnamed Document',
+                filename: doc.filename || doc.name || 'Unnamed Document',
+                type: (doc.type || getFileTypeFromName(doc.filename || doc.name || '')).toString(),
+                size: doc.size || '0 KB',
+                downloadUrl: doc.downloadUrl || doc.url || '',
               };
             });
             allDocuments.push(...processedDocs);
@@ -320,9 +328,11 @@ const DocumentsList: React.FC = () => {
               submissionId: docsData.submissionId || quote?.submissionId || '',
               companyName: docsData.companyName || quote?.companyName || '',
               documentId: docsData.documentId || docsData.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
-              name: docsData.name || 'Unnamed Document',
-              type: (docsData.type || 'unknown').toString(),
-              size: docsData.size || '0 KB'
+              name: docsData.filename || docsData.name || 'Unnamed Document',
+              filename: docsData.filename || docsData.name || 'Unnamed Document',
+              type: (docsData.type || getFileTypeFromName(docsData.filename || docsData.name || '')).toString(),
+              size: docsData.size || '0 KB',
+              downloadUrl: docsData.downloadUrl || docsData.url || '',
             };
             allDocuments.push(processedDoc as Document);
           } else {
@@ -334,6 +344,32 @@ const DocumentsList: React.FC = () => {
       }
     } catch (err) {
       console.warn(`Failed to fetch documents from ${url}:`, err);
+    }
+  };
+  
+  // Helper function to determine file type from filename
+  const getFileTypeFromName = (filename: string): string => {
+    if (!filename) return 'unknown';
+    
+    const extension = filename.split('.').pop()?.toLowerCase() || '';
+    
+    switch (extension) {
+      case 'pdf':
+        return 'PDF';
+      case 'doc':
+      case 'docx':
+        return 'Word';
+      case 'xls':
+      case 'xlsx':
+      case 'csv':
+        return 'Excel';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return 'Image';
+      default:
+        return extension.toUpperCase() || 'Unknown';
     }
   };
   
@@ -441,6 +477,12 @@ const DocumentsList: React.FC = () => {
   // Handle document download
   const handleDownload = async (document: Document) => {
     try {
+      if (document.downloadUrl) {
+        // If we already have a download URL, use it directly
+        window.open(document.downloadUrl, '_blank');
+        return;
+      }
+      
       const token = await getIdToken();
       
       const headers: HeadersInit = {
@@ -482,7 +524,7 @@ const DocumentsList: React.FC = () => {
       const blobUrl = window.URL.createObjectURL(blob);
       const a = window.document.createElement('a');
       a.href = blobUrl;
-      a.download = document.name;
+      a.download = document.name || document.filename || 'document';
       window.document.body.appendChild(a);
       a.click();
       window.document.body.removeChild(a);
@@ -491,6 +533,27 @@ const DocumentsList: React.FC = () => {
     } catch (err) {
       console.error('Error downloading document:', err);
       alert('Error downloading document. ' + (err instanceof Error ? err.message : ''));
+    }
+  };
+  
+  // Handle document view
+  const handleView = (document: Document) => {
+    try {
+      if (document.downloadUrl) {
+        window.open(document.downloadUrl, '_blank');
+        return;
+      }
+      
+      // If no direct download URL, use same path as download but open in new tab
+      const viewUrl = `${API_URL}/api/quotes/${document.submissionId}/documents/download/${document.documentId}`;
+      if (document.brokerId && document.employerId) {
+        window.open(`${viewUrl}?brokerId=${document.brokerId}&employerId=${document.employerId}`, '_blank');
+      } else {
+        window.open(viewUrl, '_blank');
+      }
+    } catch (err) {
+      console.error('Error viewing document:', err);
+      alert('Error viewing document. ' + (err instanceof Error ? err.message : ''));
     }
   };
   
@@ -729,7 +792,7 @@ const DocumentsList: React.FC = () => {
                         <FileIcon type={document.type || 'unknown'} />
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {document.name || 'Unnamed Document'}
+                            {document.name || document.filename || 'Unnamed Document'}
                           </p>
                           <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-2 mt-1">
                             <span>{document.type || 'Unknown Type'}</span>
@@ -741,17 +804,32 @@ const DocumentsList: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex">
+                      <div className="flex space-x-2">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleView(document)}
+                          className="text-seafoam hover:bg-seafoam/10 p-2 rounded-md transition-colors duration-200 flex items-center"
+                          title="View document"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          </svg>
+                          <span className="ml-1 text-sm hidden sm:inline">View</span>
+                        </motion.button>
+                        
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleDownload(document)}
-                          className="text-seafoam hover:bg-seafoam/10 p-2 rounded-full transition-colors duration-200"
+                          className="text-seafoam hover:bg-seafoam/10 p-2 rounded-md transition-colors duration-200 flex items-center"
                           title="Download document"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
+                          <span className="ml-1 text-sm hidden sm:inline">Download</span>
                         </motion.button>
                       </div>
                     </div>
