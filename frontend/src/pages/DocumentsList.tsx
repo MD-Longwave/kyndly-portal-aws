@@ -36,7 +36,10 @@ interface DocumentGroup {
 const FileIcon = ({ type }: { type: string }) => {
   // Different styles based on document type
   const getIconColor = () => {
-    switch (type.toLowerCase()) {
+    // Ensure type is a string and has a value before calling toLowerCase
+    const fileType = (type || 'unknown').toLowerCase();
+    
+    switch (fileType) {
       case 'pdf':
         return 'text-red-500';
       case 'excel':
@@ -504,12 +507,16 @@ const DocumentsList: React.FC = () => {
     
     // Check if the group matches the search term
     const matchesSearch = !searchTerm || 
-      group.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.submissionId.toLowerCase().includes(searchTerm.toLowerCase());
+      (group.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (group.submissionId || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     // Check if any document in the group matches the type filter
     const matchesType = !selectedType || 
-      group.documents.some(doc => doc.type.toLowerCase() === selectedType.toLowerCase());
+      group.documents.some(doc => {
+        const docType = (doc.type || 'unknown').toString().toLowerCase();
+        const filterType = selectedType.toLowerCase();
+        return docType === filterType;
+      });
     
     return matchesSearch && matchesType;
   });
@@ -716,20 +723,20 @@ const DocumentsList: React.FC = () => {
               
               <ul className="divide-y divide-gray-200 dark:divide-night-700">
                 {group.documents.map((document) => (
-                  <li key={document.documentId} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
+                  <li key={document.documentId || `doc-${Math.random()}`} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <FileIcon type={document.type} />
+                        <FileIcon type={document.type || 'unknown'} />
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {document.name}
+                            {document.name || 'Unnamed Document'}
                           </p>
                           <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-2 mt-1">
-                            <span>{document.type}</span>
+                            <span>{document.type || 'Unknown Type'}</span>
                             <span>•</span>
-                            <span>{document.size}</span>
+                            <span>{document.size || 'Unknown Size'}</span>
                             <span>•</span>
-                            <span>Uploaded {new Date(document.uploadedAt).toLocaleDateString()}</span>
+                            <span>Uploaded {document.uploadedAt ? new Date(document.uploadedAt).toLocaleDateString() : 'Unknown Date'}</span>
                           </div>
                         </div>
                       </div>
