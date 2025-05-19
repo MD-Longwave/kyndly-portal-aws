@@ -98,6 +98,11 @@ const DocumentsList: React.FC = () => {
       const quotesResponse = await fetch(`${API_URL}/api/quotes`, { headers });
       
       if (!quotesResponse.ok) {
+        if (quotesResponse.status === 404) {
+          setError('No quotes found. Please create a quote first before attempting to view documents.');
+          setIsLoading(false);
+          return;
+        }
         throw new Error(`Failed to fetch quotes: ${quotesResponse.status} ${quotesResponse.statusText}`);
       }
       
@@ -159,6 +164,11 @@ const DocumentsList: React.FC = () => {
       
       console.log(`Fetching documents for quote ${quote.submissionId}`);
       const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
+      
+      if (docsResponse.status === 404) {
+        console.log(`No documents found for quote ${quote.submissionId}`);
+        return; // Silently continue, this is an expected case for quotes without documents
+      }
       
       if (!docsResponse.ok) {
         console.warn(`Error fetching documents for quote ${quote.submissionId}: ${docsResponse.status} ${docsResponse.statusText}`);
@@ -622,12 +632,14 @@ const DocumentsList: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-            {searchTerm || selectedType ? 'No documents match your search' : 'No documents found'}
+            {searchTerm || selectedType ? 'No documents match your search' : error ? 'Error loading documents' : 'No documents found'}
           </h3>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {searchTerm || selectedType 
               ? 'Try adjusting your search criteria or clear filters to see all documents.'
-              : 'Upload your first document by selecting a quote and clicking the upload button.'}
+              : error
+              ? error
+              : 'Documents may not be available for your quotes yet. Upload your first document by selecting a quote and clicking the upload button.'}
           </p>
           {(searchTerm || selectedType) && (
             <button
@@ -638,6 +650,14 @@ const DocumentsList: React.FC = () => {
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-seafoam hover:bg-seafoam-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-seafoam-500"
             >
               Clear Filters
+            </button>
+          )}
+          {error && (
+            <button
+              onClick={() => fetchDocuments()}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-seafoam hover:bg-seafoam-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-seafoam-500"
+            >
+              Try Again
             </button>
           )}
         </div>
