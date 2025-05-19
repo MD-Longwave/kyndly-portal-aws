@@ -10,12 +10,16 @@ import {
   SunIcon,
   MoonIcon
 } from '@heroicons/react/24/outline';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import kyndlyLogo from '../../assets/images/Kyndly-Temp-web-logo-blue.png';
 import kyndlyLogoWhite from '../../assets/images/Kyndly-Temp-web-logo-white.png';
 import { featureAccess } from '../../config/accessConfig';
+
+// Use a hard-coded version instead
+// Add this as a constant near the top of the file
+const APP_VERSION = '1.0.0';
 
 // Define animation keyframes for AI badge
 const aiAnimationStyles = `
@@ -49,6 +53,18 @@ const aiAnimationStyles = `
     }
   }
   
+  @keyframes float-effect {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
   .ai-badge {
     animation: pulse-glow 3.0s infinite ease-in-out;
     position: relative;
@@ -60,6 +76,60 @@ const aiAnimationStyles = `
     animation: sparkle 1.7s infinite ease-in-out;
     transform-origin: center;
     display: inline-block;
+  }
+  
+  .nav-item-hover:hover svg {
+    filter: drop-shadow(0 0 7px rgba(116, 235, 213, 0.8));
+    stroke-width: 2px;
+    transform: scale(1.2);
+  }
+  
+  .nav-item-hover {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .nav-item-hover:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(90deg, rgba(0, 179, 152, 0.15), rgba(0, 160, 210, 0.1));
+    color: white !important;
+  }
+
+  /* Active route styling */
+  .nav-item-active {
+    background: linear-gradient(90deg, rgba(0, 179, 152, 0.2), rgba(0, 160, 210, 0.15));
+    border-left: 3px solid #00B398;
+    padding-left: 5px;
+  }
+
+  .nav-item-active svg {
+    filter: drop-shadow(0 0 3.5px rgba(116, 235, 213, 0.55));
+    stroke-width: 2px;
+  }
+
+  /* Company branding footer */
+  .company-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .company-footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem;
+  }
+
+  .company-logo-small {
+    height: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .company-info {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    line-height: 1.4;
   }
 `;
 
@@ -85,7 +155,7 @@ const userNavigation = [
 // Icon components
 function DashboardIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
     </svg>
   );
@@ -93,7 +163,7 @@ function DashboardIcon() {
 
 function EmployersIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
     </svg>
   );
@@ -101,7 +171,7 @@ function EmployersIcon() {
 
 function QuotesIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
     </svg>
   );
@@ -109,7 +179,7 @@ function QuotesIcon() {
 
 function SoldCasesIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
     </svg>
   );
@@ -117,7 +187,7 @@ function SoldCasesIcon() {
 
 function EnrollmentsIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
     </svg>
   );
@@ -125,7 +195,7 @@ function EnrollmentsIcon() {
 
 function KyndChoiceIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
     </svg>
   );
@@ -133,7 +203,7 @@ function KyndChoiceIcon() {
 
 function KnowledgeCenterIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
     </svg>
   );
@@ -141,7 +211,7 @@ function KnowledgeCenterIcon() {
 
 function DocumentsIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 transition-all duration-300">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
     </svg>
   );
@@ -155,6 +225,15 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Helper function to check if a route is active
+  const isActiveRoute = (href: string) => {
+    if (href === '/dashboard' && location.pathname === '/') {
+      return true;
+    }
+    return location.pathname === href || location.pathname.startsWith(`${href}/`);
+  };
   
   // Handle user logout
   const handleLogout = async () => {
@@ -254,9 +333,9 @@ export function AppLayout() {
 
                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest px-6 pb-4 shadow-lg">
                   <div className="flex h-16 items-center justify-center">
-                    <Link to="/dashboard" className="p-2 rounded-md">
+                    <Link to="/dashboard" className="p-2 rounded-md flex justify-center items-center w-full">
                       <img
-                        className="h-10 w-auto mx-auto"
+                        className="h-12 w-auto"   
                         src={kyndlyLogoWhite}
                         alt="Kyndly"
                       />
@@ -287,7 +366,7 @@ export function AppLayout() {
                                     href={item.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                                    className={`group nav-item-hover flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:text-white hover:bg-mint ${isActiveRoute(item.href) ? 'nav-item-active' : ''}`}
                                   >
                                     <item.icon aria-hidden="true" />
                                     {item.name}
@@ -303,7 +382,7 @@ export function AppLayout() {
                                 ) : (
                                   <Link
                                     to={item.href}
-                                    className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest ${item.className || ''}`}
+                                    className={`group nav-item-hover flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:text-white hover:bg-mint ${isActiveRoute(item.href) ? 'nav-item-active' : ''} ${item.className || ''}`}
                                   >
                                     <item.icon aria-hidden="true" />
                                     {item.name}
@@ -324,6 +403,19 @@ export function AppLayout() {
                       </li>
                     </ul>
                   </nav>
+                  <div className="company-footer">
+                    <div className="company-footer-content">
+                      <img
+                        className="company-logo-small"
+                        src={kyndlyLogoWhite}
+                        alt="Kyndly"
+                      />
+                      <div className="company-info">
+                        <div>© {new Date().getFullYear()} Kyndly Benefits</div>
+                        <div>Version {APP_VERSION}</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
@@ -335,9 +427,9 @@ export function AppLayout() {
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-forest dark:bg-dark-surface px-6 pb-4 shadow-[6px_0_15px_rgba(0,0,0,0.15)]">
           <div className="flex h-16 items-center justify-center">
-            <Link to="/dashboard" className="p-2 rounded-md">
+            <Link to="/dashboard" className="p-2 rounded-md flex justify-center items-center w-full">
               <img
-                className="h-10 w-auto mx-auto"
+                className="h-12 w-auto"
                 src={kyndlyLogoWhite}
                 alt="Kyndly"
               />
@@ -368,7 +460,7 @@ export function AppLayout() {
                             href={item.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest"
+                            className={`group nav-item-hover flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:text-white hover:bg-mint ${isActiveRoute(item.href) ? 'nav-item-active' : ''}`}
                           >
                             <item.icon aria-hidden="true" />
                             {item.name}
@@ -384,7 +476,7 @@ export function AppLayout() {
                         ) : (
                           <Link
                             to={item.href}
-                            className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:bg-mint hover:text-forest ${item.className || ''}`}
+                            className={`group nav-item-hover flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-white hover:text-white hover:bg-mint ${isActiveRoute(item.href) ? 'nav-item-active' : ''} ${item.className || ''}`}
                           >
                             <item.icon aria-hidden="true" />
                             {item.name}
@@ -405,6 +497,19 @@ export function AppLayout() {
               </li>
             </ul>
           </nav>
+          <div className="company-footer">
+            <div className="company-footer-content">
+              <img
+                className="company-logo-small"
+                src={kyndlyLogoWhite}
+                alt="Kyndly"
+              />
+              <div className="company-info">
+                <div>© {new Date().getFullYear()} Kyndly Benefits</div>
+                <div>Version {APP_VERSION}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
