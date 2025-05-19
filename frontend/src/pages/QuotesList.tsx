@@ -359,7 +359,7 @@ const QuotesList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-2 py-8" style={{ minWidth: '1100px' }}>
+    <div className="space-y-6 mx-auto px-2 py-8 w-full">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -374,7 +374,7 @@ const QuotesList: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.2 }}
-        className="flex justify-between items-center mb-4"
+        className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4"
       >
         <div className="w-full max-w-md">
           <div className="relative">
@@ -432,8 +432,7 @@ const QuotesList: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.2 }}
-        className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-x-auto" 
-        style={{ minWidth: '1050px' }}
+        className="bg-white dark:bg-night-800 rounded-brand shadow-brand dark:shadow-dark overflow-auto w-full"
       >
         <div className="overflow-x-auto">
           <input
@@ -442,12 +441,12 @@ const QuotesList: React.FC = () => {
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-night-700">
+          <table className="w-full divide-y divide-gray-200 dark:divide-night-700">
             <thead className="bg-gray-50 dark:bg-night-700">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('companyName')}
                 >
                   <div className="flex items-center space-x-1">
@@ -457,27 +456,27 @@ const QuotesList: React.FC = () => {
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden sm:table-cell"
                   onClick={() => handleSort('transperraRep')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Transperra Rep</span>
+                    <span>Rep</span>
                     {getSortIcon('transperraRep')}
                   </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden md:table-cell"
                   onClick={() => handleSort('ichraEffectiveDate')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Effective Date</span>
+                    <span>Date</span>
                     {getSortIcon('ichraEffectiveDate')}
                   </div>
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden lg:table-cell"
                   onClick={() => handleSort('pepm')}
                 >
                   <div className="flex items-center space-x-1">
@@ -487,7 +486,7 @@ const QuotesList: React.FC = () => {
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center space-x-1">
@@ -497,7 +496,7 @@ const QuotesList: React.FC = () => {
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden md:table-cell"
                   onClick={() => handleSort('brokerName')}
                 >
                   <div className="flex items-center space-x-1">
@@ -507,7 +506,7 @@ const QuotesList: React.FC = () => {
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden lg:table-cell"
                   onClick={() => handleSort('employerName')}
                 >
                   <div className="flex items-center space-x-1">
@@ -515,7 +514,7 @@ const QuotesList: React.FC = () => {
                     {getSortIcon('employerName')}
                   </div>
                 </th>
-                <th scope="col" className="relative px-6 py-3">
+                <th scope="col" className="relative px-4 py-3">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -530,7 +529,7 @@ const QuotesList: React.FC = () => {
                   transition={{ delay: 0.05 * index, duration: 0.3 }}
                   className="hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <Link
                       to={`/quotes/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`}
                       className="text-seafoam hover:text-seafoam-600 dark:text-sky dark:hover:text-sky-400 font-medium"
@@ -538,16 +537,16 @@ const QuotesList: React.FC = () => {
                         {quote.companyName}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap hidden sm:table-cell">
                       <div className="text-sm text-gray-900 dark:text-white">{quote.transperraRep}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap hidden md:table-cell">
                       <div className="text-sm text-gray-900 dark:text-white">{quote.ichraEffectiveDate}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300 hidden lg:table-cell">
                       {quote.pepm}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <select
                       value={quote.status}
                       onChange={(e) => handleStatusChange(quote, e.target.value)}
@@ -572,14 +571,14 @@ const QuotesList: React.FC = () => {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap hidden md:table-cell">
                     <div className="text-sm text-gray-900 dark:text-white">{quote.brokerName}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
                     <div className="text-sm text-gray-900 dark:text-white">{quote.employerName}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2 justify-end">
+                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex flex-col sm:flex-row gap-2 justify-end">
                       <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -608,7 +607,7 @@ const QuotesList: React.FC = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
-                          Export
+                          <span className="hidden sm:inline">Export</span>
                         </motion.button>
                         
                         <div id={`export-menu-${quote.submissionId}`} className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10 hidden">
@@ -653,14 +652,14 @@ const QuotesList: React.FC = () => {
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Uploading...
+                            <span className="hidden sm:inline">Uploading...</span>
                           </>
                         ) : (
                           <>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                             </svg>
-                            Upload
+                            <span className="hidden sm:inline">Upload</span>
                           </>
                         )}
                       </motion.button>
@@ -670,7 +669,7 @@ const QuotesList: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                     <p className="mb-2">
                       {searchTerm ? 'No quotes match your search criteria' : 'No quotes available yet'}
                     </p>
