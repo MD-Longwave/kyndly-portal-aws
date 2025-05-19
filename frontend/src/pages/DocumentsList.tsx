@@ -130,7 +130,7 @@ const DocumentsList: React.FC = () => {
         const possibleArrays = Object.values(quotesData).filter(val => Array.isArray(val));
         if (possibleArrays.length > 0) {
           console.log('Found array in quotes response:', possibleArrays[0]);
-          quotesArray = possibleArrays[0];
+          quotesArray = possibleArrays[0] as any[];
         } else {
           // If it's a single quote object
           if (quotesData.submissionId) {
