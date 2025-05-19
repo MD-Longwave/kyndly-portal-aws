@@ -7,7 +7,6 @@ import { FadeIn } from '../components/animations';
 // API configuration - same as in other pages
 const API_KEY = '4ws9KDIWIW11u8mNVP0Th2bGN3GhlnnZlquHiv8b';
 const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
-const API_PATH = '/api/documents';
 
 // Types for document data
 interface Document {
@@ -66,7 +65,6 @@ const FileIcon = ({ type }: { type: string }) => {
 };
 
 const DocumentsList: React.FC = () => {
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [documentGroups, setDocumentGroups] = useState<DocumentGroup[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -96,21 +94,19 @@ const DocumentsList: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${API_URL}${API_PATH}`, { 
-        headers,
-        mode: 'cors',
-        credentials: 'include'
-      });
+      // First fetch quotes, then for each quote fetch documents:
+      const quotesResponse = await fetch(`${API_URL}/api/quotes`, { headers });
+      const quotes = await quotesResponse.json();
+      let allDocuments: Document[] = [];
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch documents: ${response.status} ${response.statusText}`);
+      for (const quote of quotes) {
+        const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
+        const docs = await docsResponse.json();
+        allDocuments = [...allDocuments, ...(docs || [])];
       }
       
-      const data = await response.json();
-      setDocuments(data.documents || []);
-      
       // Group documents by submission ID
-      const groups = groupDocumentsBySubmission(data.documents || []);
+      const groups = groupDocumentsBySubmission(allDocuments);
       setDocumentGroups(groups);
       
     } catch (err) {
@@ -175,7 +171,7 @@ const DocumentsList: React.FC = () => {
       formData.append('file', file);
       
       // Create the URL with the right parameters
-      const url = `${API_URL}${API_PATH}/${selectedSubmission}?brokerId=${selectedGroup.brokerId}&employerId=${selectedGroup.employerId}`;
+      const url = `${API_URL}/api/quotes/${selectedSubmission}/documents?brokerId=${selectedGroup.brokerId}&employerId=${selectedGroup.employerId}`;
       
       // Important: Don't set Content-Type header for multipart/form-data
       const headers: any = {
@@ -230,7 +226,7 @@ const DocumentsList: React.FC = () => {
       }
       
       // Construct URL with the document's S3 key and submission info
-      const url = `${API_URL}${API_PATH}/${document.submissionId}/download/${document.documentId}?brokerId=${document.brokerId}&employerId=${document.employerId}`;
+      const url = `${API_URL}/api/quotes/${document.submissionId}/documents/download/${document.documentId}?brokerId=${document.brokerId}&employerId=${document.employerId}`;
       
       const response = await fetch(url, {
         headers,
