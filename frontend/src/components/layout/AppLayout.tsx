@@ -21,15 +21,15 @@ import { featureAccess } from '../../config/accessConfig';
 const aiAnimationStyles = `
   @keyframes pulse-glow {
     0% {
-      box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7);
+      box-shadow: 0 0 0 0 rgba(0, 179, 152, 0.7);
       transform: scale(1);
     }
     50% {
-      box-shadow: 0 0 6px 3px rgba(124, 58, 237, 0.4);
-      transform: scale(1.03);
+      box-shadow: 0 0 6px 3px rgba(0, 179, 152, 0.4);
+      transform: scale(1.08);
     }
     100% {
-      box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+      box-shadow: 0 0 0 0 rgba(0, 179, 152, 0);
       transform: scale(1);
     }
   }
@@ -50,12 +50,14 @@ const aiAnimationStyles = `
   }
   
   .ai-badge {
-    animation: pulse-glow 2.5s infinite ease-in-out;
+    animation: pulse-glow 3.0s infinite ease-in-out;
     position: relative;
+    background: linear-gradient(90deg, #00B398 0%, #00A0D2 100%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
   }
   
   .ai-sparkle {
-    animation: sparkle 1.5s infinite ease-in-out;
+    animation: sparkle 1.7s infinite ease-in-out;
     transform-origin: center;
     display: inline-block;
   }
@@ -290,7 +292,7 @@ export function AppLayout() {
                                     <item.icon aria-hidden="true" />
                                     {item.name}
                                     {item.aiPowered && (
-                                      <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                                      <span className="ml-1 text-xs flex items-center text-white px-1.5 py-0.5 rounded-full ai-badge">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
                                           <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                                         </svg>
@@ -306,7 +308,7 @@ export function AppLayout() {
                                     <item.icon aria-hidden="true" />
                                     {item.name}
                                     {item.aiPowered && (
-                                      <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                                      <span className="ml-1 text-xs flex items-center text-white px-1.5 py-0.5 rounded-full ai-badge">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
                                           <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                                         </svg>
@@ -371,7 +373,7 @@ export function AppLayout() {
                             <item.icon aria-hidden="true" />
                             {item.name}
                             {item.aiPowered && (
-                              <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                              <span className="ml-1 text-xs flex items-center text-white px-1.5 py-0.5 rounded-full ai-badge">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                                 </svg>
@@ -387,7 +389,7 @@ export function AppLayout() {
                             <item.icon aria-hidden="true" />
                             {item.name}
                             {item.aiPowered && (
-                              <span className="ml-1 text-xs flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-white px-1.5 py-0.5 rounded-full ai-badge">
+                              <span className="ml-1 text-xs flex items-center text-white px-1.5 py-0.5 rounded-full ai-badge">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-0.5 ai-sparkle">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                                 </svg>
