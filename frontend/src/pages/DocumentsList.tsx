@@ -100,9 +100,26 @@ const DocumentsList: React.FC = () => {
       let allDocuments: Document[] = [];
       
       for (const quote of quotes) {
-        const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
-        const docs = await docsResponse.json();
-        allDocuments = [...allDocuments, ...(docs || [])];
+        try {
+          const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
+          const docs = await docsResponse.json();
+          
+          // Handle different response formats
+          if (docs) {
+            if (Array.isArray(docs)) {
+              allDocuments = [...allDocuments, ...docs];
+            } else if (docs.documents && Array.isArray(docs.documents)) {
+              // If response has a documents array property
+              allDocuments = [...allDocuments, ...docs.documents];
+            } else if (typeof docs === 'object') {
+              // If it's a single document object
+              allDocuments.push(docs as Document);
+            }
+          }
+        } catch (err) {
+          console.warn(`Failed to fetch documents for quote ${quote.submissionId}:`, err);
+          // Continue with other quotes
+        }
       }
       
       // Group documents by submission ID
