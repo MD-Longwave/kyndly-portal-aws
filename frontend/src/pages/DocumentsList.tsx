@@ -99,26 +99,28 @@ const DocumentsList: React.FC = () => {
       const quotes = await quotesResponse.json();
       let allDocuments: Document[] = [];
       
-      for (const quote of quotes) {
-        try {
-          const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
-          const docs = await docsResponse.json();
-          
-          // Handle different response formats
-          if (docs) {
-            if (Array.isArray(docs)) {
-              allDocuments = [...allDocuments, ...docs];
-            } else if (docs.documents && Array.isArray(docs.documents)) {
-              // If response has a documents array property
-              allDocuments = [...allDocuments, ...docs.documents];
-            } else if (typeof docs === 'object') {
-              // If it's a single document object
-              allDocuments.push(docs as Document);
+      console.log('Quotes:', quotes);
+      
+      if (!Array.isArray(quotes)) {
+        console.error('Expected quotes response to be an array, but got:', typeof quotes);
+        if (quotes && typeof quotes === 'object') {
+          // Try to extract quotes array if it's nested in an object
+          const possibleArrays = Object.values(quotes).filter(val => Array.isArray(val));
+          if (possibleArrays.length > 0) {
+            console.log('Found array in quotes response:', possibleArrays[0]);
+            for (const quote of possibleArrays[0]) {
+              await fetchDocumentsForQuote(quote, headers, allDocuments);
             }
+          } else {
+            setError('Failed to parse quotes data.');
           }
-        } catch (err) {
-          console.warn(`Failed to fetch documents for quote ${quote.submissionId}:`, err);
-          // Continue with other quotes
+        } else {
+          setError('Failed to parse quotes data.');
+        }
+      } else {
+        // Quotes is an array, process normally
+        for (const quote of quotes) {
+          await fetchDocumentsForQuote(quote, headers, allDocuments);
         }
       }
       
@@ -131,6 +133,52 @@ const DocumentsList: React.FC = () => {
       setError('Failed to load documents. Please try again later.');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Helper function to fetch documents for a single quote
+  const fetchDocumentsForQuote = async (quote: any, headers: HeadersInit, allDocuments: Document[]) => {
+    try {
+      if (!quote || !quote.submissionId) {
+        console.warn('Invalid quote object:', quote);
+        return;
+      }
+      
+      console.log(`Fetching documents for quote ${quote.submissionId}`);
+      const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
+      const docsData = await docsResponse.json();
+      
+      console.log(`Documents response for ${quote.submissionId}:`, docsData);
+      
+      // Handle different response formats
+      if (!docsData) {
+        console.log('Empty documents response');
+        return;
+      }
+      
+      if (Array.isArray(docsData)) {
+        console.log('Documents data is an array with length:', docsData.length);
+        allDocuments.push(...docsData);
+      } else if (docsData.documents && Array.isArray(docsData.documents)) {
+        console.log('Documents data has documents array with length:', docsData.documents.length);
+        allDocuments.push(...docsData.documents);
+      } else if (typeof docsData === 'object') {
+        console.log('Documents data is a single object');
+        // Try to extract any arrays that might be present
+        const possibleArrays = Object.values(docsData).filter(val => Array.isArray(val));
+        if (possibleArrays.length > 0) {
+          console.log('Found array in documents response:', possibleArrays[0]);
+          allDocuments.push(...possibleArrays[0]);
+        } else {
+          // If no arrays found, treat as a single document
+          allDocuments.push(docsData as Document);
+        }
+      } else {
+        console.warn(`Unhandled documents response type: ${typeof docsData}`);
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch documents for quote ${quote.submissionId}:`, err);
+      // Continue with other quotes
     }
   };
   
