@@ -96,32 +96,45 @@ const DocumentsList: React.FC = () => {
       
       // First fetch quotes, then for each quote fetch documents:
       const quotesResponse = await fetch(`${API_URL}/api/quotes`, { headers });
-      const quotes = await quotesResponse.json();
+      
+      if (!quotesResponse.ok) {
+        throw new Error(`Failed to fetch quotes: ${quotesResponse.status} ${quotesResponse.statusText}`);
+      }
+      
+      const quotesData = await quotesResponse.json();
       let allDocuments: Document[] = [];
       
-      console.log('Quotes:', quotes);
+      console.log('Quotes:', quotesData);
       
-      if (!Array.isArray(quotes)) {
-        console.error('Expected quotes response to be an array, but got:', typeof quotes);
-        if (quotes && typeof quotes === 'object') {
-          // Try to extract quotes array if it's nested in an object
-          const possibleArrays = Object.values(quotes).filter(val => Array.isArray(val));
-          if (possibleArrays.length > 0) {
-            console.log('Found array in quotes response:', possibleArrays[0]);
-            for (const quote of possibleArrays[0] as any[]) {
-              await fetchDocumentsForQuote(quote, headers, allDocuments);
-            }
+      if (!quotesData) {
+        throw new Error('Empty quotes response');
+      }
+      
+      if (Array.isArray(quotesData)) {
+        console.log('Quotes data is an array with length:', quotesData.length);
+        for (const quote of quotesData) {
+          await fetchDocumentsForQuote(quote, headers, allDocuments);
+        }
+      } else if (typeof quotesData === 'object') {
+        console.error('Expected quotes response to be an array, but got:', typeof quotesData);
+        // Try to extract quotes array if it's nested in an object
+        const possibleArrays = Object.values(quotesData).filter(val => Array.isArray(val));
+        if (possibleArrays.length > 0) {
+          console.log('Found array in quotes response:', possibleArrays[0]);
+          const quotesArray = possibleArrays[0] as any[];
+          for (const quote of quotesArray) {
+            await fetchDocumentsForQuote(quote, headers, allDocuments);
+          }
+        } else {
+          // If it's a single quote object
+          if (quotesData.submissionId) {
+            await fetchDocumentsForQuote(quotesData, headers, allDocuments);
           } else {
             setError('Failed to parse quotes data.');
           }
-        } else {
-          setError('Failed to parse quotes data.');
         }
       } else {
-        // Quotes is an array, process normally
-        for (const quote of quotes) {
-          await fetchDocumentsForQuote(quote, headers, allDocuments);
-        }
+        setError('Failed to parse quotes data.');
       }
       
       // Group documents by submission ID
@@ -130,7 +143,7 @@ const DocumentsList: React.FC = () => {
       
     } catch (err) {
       console.error('Error fetching documents:', err);
-      setError('Failed to load documents. Please try again later.');
+      setError(`Failed to load documents: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +159,12 @@ const DocumentsList: React.FC = () => {
       
       console.log(`Fetching documents for quote ${quote.submissionId}`);
       const docsResponse = await fetch(`${API_URL}/api/quotes/${quote.submissionId}/documents`, { headers });
+      
+      if (!docsResponse.ok) {
+        console.warn(`Error fetching documents for quote ${quote.submissionId}: ${docsResponse.status} ${docsResponse.statusText}`);
+        return;
+      }
+      
       const docsData = await docsResponse.json();
       
       console.log(`Documents response for ${quote.submissionId}:`, docsData);
@@ -158,26 +177,38 @@ const DocumentsList: React.FC = () => {
       
       if (Array.isArray(docsData)) {
         console.log('Documents data is an array with length:', docsData.length);
-        allDocuments.push(...docsData);
+        if (docsData.length > 0) {
+          allDocuments.push(...docsData);
+        }
       } else if (docsData.documents && Array.isArray(docsData.documents)) {
         console.log('Documents data has documents array with length:', docsData.documents.length);
-        allDocuments.push(...docsData.documents);
+        if (docsData.documents.length > 0) {
+          allDocuments.push(...docsData.documents);
+        }
       } else if (typeof docsData === 'object') {
         console.log('Documents data is a single object');
         // Try to extract any arrays that might be present
         const possibleArrays = Object.values(docsData).filter(val => Array.isArray(val));
         if (possibleArrays.length > 0) {
           console.log('Found array in documents response:', possibleArrays[0]);
-          allDocuments.push(...(possibleArrays[0] as Document[]));
+          const documentsArray = possibleArrays[0] as Document[];
+          if (documentsArray.length > 0) {
+            allDocuments.push(...documentsArray);
+          }
         } else {
-          // If no arrays found, treat as a single document
-          allDocuments.push(docsData as Document);
+          // Check if it's a valid document object with required fields
+          if (docsData.documentId) {
+            // If no arrays found, treat as a single document
+            allDocuments.push(docsData as Document);
+          } else {
+            console.warn(`Response doesn't contain valid document data:`, docsData);
+          }
         }
       } else {
         console.warn(`Unhandled documents response type: ${typeof docsData}`);
       }
     } catch (err) {
-      console.warn(`Failed to fetch documents for quote ${quote.submissionId}:`, err);
+      console.warn(`Failed to fetch documents for quote ${quote?.submissionId}:`, err);
       // Continue with other quotes
     }
   };
