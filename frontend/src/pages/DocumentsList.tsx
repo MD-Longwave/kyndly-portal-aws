@@ -4,15 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { FadeIn } from '../components/animations';
 
-// Import file type icons with explicit relative paths
-import pdfIcon from '../assets/images/pdf.png';
-import xlsIcon from '../assets/images/xls.png';
-import csvIcon from '../assets/images/csv.png';
-import docIcon from '../assets/images/doc.png';
-import jpgIcon from '../assets/images/jpg.png';
-import imgIcon from '../assets/images/img.png';
-import zipIcon from '../assets/images/zip.png';
-
 // API configuration - same as in other pages
 const API_KEY = '4ws9KDIWIW11u8mNVP0Th2bGN3GhlnnZlquHiv8b';
 const API_URL = 'https://m88qalv4u5.execute-api.us-east-2.amazonaws.com/prod';
@@ -44,31 +35,40 @@ interface DocumentGroup {
 }
 
 // Icon components for document types
-const FileIcon = ({ type }: { type: string }) => {
-  // Ensure type is a string and has a value before calling toLowerCase
-  const fileType = (type || 'unknown').toLowerCase();
+const FileIcon = ({ type, filename }: { type: string; filename?: string }) => {
+  // Determine file type based on extension or provided type
+  const getFileType = (): string => {
+    // If we have a filename, extract the extension
+    if (filename) {
+      const extension = filename.split('.').pop()?.toLowerCase() || '';
+      
+      if (['pdf'].includes(extension)) return 'pdf';
+      if (['doc', 'docx'].includes(extension)) return 'doc';
+      if (['xls', 'xlsx'].includes(extension)) return 'xls';
+      if (['csv'].includes(extension)) return 'csv';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) return 'jpg';
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) return 'zip';
+    }
+    
+    // If no filename or unrecognized extension, use the provided type
+    const fileType = (type || '').toLowerCase();
+    
+    if (fileType.includes('pdf')) return 'pdf';
+    if (fileType.includes('word') || fileType.includes('doc')) return 'doc';
+    if (fileType.includes('excel') || fileType.includes('xls')) return 'xls';
+    if (fileType.includes('csv')) return 'csv';
+    if (fileType.includes('image') || fileType.includes('jpg') || fileType.includes('jpeg') || fileType.includes('png')) return 'jpg';
+    if (fileType.includes('zip') || fileType.includes('compress')) return 'zip';
+    
+    // Default to generic document icon
+    return 'img';
+  };
   
-  // Get the icon path based on file type
-  let iconPath: string;
+  const fileType = getFileType();
+  const iconPath = `/images/${fileType}.png`;
   
-  if (fileType === 'pdf') {
-    iconPath = '/images/pdf.png'; 
-  } else if (fileType === 'excel' || fileType === 'xlsx' || fileType === 'xls') {
-    iconPath = '/images/xls.png';
-  } else if (fileType === 'csv') {
-    iconPath = '/images/csv.png';
-  } else if (fileType === 'word' || fileType === 'docx' || fileType === 'doc') {
-    iconPath = '/images/doc.png';
-  } else if (fileType === 'image' || fileType === 'jpg' || fileType === 'jpeg' || fileType === 'png') {
-    iconPath = '/images/jpg.png';
-  } else if (fileType === 'zip' || fileType === 'compressed') {
-    iconPath = '/images/zip.png';
-  } else {
-    iconPath = '/images/img.png';
-  }
-  
-  // Return image with appropriate alt text
-  return <img src={process.env.PUBLIC_URL + iconPath} alt={`${fileType} document`} className="mr-3 h-6 w-6 flex-shrink-0" />;
+  // Return image with appropriate alt text and bigger size
+  return <img src={process.env.PUBLIC_URL + iconPath} alt={`${fileType} document`} className="mr-3 h-8 w-8 flex-shrink-0" />;
 };
 
 const DocumentsList: React.FC = () => {
@@ -693,7 +693,7 @@ const DocumentsList: React.FC = () => {
                   <li key={document.documentId || `doc-${Math.random()}`} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-night-700 transition-colors duration-150">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <FileIcon type={document.type || 'unknown'} />
+                        <FileIcon type={document.type || 'unknown'} filename={document.filename} />
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
                             {document.name || document.filename || 'Unnamed Document'}
