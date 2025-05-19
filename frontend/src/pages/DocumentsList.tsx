@@ -115,31 +115,37 @@ const DocumentsList: React.FC = () => {
         throw new Error('Empty quotes response');
       }
       
+      let quotesArray: any[] = [];
+      
+      // Handle the response structure correctly
       if (Array.isArray(quotesData)) {
         console.log('Quotes data is an array with length:', quotesData.length);
-        for (const quote of quotesData) {
-          await fetchDocumentsForQuote(quote, headers, allDocuments);
-        }
+        quotesArray = quotesData;
+      } else if (quotesData.quotes && Array.isArray(quotesData.quotes)) {
+        console.log('Found quotes array in response with length:', quotesData.quotes.length);
+        quotesArray = quotesData.quotes;
       } else if (typeof quotesData === 'object') {
-        console.error('Expected quotes response to be an array, but got:', typeof quotesData);
+        console.log('Expected quotes response to be an array, but got:', typeof quotesData);
         // Try to extract quotes array if it's nested in an object
         const possibleArrays = Object.values(quotesData).filter(val => Array.isArray(val));
         if (possibleArrays.length > 0) {
           console.log('Found array in quotes response:', possibleArrays[0]);
-          const quotesArray = possibleArrays[0] as any[];
-          for (const quote of quotesArray) {
-            await fetchDocumentsForQuote(quote, headers, allDocuments);
-          }
+          quotesArray = possibleArrays[0];
         } else {
           // If it's a single quote object
           if (quotesData.submissionId) {
-            await fetchDocumentsForQuote(quotesData, headers, allDocuments);
+            quotesArray = [quotesData];
           } else {
             setError('Failed to parse quotes data.');
           }
         }
       } else {
         setError('Failed to parse quotes data.');
+      }
+      
+      // Process all the quotes
+      for (const quote of quotesArray) {
+        await fetchDocumentsForQuote(quote, headers, allDocuments);
       }
       
       // Group documents by submission ID
@@ -164,7 +170,41 @@ const DocumentsList: React.FC = () => {
       
       console.log(`Fetching documents for quote ${quote.submissionId}`);
       
-      // First try the root documents path
+      // First try the direct path from the QuoteDetails page
+      const quotePath = `${API_URL}/api/quotes/${quote.submissionId}?brokerId=${quote.brokerId || ''}&employerId=${quote.employerId || ''}`;
+      console.log(`Trying to load quote data path: ${quotePath}`);
+      
+      try {
+        const quoteResponse = await fetch(quotePath, { headers });
+        if (quoteResponse.ok) {
+          const quoteData = await quoteResponse.json();
+          console.log('Found document data in quote:', quoteData);
+          
+          // Check if documents are directly in the quoteData
+          if (quoteData.documents && Array.isArray(quoteData.documents)) {
+            console.log(`Found ${quoteData.documents.length} documents in quote data`);
+            
+            const processedDocs = quoteData.documents.map((doc: any) => {
+              // Ensure each document has the submission ID and other required metadata
+              return {
+                ...doc,
+                submissionId: quote.submissionId,
+                brokerId: quote.brokerId || doc.brokerId,
+                employerId: quote.employerId || doc.employerId,
+                companyName: quote.companyName || doc.companyName || ''
+              };
+            });
+            
+            allDocuments.push(...processedDocs);
+            return; // Early return if documents were found in quote data
+          }
+        }
+      } catch (err) {
+        console.warn(`Error fetching quote data for ${quote.submissionId}:`, err);
+        // Continue with other methods even if this fails
+      }
+      
+      // Then try regular documents path
       await fetchFromPath(`${API_URL}/api/quotes/${quote.submissionId}/documents`, headers, allDocuments, quote);
       
       // Also try looking for documents in the TPA/Broker/Employer structure
