@@ -41,12 +41,60 @@ const QuotesList: React.FC = () => {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadTarget, setUploadTarget] = useState<{quote: Quote} | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   
   // Search and sorting states
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('companyName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
+  const handleStatusChange = async (quote: Quote, newStatus: string) => {
+    // Don't do anything if the status is the same
+    if (quote.status === newStatus) return;
+    
+    setUpdatingStatusId(quote.submissionId);
+    try {
+      const token = await getIdToken();
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const url = `${API_URL}${API_PATH}/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`;
+      console.log('Making status update request to:', url);
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ status: newStatus }),
+        mode: 'cors',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        // Update the quote status in the local state
+        setQuotes(quotes.map(q => 
+          q.submissionId === quote.submissionId ? { ...q, status: newStatus } : q
+        ));
+      } else {
+        const errorText = await response.text();
+        console.error('Status update error:', response.status, errorText);
+        alert(`Failed to update status: ${response.status} ${response.statusText}`);
+        // Rollback UI to original status
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Error updating status.');
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
   const fetchQuotes = React.useCallback(async () => {
     setIsLoading(true);
     try {
@@ -455,17 +503,29 @@ const QuotesList: React.FC = () => {
                       {quote.pepm}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        quote.status === 'Approved'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-                          : quote.status === 'Pending'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
-                          : 'bg-sky-100 text-sky-800 dark:bg-sky-900/20 dark:text-sky-300'
+                    <select
+                      value={quote.status}
+                      onChange={(e) => handleStatusChange(quote, e.target.value)}
+                      disabled={updatingStatusId === quote.submissionId}
+                      className={`px-2 py-1 text-xs font-semibold rounded-md border transition-colors duration-200 ${
+                        updatingStatusId === quote.submissionId
+                          ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-wait'
+                          : quote.status === 'Sold'
+                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
+                            : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800'
                       }`}
                     >
-                      {quote.status}
-                    </span>
+                      <option value="Pending">Pending</option>
+                      <option value="Sold">Sold</option>
+                    </select>
+                    {updatingStatusId === quote.submissionId && (
+                      <span className="ml-2 inline-flex items-center">
+                        <svg className="animate-spin h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">{quote.brokerName}</div>
