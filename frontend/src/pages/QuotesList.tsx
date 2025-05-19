@@ -64,9 +64,17 @@ const QuotesList: React.FC = () => {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+
+      // Extract the actual submissionId without the "submission-" prefix if it exists
+      const submissionId = quote.submissionId.replace('submission-', '');
       
-      const url = `${API_URL}${API_PATH}/${quote.submissionId}?brokerId=${quote.brokerId}&employerId=${quote.employerId}`;
+      // Clean up brokerId and employerId to remove any prefixes
+      const brokerId = quote.brokerId.replace(/^Broker_|^broker_|^broker-/, '');
+      const employerId = quote.employerId.replace(/^Employer_|^employer_|^employer-/, '');
+      
+      const url = `${API_URL}${API_PATH}/${submissionId}?brokerId=${brokerId}&employerId=${employerId}`;
       console.log('Making status update request to:', url);
+      console.log('Request body:', JSON.stringify({ status: newStatus }));
       
       const response = await fetch(url, {
         method: 'PUT',
