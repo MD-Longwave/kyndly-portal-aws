@@ -36,37 +36,41 @@ interface DocumentGroup {
 
 // Icon components for document types
 const FileIcon = ({ type }: { type: string }) => {
-  // Different styles based on document type
-  const getIconColor = () => {
-    // Ensure type is a string and has a value before calling toLowerCase
-    const fileType = (type || 'unknown').toLowerCase();
-    
-    switch (fileType) {
-      case 'pdf':
-        return 'text-red-500';
-      case 'excel':
-      case 'xlsx':
-      case 'xls':
-        return 'text-green-500';
-      case 'word':
-      case 'docx':
-      case 'doc':
-        return 'text-blue-500';
-      case 'image':
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return 'text-purple-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
+  // Ensure type is a string and has a value before calling toLowerCase
+  const fileType = (type || 'unknown').toLowerCase();
   
-  return (
-    <svg className={`mr-3 h-5 w-5 ${getIconColor()} flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-    </svg>
-  );
+  // Render different icons based on file type
+  if (fileType === 'pdf') {
+    return (
+      <svg className="mr-3 h-5 w-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 384 512">
+        <path d="M320 464C328.8 464 336 456.8 336 448V416H384V448C384 483.3 355.3 512 320 512H64C28.65 512 0 483.3 0 448V416H48V448C48 456.8 55.16 464 64 464H320zM256 160C238.3 160 224 145.7 224 128V48H64C55.16 48 48 55.16 48 64V192H0V64C0 28.65 28.65 0 64 0H229.5C246.5 0 262.7 6.743 274.7 18.75L365.3 109.3C377.3 121.3 384 137.5 384 154.5V192H336V160H256zM88 224C118.9 224 144 249.1 144 280C144 310.9 118.9 336 88 336H80V368H88C136.6 368 176 328.6 176 280C176 231.4 136.6 192 88 192H56C42.75 192 32 202.8 32 216V408C32 421.3 42.75 432 56 432H88C101.3 432 112 421.3 112 408V392C112 378.7 101.3 368 88 368V336C101.3 336 112 325.3 112 312V296C112 282.7 101.3 272 88 272H80V224H88zM280 224H288C301.3 224 312 213.3 312 200V184C312 170.7 301.3 160 288 160H280C266.7 160 256 170.7 256 184V200C256 213.3 266.7 224 280 224zM352 376C352 362.7 341.3 352 328 352H320C306.7 352 296 362.7 296 376V392C296 405.3 306.7 416 320 416H328C341.3 416 352 405.3 352 392V376zM328 320C354.5 320 376 341.5 376 368V400C376 426.5 354.5 448 328 448H320C293.5 448 272 426.5 272 400V368C272 341.5 293.5 320 320 320H328zM280 256H288C314.5 256 336 277.5 336 304V336C336 362.5 314.5 384 288 384H280C253.5 384 232 362.5 232 336V304C232 277.5 253.5 256 280 256z" />
+      </svg>
+    );
+  } else if (fileType === 'excel' || fileType === 'xlsx' || fileType === 'xls' || fileType === 'csv') {
+    return (
+      <svg className="mr-3 h-5 w-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 384 512">
+        <path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM155.7 250.2L192 302.1l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4L162.7 344l-46.4-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z"/>
+      </svg>
+    );
+  } else if (fileType === 'word' || fileType === 'docx' || fileType === 'doc') {
+    return (
+      <svg className="mr-3 h-5 w-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 384 512">
+        <path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM111 257.1l26.8 89.2 31.6-90.3c3.4-9.6 12.5-16.1 22.7-16.1s19.3 6.4 22.7 16.1l31.6 90.3L273 257.1c3.8-12.7 17.2-19.9 29.9-16.1s19.9 17.2 16.1 29.9l-48 160c-3 10-12.1 16.9-22.4 17.1S231.7 442 228.1 432.5L192 338.7l-36.1 93.8c-3.5 9.4-12.6 15.7-22.8 16S117.3 443 114 433L66 271c-3.8-12.7 3.4-26.1 16.1-29.9s26.1 3.4 29.9 16.1z"/>
+      </svg>
+    );
+  } else if (fileType === 'image' || fileType === 'jpg' || fileType === 'jpeg' || fileType === 'png' || fileType === 'gif') {
+    return (
+      <svg className="mr-3 h-5 w-5 text-purple-500 flex-shrink-0" fill="currentColor" viewBox="0 0 512 512">
+        <path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h336c8.9 0 17.1-4.9 21.5-12.8s3.6-17.4-1.4-24.7l-120.3-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
+      </svg>
+    );
+  } else {
+    return (
+      <svg className="mr-3 h-5 w-5 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 384 512">
+        <path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128z"/>
+      </svg>
+    );
+  }
 };
 
 const DocumentsList: React.FC = () => {
@@ -563,6 +567,21 @@ const DocumentsList: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
+  // Load available document types from documents
+  const getAvailableDocumentTypes = (): string[] => {
+    const typesSet = new Set<string>();
+    
+    documentGroups.forEach(group => {
+      group.documents.forEach(doc => {
+        if (doc.type) {
+          typesSet.add(doc.type);
+        }
+      });
+    });
+    
+    return Array.from(typesSet).sort();
+  };
+  
   // Filter document groups based on search and filters
   const filteredGroups = documentGroups.filter(group => {
     // If no search term or type filter, include all groups
@@ -592,6 +611,8 @@ const DocumentsList: React.FC = () => {
     );
   }
   
+  const availableDocumentTypes = getAvailableDocumentTypes();
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-2 py-8">
       {/* Header */}
@@ -643,10 +664,9 @@ const DocumentsList: React.FC = () => {
               onChange={(e) => setSelectedType(e.target.value)}
             >
               <option value="">All Types</option>
-              <option value="PDF">PDF</option>
-              <option value="Excel">Excel</option>
-              <option value="Word">Word</option>
-              <option value="Image">Image</option>
+              {availableDocumentTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
             </select>
           </div>
         </div>
