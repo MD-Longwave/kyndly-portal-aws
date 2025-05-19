@@ -256,15 +256,16 @@ const DocumentsList: React.FC = () => {
         console.log('Documents data is an array with length:', docsData.length);
         if (docsData.length > 0) {
           const processedDocs = docsData.map((doc: any) => {
-            // Ensure each document has the submission ID
-            if (!doc.submissionId && quote?.submissionId) {
-              doc.submissionId = quote.submissionId;
-            }
-            // Ensure each document has company name if available
-            if (!doc.companyName && quote?.companyName) {
-              doc.companyName = quote.companyName;
-            }
-            return doc;
+            // Ensure each document has required properties to prevent undefined errors
+            return {
+              ...doc,
+              submissionId: doc.submissionId || quote?.submissionId || '',
+              companyName: doc.companyName || quote?.companyName || '',
+              documentId: doc.documentId || doc.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
+              name: doc.name || 'Unnamed Document',
+              type: (doc.type || 'unknown').toString(),
+              size: doc.size || '0 KB'
+            };
           });
           allDocuments.push(...processedDocs);
         }
@@ -272,15 +273,16 @@ const DocumentsList: React.FC = () => {
         console.log('Documents data has documents array with length:', docsData.documents.length);
         if (docsData.documents.length > 0) {
           const processedDocs = docsData.documents.map((doc: any) => {
-            // Ensure each document has the submission ID
-            if (!doc.submissionId && quote?.submissionId) {
-              doc.submissionId = quote.submissionId;
-            }
-            // Ensure each document has company name if available
-            if (!doc.companyName && quote?.companyName) {
-              doc.companyName = quote.companyName;
-            }
-            return doc;
+            // Ensure each document has required properties to prevent undefined errors
+            return {
+              ...doc,
+              submissionId: doc.submissionId || quote?.submissionId || '',
+              companyName: doc.companyName || quote?.companyName || '',
+              documentId: doc.documentId || doc.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
+              name: doc.name || 'Unnamed Document',
+              type: (doc.type || 'unknown').toString(),
+              size: doc.size || '0 KB'
+            };
           });
           allDocuments.push(...processedDocs);
         }
@@ -290,34 +292,36 @@ const DocumentsList: React.FC = () => {
         const possibleArrays = Object.values(docsData).filter(val => Array.isArray(val));
         if (possibleArrays.length > 0) {
           console.log('Found array in documents response:', possibleArrays[0]);
-          const documentsArray = possibleArrays[0] as Document[];
+          const documentsArray = possibleArrays[0] as any[];
           if (documentsArray.length > 0) {
             const processedDocs = documentsArray.map((doc: any) => {
-              // Ensure each document has the submission ID
-              if (!doc.submissionId && quote?.submissionId) {
-                doc.submissionId = quote.submissionId;
-              }
-              // Ensure each document has company name if available
-              if (!doc.companyName && quote?.companyName) {
-                doc.companyName = quote.companyName;
-              }
-              return doc;
+              // Ensure each document has required properties to prevent undefined errors
+              return {
+                ...doc,
+                submissionId: doc.submissionId || quote?.submissionId || '',
+                companyName: doc.companyName || quote?.companyName || '',
+                documentId: doc.documentId || doc.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
+                name: doc.name || 'Unnamed Document',
+                type: (doc.type || 'unknown').toString(),
+                size: doc.size || '0 KB'
+              };
             });
             allDocuments.push(...processedDocs);
           }
         } else {
           // Check if it's a valid document object with required fields
-          if (docsData.documentId) {
-            // If no arrays found, treat as a single document
-            // Ensure the document has the submission ID
-            if (!docsData.submissionId && quote?.submissionId) {
-              docsData.submissionId = quote.submissionId;
-            }
-            // Ensure the document has company name if available
-            if (!docsData.companyName && quote?.companyName) {
-              docsData.companyName = quote.companyName;
-            }
-            allDocuments.push(docsData as Document);
+          if (docsData.documentId || docsData.id) {
+            // Ensure the document has required properties to prevent undefined errors
+            const processedDoc = {
+              ...docsData,
+              submissionId: docsData.submissionId || quote?.submissionId || '',
+              companyName: docsData.companyName || quote?.companyName || '',
+              documentId: docsData.documentId || docsData.id || `doc-${Math.random().toString(36).substring(2, 9)}`,
+              name: docsData.name || 'Unnamed Document',
+              type: (docsData.type || 'unknown').toString(),
+              size: docsData.size || '0 KB'
+            };
+            allDocuments.push(processedDoc as Document);
           } else {
             console.warn(`Response doesn't contain valid document data:`, docsData);
           }
@@ -335,14 +339,20 @@ const DocumentsList: React.FC = () => {
     const groupsMap = new Map<string, DocumentGroup>();
     
     docs.forEach(doc => {
+      // Skip documents without required fields
+      if (!doc.submissionId) {
+        console.warn('Document missing submissionId:', doc);
+        return;
+      }
+      
       const key = doc.submissionId;
       
       if (!groupsMap.has(key)) {
         groupsMap.set(key, {
           submissionId: doc.submissionId,
-          companyName: doc.companyName,
-          brokerId: doc.brokerId,
-          employerId: doc.employerId,
+          companyName: doc.companyName || 'Unknown Company',
+          brokerId: doc.brokerId || '',
+          employerId: doc.employerId || '',
           documents: []
         });
       }
@@ -352,7 +362,7 @@ const DocumentsList: React.FC = () => {
     
     // Convert map to array and sort by company name
     return Array.from(groupsMap.values()).sort((a, b) => 
-      a.companyName.localeCompare(b.companyName)
+      (a.companyName || '').localeCompare(b.companyName || '')
     );
   };
   
