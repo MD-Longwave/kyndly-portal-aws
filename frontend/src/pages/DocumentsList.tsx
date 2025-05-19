@@ -108,7 +108,7 @@ const DocumentsList: React.FC = () => {
           const possibleArrays = Object.values(quotes).filter(val => Array.isArray(val));
           if (possibleArrays.length > 0) {
             console.log('Found array in quotes response:', possibleArrays[0]);
-            for (const quote of possibleArrays[0]) {
+            for (const quote of possibleArrays[0] as any[]) {
               await fetchDocumentsForQuote(quote, headers, allDocuments);
             }
           } else {
@@ -168,7 +168,7 @@ const DocumentsList: React.FC = () => {
         const possibleArrays = Object.values(docsData).filter(val => Array.isArray(val));
         if (possibleArrays.length > 0) {
           console.log('Found array in documents response:', possibleArrays[0]);
-          allDocuments.push(...possibleArrays[0]);
+          allDocuments.push(...(possibleArrays[0] as Document[]));
         } else {
           // If no arrays found, treat as a single document
           allDocuments.push(docsData as Document);
