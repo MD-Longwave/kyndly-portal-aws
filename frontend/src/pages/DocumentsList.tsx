@@ -164,8 +164,21 @@ const DocumentsList: React.FC = () => {
       
       console.log(`Fetching documents for quote ${quote.submissionId}`);
       
-      // Fetch from the documents subfolder only
-      await fetchFromPath(`${API_URL}/api/quotes/${quote.submissionId}/documents/documents`, headers, allDocuments, quote);
+      // First try the root documents path
+      await fetchFromPath(`${API_URL}/api/quotes/${quote.submissionId}/documents`, headers, allDocuments, quote);
+      
+      // Also try looking for documents in the TPA/Broker/Employer structure
+      // Get the broker and employer IDs from the quote if available
+      const brokerId = quote.brokerId || '';
+      const employerId = quote.employerId || '';
+      
+      if (brokerId && employerId) {
+        const tpaPath = `${API_URL}/api/tpa/brokers/${brokerId}/employers/${employerId}/submissions/${quote.submissionId}/documents`;
+        console.log(`Trying TPA path: ${tpaPath}`);
+        await fetchFromPath(tpaPath, headers, allDocuments, quote);
+      }
+      
+      console.log("All document fetching attempts completed");
       
     } catch (err) {
       console.warn(`Failed to fetch documents for quote ${quote?.submissionId}:`, err);
@@ -385,14 +398,25 @@ const DocumentsList: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      // Construct URL with the document's S3 key and submission info
-      const url = `${API_URL}/api/quotes/${document.submissionId}/documents/download/${document.documentId}?brokerId=${document.brokerId}&employerId=${document.employerId}`;
+      // Try downloading using different possible URL patterns
+      let response: Response | null = null;
+      let downloadUrl = '';
       
-      const response = await fetch(url, {
-        headers,
-        mode: 'cors',
-        credentials: 'include'
-      });
+      // First try the regular documents path
+      downloadUrl = `${API_URL}/api/quotes/${document.submissionId}/documents/download/${document.documentId}`;
+      if (document.brokerId && document.employerId) {
+        downloadUrl += `?brokerId=${document.brokerId}&employerId=${document.employerId}`;
+      }
+      
+      console.log(`Attempting to download from: ${downloadUrl}`);
+      response = await fetch(downloadUrl, { headers });
+      
+      // If that fails, try the TPA path
+      if (!response.ok && document.brokerId && document.employerId) {
+        downloadUrl = `${API_URL}/api/tpa/brokers/${document.brokerId}/employers/${document.employerId}/submissions/${document.submissionId}/documents/download/${document.documentId}`;
+        console.log(`First attempt failed. Trying TPA path: ${downloadUrl}`);
+        response = await fetch(downloadUrl, { headers });
+      }
       
       if (!response.ok) {
         throw new Error(`Failed to download document: ${response.status} ${response.statusText}`);
@@ -402,18 +426,18 @@ const DocumentsList: React.FC = () => {
       const blob = await response.blob();
       
       // Create download link and trigger click
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
       const a = window.document.createElement('a');
-      a.href = downloadUrl;
+      a.href = blobUrl;
       a.download = document.name;
       window.document.body.appendChild(a);
       a.click();
       window.document.body.removeChild(a);
-      window.URL.revokeObjectURL(downloadUrl);
+      window.URL.revokeObjectURL(blobUrl);
       
     } catch (err) {
       console.error('Error downloading document:', err);
-      alert('Error downloading document.');
+      alert('Error downloading document. ' + (err instanceof Error ? err.message : ''));
     }
   };
   
